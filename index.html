@@ -21,8 +21,8 @@
         .page { display: none; padding: 15px; padding-bottom: 120px; }
         .page.active { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
         
-        #friends, #profile { display: none; flex-direction: column; }
-        #friends.active, #profile.active { display: flex; }
+        #friends, #profile, #admin { display: none; flex-direction: column; }
+        #friends.active, #profile.active, #admin.active { display: flex; }
 
         .card { background: var(--card); border-radius: 25px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative; }
         
@@ -39,6 +39,9 @@
         #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 20px; transition: 0.4s; opacity: 0; z-index: 3000; pointer-events: none; }
         #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
+        .avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); margin-bottom: 10px; background: #1a242f; }
+        .pinned-row { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; margin: 10px 0; background: rgba(255,255,255,0.03); border-radius: 15px; }
+        .pin-box { min-width: 60px; font-size: 24px; text-align: center; }
         .support-link { color: var(--accent); text-decoration: none; font-size: 14px; display: block; margin: 5px 0; }
     </style>
 </head>
@@ -76,6 +79,12 @@
         <div id="friends-list" style="margin-top:20px;"></div>
     </div>
     <div id="profile" class="page"></div>
+    <div id="admin" class="page">
+        <h2>Панель Админа</h2>
+        <input type="text" id="adm-target" placeholder="Ник игрока">
+        <input type="number" id="adm-amount" placeholder="Сумма 💰">
+        <button class="btn" onclick="admAddMoney()">Выдать монеты</button>
+    </div>
 
     <div class="nav">
         <button class="nav-btn active" onclick="tab('shop', this)"><i>🛍️</i><span>Магазин</span></button>
@@ -83,6 +92,7 @@
         <button class="nav-btn" onclick="tab('market', this)"><i>⚖️</i><span>Рынок</span></button>
         <button class="nav-btn" onclick="tab('friends', this)"><i>👥</i><span>Игроки</span></button>
         <button class="nav-btn" onclick="tab('profile', this)"><i>👤</i><span>Профиль</span></button>
+        <button id="adm-nav" class="nav-btn" style="display:none" onclick="tab('admin', this)"><i>⚡</i><span>Админ</span></button>
     </div>
 </div>
 
@@ -104,8 +114,8 @@
 
     const catalog = [
         {id:1, n:"Печенька", i:"🍪"}, {id:2, n:"Кофе", i:"☕"}, {id:3, n:"Пицца", i:"🍕"},
-        {id:4, n:"Бургер", i:"🍔"}, {id:5, n:"Торт", i:"🎂"}, {id:8, n:"Роза", i:"🌹"},
-        {id:12, n:"Кристалл", i:"💎"}, {id:14, n:"Спорткар", i:"🏎️"}, {id:16, n:"Ракета", i:"🚀"}
+        {id:4, n:"Бургер", i:"🍔"}, {id:5, n:"Торт", i:"🎂"}, {id:12, n:"Кристалл", i:"💎"},
+        {id:14, n:"Спорткар", i:"🏎️"}, {id:16, n:"Ракета", i:"🚀"}
     ];
 
     window.showToast = (msg, col = 'var(--accent)') => {
@@ -128,10 +138,8 @@
         const u = document.getElementById('u-in').value.trim().toLowerCase();
         const p = document.getElementById('p-in').value.trim();
         if(!u || !p) return showToast("Заполни поля!", "var(--err)");
-
         const r = ref(db, 'users/' + u);
         const s = await get(r);
-
         if(type === 'reg') {
             if(s.exists()) return showToast("Ник занят", "var(--err)");
             await set(r, { username: u, password: p, balance: 1000, cloudInv: [], pinned: [], pic: "", bio: "" });
@@ -147,17 +155,12 @@
         localStorage.setItem('gift_uid', uid);
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
+        if(uid === 'ckovoroda') document.getElementById('adm-nav').style.display = 'flex';
 
         onValue(ref(db, 'users/' + uid), s => {
             const d = s.val(); if(!d) return;
             document.getElementById('header-name').innerText = d.username;
             document.getElementById('u-bal').innerText = d.balance;
-            
-            const badge = document.getElementById('badge-inv');
-            const newGifts = (d.cloudInv || []).filter(x => x.from && !x.seen).length;
-            badge.innerText = newGifts;
-            badge.style.display = newGifts > 0 ? 'flex' : 'none';
-
             renderProfile(d);
         });
         renderShop();
@@ -176,11 +179,10 @@
     window.buy = async (id) => {
         const itm = catalog.find(x => x.id === id);
         const r = ref(db, 'users/' + user.id), s = await get(r);
-        const d = s.val();
-        if(d.balance >= 500) {
-            const inv = d.cloudInv || [];
+        if(s.val().balance >= 500) {
+            const inv = s.val().cloudInv || [];
             inv.push({...itm, inst: Date.now(), seen: true});
-            await update(r, { balance: d.balance - 500, cloudInv: inv });
+            await update(r, { balance: s.val().balance - 500, cloudInv: inv });
             showToast("Куплено!");
         } else showToast("Мало монет", "var(--err)");
     };
@@ -188,91 +190,108 @@
     window.renderInv = async () => {
         const r = ref(db, 'users/' + user.id), s = await get(r);
         const d = s.val();
-        const inv = (d.cloudInv || []).map(x => ({...x, seen: true}));
-        await update(r, { cloudInv: inv });
-        document.getElementById('inv').innerHTML = inv.map(x => `
+        document.getElementById('inv').innerHTML = (d.cloudInv || []).map(x => `
             <div class="card">
-                ${x.from ? `<small style="color:var(--orange)">От: ${x.from}</small><br>` : ''}
                 <span style="font-size:40px;">${x.i}</span><br><b>${x.n}</b>
-                <button class="btn" style="margin-top:10px; font-size:12px;" onclick="toMarket(${x.inst})">На рынок</button>
-            </div>`).join('') || "Склад пуст";
+                <button class="btn" style="font-size:12px; margin-top:5px;" onclick="toMarket(${x.inst})">Продать</button>
+                <button class="btn" style="font-size:12px; background:var(--orange)" onclick="togglePin(${x.inst})">📌 Закрепить</button>
+            </div>`).join('') || "Пусто";
     };
 
+    window.togglePin = async (inst) => {
+        const r = ref(db, 'users/'+user.id), s = await get(r);
+        const d = s.val();
+        let pins = d.pinned || [];
+        if(pins.some(p => p.inst === inst)) pins = pins.filter(p => p.inst !== inst);
+        else pins.push(d.cloudInv.find(i => i.inst === inst));
+        await update(r, { pinned: pins.slice(-5) });
+        showToast("Витрина обновлена");
+    };
+
+    function renderProfile(d) {
+        document.getElementById('profile').innerHTML = `
+            <div class="card" style="width:100%;">
+                <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar">
+                <h2>${d.username}</h2>
+                <p>${d.bio || 'Нет описания'}</p>
+                <div class="pinned-row">${(d.pinned || []).map(p => `<div class="pin-box">${p.i}</div>`).join('')}</div>
+                <button class="btn" onclick="openEdit()">⚙️ Изменить профиль</button>
+                <a href="https://t.me/gift_in_crome_bot" class="support-link">🆘 Поддержка</a>
+                <a href="https://t.me/gift_crome" class="support-link">📢 Канал</a>
+                <button class="btn" style="background:var(--err)" onclick="localStorage.clear(); location.reload();">Выход</button>
+            </div>`;
+    }
+
+    window.openEdit = async () => {
+        const s = await get(ref(db, 'users/'+user.id)), d = s.val();
+        document.getElementById('modal-content').innerHTML = `
+            <h3>Настройки</h3>
+            <input type="text" id="new-pic" placeholder="URL Аватарки" value="${d.pic||''}">
+            <textarea id="new-bio" placeholder="О себе">${d.bio||''}</textarea>
+            <button class="btn" onclick="saveProf()">Сохранить</button>`;
+        document.getElementById('modal-overlay').style.display = 'flex';
+    };
+
+    window.saveProf = async () => {
+        const pic = document.getElementById('new-pic').value;
+        const bio = document.getElementById('new-bio').value;
+        await update(ref(db, 'users/'+user.id), { pic, bio });
+        closeModal(); showToast("Обновлено");
+    };
+
+    window.admAddMoney = async () => {
+        const t = document.getElementById('adm-target').value.toLowerCase();
+        const a = parseInt(document.getElementById('adm-amount').value);
+        const r = ref(db, 'users/'+t), s = await get(r);
+        if(s.exists()) {
+            await update(r, { balance: s.val().balance + a });
+            showToast("Выполнено!");
+        } else showToast("Игрок не найден", "var(--err)");
+    };
+
+    // --- Рынок ---
     function listenMarket() {
         onValue(ref(db, 'market'), s => {
             const d = s.val();
             document.getElementById('market').innerHTML = d ? Object.entries(d).map(([k, x]) => `
                 <div class="card">
                     <span style="font-size:30px;">${x.i}</span><br><b>${x.mPrice}💰</b><br>
-                    <small>@${x.sName || 'Игрок'}</small>
-                    <button class="btn" style="margin-top:5px;" onclick="${x.sId===user.id ? `removeM('${k}')` : `buyM('${k}',${x.mPrice},'${x.sId}')`}">${x.sId===user.id ? 'Снять' : 'Купить'}</button>
-                </div>`).join('') : "Рынок пуст";
+                    <button class="btn" onclick="${x.sId===user.id ? `removeM('${k}')` : `buyM('${k}',${x.mPrice},'${x.sId}')`}">${x.sId===user.id ? 'Снять' : 'Купить'}</button>
+                </div>`).join('') : "Пусто";
         });
     }
-
     window.toMarket = async (inst) => {
-        const p = prompt("Цена:");
-        if(!p || isNaN(p)) return;
-        const r = ref(db, 'users/' + user.id), s = await get(r);
+        const p = prompt("Цена:"); if(!p) return;
+        const r = ref(db, 'users/'+user.id), s = await get(r);
         const inv = [...s.val().cloudInv];
         const idx = inv.findIndex(i => i.inst === inst);
         const itm = inv.splice(idx, 1)[0];
         await update(r, { cloudInv: inv });
-        push(ref(db, 'market'), {...itm, mPrice: parseInt(p), sId: user.id, sName: user.id});
+        push(ref(db, 'market'), {...itm, mPrice: parseInt(p), sId: user.id});
         renderInv();
     };
-
     window.buyM = async (k, p, sid) => {
         const r = ref(db, 'users/'+user.id), s = await get(r);
         if(s.val().balance < p) return showToast("Нет монет", "var(--err)");
         const mRef = ref(db, 'market/'+k), ms = await get(mRef);
-        const itm = ms.val();
-        await remove(mRef);
+        const itm = ms.val(); await remove(mRef);
         const myInv = [...(s.val().cloudInv || [])];
-        myInv.push({...itm, inst: Date.now(), seen: true});
+        myInv.push({...itm, inst: Date.now()});
         await update(r, { balance: s.val().balance - p, cloudInv: myInv });
         const sellerR = ref(db, 'users/'+sid), ss = await get(sellerR);
         if(ss.exists()) await update(sellerR, { balance: ss.val().balance + p });
         showToast("Куплено!");
     };
-
     window.removeM = async (k) => {
         const mRef = ref(db, 'market/'+k), ms = await get(mRef);
-        const itm = ms.val();
-        await remove(mRef);
+        const itm = ms.val(); await remove(mRef);
         const r = ref(db, 'users/'+user.id), s = await get(r);
         const inv = [...(s.val().cloudInv || [])];
-        inv.push(itm);
-        await update(r, { cloudInv: inv });
-        showToast("Возвращено");
-    };
-
-    function renderProfile(d) {
-        document.getElementById('profile').innerHTML = `
-            <div class="card" style="width:100%;">
-                <div style="font-size:50px;">👤</div>
-                <h2>${d.username}</h2>
-                <p>Баланс: ${d.balance} 💰</p>
-                <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">
-                    <a href="https://t.me/gift_in_crome_bot" target="_blank" class="btn">🆘 Поддержка</a>
-                    <a href="https://t.me/gift_crome" target="_blank" class="btn" style="background:#0088cc">📢 Канал проекта</a>
-                    <button class="btn" style="background:var(--err); margin-top:20px;" onclick="localStorage.clear(); location.reload();">Выход</button>
-                </div>
-            </div>`;
-    }
-
-    window.searchFriend = async () => {
-        const q = document.getElementById('friend-search').value.toLowerCase();
-        const s = await get(ref(db, 'users/'+q));
-        if(s.exists()) {
-            const d = s.val();
-            document.getElementById('friends-list').innerHTML = `<div class="card"><b>${d.username}</b><br><button class="btn" onclick="showToast('Подарок можно отправить через склад')">Профиль</button></div>`;
-        } else showToast("Не найден", "var(--err)");
+        inv.push(itm); await update(r, { cloudInv: inv });
     };
 
     const saved = localStorage.getItem('gift_uid');
     if(saved) login(saved);
-
 </script>
 </body>
-    </html>
+</html>
