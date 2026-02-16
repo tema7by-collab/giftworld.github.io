@@ -30,7 +30,7 @@
         .card { background: var(--card); border-radius: 25px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative; }
         
         .nav { display: flex; background: var(--glass); backdrop-filter: blur(20px); position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; border-radius: 30px; padding: 10px; z-index: 1000; border: 1px solid rgba(255,255,255,0.1); }
-        .nav-btn { flex: 1; background: none; border: none; color: var(--secondary); cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 11px; }
+        .nav-btn { flex: 1; background: none; border: none; color: var(--secondary); cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 11px; position: relative; }
         .nav-btn.active { color: var(--accent); }
         .nav-btn i { font-size: 22px; margin-bottom: 4px; font-style: normal; }
 
@@ -47,6 +47,9 @@
         .side-back { transform: rotateY(180deg); }
         .spin-eagle { transform: rotateY(1800deg); }
         .spin-tails { transform: rotateY(1980deg); }
+
+        /* ЦЕНТРИРОВАНИЕ КНОПОК ИГРЫ */
+        .game-actions-container { display: flex; gap: 10px; justify-content: center; max-width: 280px; margin: 0 auto; }
 
         .pinned-section { width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; min-height: 80px; align-items: center; }
         .price-up { color: var(--err); font-size: 12px; }
@@ -95,8 +98,8 @@
                 <div id="game-friends-list"></div>
             </div>
             <div id="game-invite-box" style="display:none;">
-                <p id="invite-text"></p>
-                <div style="display:flex; gap:10px;">
+                <p id="invite-text" style="font-weight:bold; font-size:18px;"></p>
+                <div class="game-actions-container">
                     <button class="btn" style="background:var(--green)" onclick="acceptGame()">Принять</button>
                     <button class="btn" style="background:var(--err)" onclick="declineGame()">Отклон.</button>
                 </div>
@@ -110,7 +113,7 @@
                 </div>
                 <div id="game-controls">
                     <p id="game-status">Ожидание выбора...</p>
-                    <div style="display:flex; gap:10px;">
+                    <div class="game-actions-container">
                         <button class="btn" id="btn-eagle" onclick="makeChoice('eagle')">Орёл 🦅</button>
                         <button class="btn" id="btn-tails" onclick="makeChoice('tails')">Решка 💰</button>
                     </div>
@@ -136,7 +139,7 @@
 
     <div class="nav">
         <button class="nav-btn active" onclick="tab('shop', this)"><i>🛍️</i><span>Магазин</span></button>
-        <button class="nav-btn" onclick="tab('game', this)"><i>🪙</i><span>Монетка</span></button>
+        <button class="nav-btn" onclick="tab('game', this)"><div id="badge-game" class="badge">0</div><i>🪙</i><span>Монетка</span></button>
         <button class="nav-btn" onclick="tab('inv', this)"><div id="badge-inv" class="badge">0</div><i>📦</i><span>Склад</span></button>
         <button class="nav-btn" onclick="tab('market', this)"><i>⚖️</i><span>Рынок</span></button>
         <button class="nav-btn" onclick="tab('friends', this)"><div id="badge-fr" class="badge">0</div><i>👥</i><span>Друзья</span></button>
@@ -221,19 +224,22 @@
             document.getElementById('u-bal').innerText = d.balance;
             renderFriends(d); renderMyProfile(d); renderGameFriends(d);
             
-            // Проверка игровых инвайтов
+            // Уведомление о запросе игры
+            const bGame = document.getElementById('badge-game');
             if(d.gameInvite && !currentGameId) {
+                bGame.innerText = "1"; bGame.style.display = 'flex';
                 document.getElementById('game-lobby').style.display = 'none';
                 document.getElementById('game-invite-box').style.display = 'block';
                 document.getElementById('invite-text').innerText = `Вызов от @${d.gameInvite.fromName}`;
-            } else if (!d.gameInvite && !currentGameId) {
-                document.getElementById('game-invite-box').style.display = 'none';
-                document.getElementById('game-lobby').style.display = 'block';
+            } else {
+                bGame.style.display = 'none';
+                if(!currentGameId) {
+                    document.getElementById('game-invite-box').style.display = 'none';
+                    document.getElementById('game-lobby').style.display = 'block';
+                }
             }
 
-            if(d.activeGameId) {
-                listenGame(d.activeGameId);
-            }
+            if(d.activeGameId) listenGame(d.activeGameId);
 
             const gCount = (d.cloudInv || []).filter(x => x.from && !x.seen).length;
             const bInv = document.getElementById('badge-inv');
@@ -294,12 +300,12 @@
                 document.getElementById('game-controls').style.display = 'none';
                 document.getElementById('game-status').innerText = otherChoice ? "Бросаем..." : "Ждем хода друга...";
             } else {
-                document.getElementById('game-controls').style.display = 'flex';
+                document.getElementById('game-controls').style.display = 'block';
                 document.getElementById('game-status').innerText = "Твой ход!";
             }
 
             if(g.p1Choice && g.p2Choice && !g.result) {
-                if(isP1) { // Считает результат один раз (P1)
+                if(isP1) {
                     const side = Math.random() > 0.5 ? 'eagle' : 'tails';
                     await update(ref(db, 'games/'+gid), { result: side });
                 }
@@ -311,9 +317,6 @@
                 
                 setTimeout(async () => {
                     const win = (isP1 && g.p1Choice === g.result) || (!isP1 && g.p2Choice === g.result);
-                    const draw = g.p1Choice === g.p2Choice; // Если оба выбрали одно и то же, выигрывает тот, чья сторона выпала
-
-                    // Награждение
                     if(!g.paid) {
                         if(isP1) await update(ref(db, 'games/'+gid), { paid: true });
                         const reward = win ? 100 : -100;
@@ -325,9 +328,7 @@
                         `<b style="color:var(--green)">ТЫ ВЫИГРАЛ 100💰!</b>` : 
                         `<b style="color:var(--err)">ТЫ ПРОИГРАЛ...</b>`;
                     
-                    setTimeout(() => {
-                        resetGame();
-                    }, 4000);
+                    setTimeout(() => resetGame(), 4000);
                 }, 3100);
             }
         });
@@ -349,7 +350,7 @@
         await update(ref(db, 'games/'+currentGameId), upd);
     };
 
-    // --- (ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ) ---
+    // --- (ФУНКЦИИ БЕЗ ИЗМЕНЕНИЙ) ---
     function initAdmin() {
         onValue(ref(db, 'users'), s => {
             const users = s.val(); if(!users) return;
@@ -565,6 +566,10 @@
 
     function renderFriends(d) {
         const reqs = d.requests || {}, frs = d.friends || {};
+        const frCount = Object.keys(reqs).length;
+        const bFr = document.getElementById('badge-fr');
+        bFr.innerText = frCount; bFr.style.display = frCount > 0 ? 'flex' : 'none';
+        
         document.getElementById('friend-requests').innerHTML = Object.entries(reqs).map(([id, data]) => `<div class="card" style="margin-bottom:10px;">Запрос от ${data.name} <button class="btn" style="padding:5px;" onclick="acceptFriend('${id}','${data.name}')">Принять</button></div>`).join('');
         document.getElementById('friends-list').innerHTML = Object.entries(frs).map(([id, data]) => `<div class="card" style="margin-bottom:5px;">👤 ${data.name}</div>`).join('');
     }
@@ -599,6 +604,7 @@
 </script>
 </body>
 </html>
+
 
 
 
