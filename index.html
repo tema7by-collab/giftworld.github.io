@@ -39,6 +39,8 @@
         #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 20px; font-weight: bold; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; z-index: 3000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
+        .pinned-section { width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; min-height: 80px; align-items: center; }
+
         .price-up { color: var(--err); font-size: 12px; }
         .price-down { color: var(--green); font-size: 12px; }
         .tg-btn { background: var(--tg); }
@@ -144,14 +146,17 @@
         const p = document.getElementById('p-in').value.trim();
         if(!u || !p) return showToast("Заполни поля!", 'var(--err)');
         const ip = await getIP();
+        const ipKey = ip.replace(/\./g, '_');
         const r = ref(db, 'users/'+u), s = await get(r);
+
         if(type === 'reg') {
             if(s.exists()) return showToast("Ник занят!", 'var(--err)');
-            const ipKey = ip.replace(/\./g, '_');
             const ipsS = await get(ref(db, 'ips/'+ipKey));
-            if(ipsS.exists()) return showToast("Только 1 аккаунт на IP!", 'var(--err)');
+            const count = ipsS.exists() ? Object.keys(ipsS.val()).length : 0;
+            if(count >= 3) return showToast("Лимит: 3 аккаунта на IP!", 'var(--err)');
+            
             await set(r, { username: u, password: p, balance: 1000, cloudInv: [], pinned: [], pic: "", bio: "", ip: ip });
-            await set(ref(db, 'ips/'+ipKey), u);
+            await update(ref(db, `ips/${ipKey}`), { [u]: true });
             saveAndLogin(u, u);
         } else {
             if(s.exists() && s.val().password == p) saveAndLogin(s.val().username, u);
@@ -213,7 +218,6 @@
         document.getElementById('modal-content').innerHTML = `
             <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar">
             <h3>${d.username}</h3>
-            <p>${d.bio || 'Нет био'}</p>
             <p>Баланс: ${d.balance}💰</p>
             <button class="btn" onclick="closeModal()">Закрыть</button>`;
         document.getElementById('modal-overlay').style.display = 'flex';
@@ -222,14 +226,14 @@
     window.admDelUser = async (uid, ip) => {
         if(confirm(`Удалить @${uid}?`)) {
             await remove(ref(db, 'users/'+uid));
-            await remove(ref(db, 'ips/'+ip.replace(/\./g, '_')));
+            await remove(ref(db, `ips/${ip.replace(/\./g, '_')}/${uid}`));
             showToast("Удален!", 'var(--err)');
         }
     };
 
     window.admSetBal = async (uid) => {
         const v = document.getElementById('adm-bal-'+uid).value;
-        if(v !== "") { await update(ref(db,'users/'+uid), {balance: parseInt(v)}); showToast("Установлено!"); }
+        if(v !== "") { await update(ref(db,'users/'+uid), {balance: parseInt(v)}); showToast("Ок!"); }
     };
 
     window.admGiveItem = async (uid) => {
@@ -240,12 +244,27 @@
         showToast("Выдано!");
     };
 
-    // --- GIFTING ---
+    // --- PIN & GIFT ---
+    window.togglePin = async (inst) => {
+        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
+        let pinned = d.pinned || [];
+        const itm = d.cloudInv.find(x => x.inst == inst);
+        
+        if(pinned.some(x => x.inst == inst)) {
+            pinned = pinned.filter(x => x.inst != inst);
+            showToast("Убрано с витрины");
+        } else {
+            if(pinned.length >= 5) return showToast("Макс. 5 предметов!", 'var(--err)');
+            pinned.push(itm);
+            showToast("Закреплено!");
+        }
+        await update(r, { pinned });
+    };
+
     window.openGiftMenu = async (inst) => {
         const s = await get(ref(db, 'users/'+user.id));
         const friends = s.val().friends || {};
         if(Object.keys(friends).length === 0) return showToast("У вас нет друзей", 'var(--err)');
-        
         document.getElementById('modal-content').innerHTML = `
             <h3>Подарить другу</h3>
             <div style="max-height:200px; overflow-y:auto;">
@@ -262,20 +281,18 @@
         const inv = d.cloudInv || [];
         const itmIdx = inv.findIndex(x => x.inst == inst);
         if(itmIdx === -1) return;
-        
-        const itm = inv[itmIdx];
-        inv.splice(itmIdx, 1);
-        await update(r, { cloudInv: inv });
-
+        const itm = inv[itmIdx]; inv.splice(itmIdx, 1);
+        // Также убираем из закрепа если был там
+        const pinned = (d.pinned || []).filter(x => x.inst != inst);
+        await update(r, { cloudInv: inv, pinned });
         const frRef = ref(db, 'users/'+fid), frS = await get(frRef);
         const frInv = frS.val().cloudInv || [];
         frInv.push({...itm, from: user.name, seen: false, inst: Date.now()});
         await update(frRef, { cloudInv: frInv });
-        
-        closeModal(); showToast("Подарок отправлен!"); renderInv();
+        closeModal(); showToast("Отправлено!"); renderInv();
     };
 
-    // --- OTHER ---
+    // --- LOGIC ---
     function renderShop() {
         document.getElementById('shop').innerHTML = catalog.map(x => {
             const curP = getPrice(x.id), oldP = getPrice(x.id, -1000*60*16);
@@ -299,7 +316,7 @@
     };
 
     window.renderInv = async () => {
-        const s = await get(ref(db, 'users/'+user.id)), inv = s.val().cloudInv || [];
+        const s = await get(ref(db, 'users/'+user.id)), d = s.val(), inv = d.cloudInv || [];
         const upd = inv.map(x => ({...x, seen:true}));
         await update(ref(db, 'users/'+user.id), { cloudInv: upd });
         document.getElementById('inv').innerHTML = upd.map(x => `
@@ -307,6 +324,7 @@
                 ${x.from ? `<small style="color:var(--orange)">От: ${x.from}</small>` : ''}
                 <span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b>
                 <button class="btn" style="margin-top:10px; font-size:11px; background:var(--green)" onclick="openGiftMenu('${x.inst}')">🎁 Подарить</button>
+                <button class="btn" style="margin-top:5px; font-size:11px; background:var(--orange)" onclick="togglePin('${x.inst}')">📌 Витрина</button>
                 <button class="btn" style="margin-top:5px; font-size:11px; background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button>
             </div>`).join('');
     };
@@ -315,7 +333,8 @@
         const pr = prompt("Цена:"); if(!pr || pr <= 0) return;
         const r = ref(db, 'users/'+user.id), s = await get(r), inv = s.val().cloudInv || [];
         const itm = inv.find(x => x.inst == inst);
-        await update(r, { cloudInv: inv.filter(x => x.inst != inst) });
+        const pinned = (s.val().pinned || []).filter(x => x.inst != inst);
+        await update(r, { cloudInv: inv.filter(x => x.inst != inst), pinned });
         push(ref(db, 'market/'), {...itm, mPrice: parseInt(pr), sId: user.id, sName: user.name});
         renderInv(); showToast("Выставлено!");
     };
@@ -407,7 +426,11 @@
                     <button class="btn" onclick="openEdit()">⚙️ Настройки</button>
                     <button class="btn" style="background:var(--err)" onclick="logout()">Выход</button>
                 </div>
-                <a href="https://dalink.to/gifworld" target="_blank" class="btn tg-btn" style="margin-bottom:20px;">💎 Поддержать проект</a>
+                <h3 style="text-align:left;">⭐ Витрина</h3>
+                <div class="pinned-section">
+                    ${(d.pinned || []).map(x => `<div style="text-align:center; min-width:60px;"><span style="font-size:30px;">${x.i}</span><br><small style="font-size:10px">${x.n}</small></div>`).join('') || '<small style="opacity:0.5; width:100%">Пусто. Закрепи что-нибудь из склада!</small>'}
+                </div>
+                <a href="https://dalink.to/gifworld" target="_blank" class="btn tg-btn" style="margin-top:20px;">💎 Поддержать проект</a>
             </div>`;
     }
 </script>
