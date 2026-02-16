@@ -17,14 +17,15 @@
 
         .btn { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 18px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; font-size: 14px; display: inline-block; text-decoration: none; text-align: center; }
         .btn:active { transform: scale(0.96); opacity: 0.8; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
         input, textarea, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 15px; border: 2px solid #2b3a4a; background: #0e1621; color: white; outline: none; font-size: 16px; }
 
         .page { display: none; padding: 15px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding-bottom: 120px; }
         .page.active { display: grid; }
         
-        #friends, #profile, #admin { display: none; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; }
-        #friends.active, #profile.active, #admin.active { display: flex; }
+        #friends, #profile, #admin, #game { display: none; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; }
+        #friends.active, #profile.active, #admin.active, #game.active { display: flex; }
 
         .card { background: var(--card); border-radius: 25px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative; }
         
@@ -39,12 +40,18 @@
         #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 20px; font-weight: bold; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; z-index: 3000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        .pinned-section { width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; min-height: 80px; align-items: center; }
+        /* МОНЕТКА */
+        .coin-box { perspective: 1000px; width: 120px; height: 120px; margin: 20px auto; }
+        .coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .coin-side { position: absolute; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 50px; background: radial-gradient(circle, #f1c40f, #f39c12); border: 5px solid #d35400; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); }
+        .side-back { transform: rotateY(180deg); }
+        .spin-eagle { transform: rotateY(1800deg); }
+        .spin-tails { transform: rotateY(1980deg); }
 
+        .pinned-section { width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; min-height: 80px; align-items: center; }
         .price-up { color: var(--err); font-size: 12px; }
         .price-down { color: var(--green); font-size: 12px; }
         .tg-btn { background: var(--tg); }
-
         .adm-user-card { background: #1c2833; border-radius: 20px; padding: 15px; margin-bottom: 15px; text-align: left; border-left: 4px solid var(--orange); }
         .adm-row { display: flex; gap: 5px; align-items: center; margin-top: 5px; }
     </style>
@@ -79,13 +86,48 @@
     <div id="shop" class="page active"></div>
     <div id="inv" class="page"></div>
     <div id="market" class="page" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));"></div>
+    
+    <div id="game" class="page">
+        <div class="card">
+            <h2>🪙 Орёл или Решка</h2>
+            <div id="game-lobby">
+                <p style="color:var(--secondary)">Вызови друга на дуэль за 100💰</p>
+                <div id="game-friends-list"></div>
+            </div>
+            <div id="game-invite-box" style="display:none;">
+                <p id="invite-text"></p>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn" style="background:var(--green)" onclick="acceptGame()">Принять</button>
+                    <button class="btn" style="background:var(--err)" onclick="declineGame()">Отклон.</button>
+                </div>
+            </div>
+            <div id="game-play" style="display:none;">
+                <div class="coin-box">
+                    <div id="game-coin" class="coin">
+                        <div class="coin-side">🦅</div>
+                        <div class="coin-side side-back">💰</div>
+                    </div>
+                </div>
+                <div id="game-controls">
+                    <p id="game-status">Ожидание выбора...</p>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn" id="btn-eagle" onclick="makeChoice('eagle')">Орёл 🦅</button>
+                        <button class="btn" id="btn-tails" onclick="makeChoice('tails')">Решка 💰</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="friends" class="page">
         <input type="text" id="friend-search" placeholder="Ник друга...">
         <button class="btn" onclick="searchFriend()">Найти</button>
         <div id="friend-requests"></div>
         <div id="friends-list"></div>
     </div>
+    
     <div id="profile" class="page"></div>
+    
     <div id="admin" class="page">
         <h2 style="color:var(--orange)">⚙️ Админ-центр</h2>
         <div id="adm-stats" style="margin-bottom:15px; font-size:14px; color:var(--secondary)"></div>
@@ -94,6 +136,7 @@
 
     <div class="nav">
         <button class="nav-btn active" onclick="tab('shop', this)"><i>🛍️</i><span>Магазин</span></button>
+        <button class="nav-btn" onclick="tab('game', this)"><i>🪙</i><span>Монетка</span></button>
         <button class="nav-btn" onclick="tab('inv', this)"><div id="badge-inv" class="badge">0</div><i>📦</i><span>Склад</span></button>
         <button class="nav-btn" onclick="tab('market', this)"><i>⚖️</i><span>Рынок</span></button>
         <button class="nav-btn" onclick="tab('friends', this)"><div id="badge-fr" class="badge">0</div><i>👥</i><span>Друзья</span></button>
@@ -116,6 +159,7 @@
     const fb = initializeApp(config);
     const db = getDatabase(fb);
     let user = null;
+    let currentGameId = null;
 
     const catalog = [
         {id:1, n:"Печенька", i:"🍪"}, {id:2, n:"Кофе", i:"☕"}, {id:3, n:"Пицца", i:"🍕"},
@@ -175,7 +219,22 @@
             const d = s.val(); if(!d) return;
             document.getElementById('header-name').innerText = d.username;
             document.getElementById('u-bal').innerText = d.balance;
-            renderFriends(d); renderMyProfile(d);
+            renderFriends(d); renderMyProfile(d); renderGameFriends(d);
+            
+            // Проверка игровых инвайтов
+            if(d.gameInvite && !currentGameId) {
+                document.getElementById('game-lobby').style.display = 'none';
+                document.getElementById('game-invite-box').style.display = 'block';
+                document.getElementById('invite-text').innerText = `Вызов от @${d.gameInvite.fromName}`;
+            } else if (!d.gameInvite && !currentGameId) {
+                document.getElementById('game-invite-box').style.display = 'none';
+                document.getElementById('game-lobby').style.display = 'block';
+            }
+
+            if(d.activeGameId) {
+                listenGame(d.activeGameId);
+            }
+
             const gCount = (d.cloudInv || []).filter(x => x.from && !x.seen).length;
             const bInv = document.getElementById('badge-inv');
             bInv.innerText = gCount; bInv.style.display = gCount > 0 ? 'flex' : 'none';
@@ -183,7 +242,114 @@
         renderShop(); listenMarket();
     }
 
-    // --- ADMIN ---
+    // --- GAME LOGIC (COIN FLIP) ---
+    function renderGameFriends(d) {
+        const frs = d.friends || {};
+        document.getElementById('game-friends-list').innerHTML = Object.entries(frs).map(([id, data]) => 
+            `<button class="btn" style="margin-top:10px; background:var(--card); border:1px solid var(--accent);" onclick="inviteToGame('${id}', '${data.name}')">🎮 Играть с ${data.name}</button>`
+        ).join('') || "<p>Добавь друзей, чтобы играть</p>";
+    }
+
+    window.inviteToGame = async (fid, fname) => {
+        const s = await get(ref(db, 'users/'+user.id));
+        if(s.val().balance < 100) return showToast("Нужно 100💰", 'var(--err)');
+        const gameId = 'game_' + Date.now();
+        await update(ref(db, `users/${fid}`), { gameInvite: { fromId: user.id, fromName: user.name, gameId: gameId } });
+        showToast("Вызов отправлен!");
+    };
+
+    window.acceptGame = async () => {
+        const s = await get(ref(db, 'users/'+user.id));
+        const inv = s.val().gameInvite;
+        if(s.val().balance < 100) return showToast("Нужно 100💰", 'var(--err)');
+        
+        const gameData = {
+            p1: inv.fromId, p1Name: inv.fromName,
+            p2: user.id, p2Name: user.name,
+            p1Choice: null, p2Choice: null,
+            result: null, status: 'playing'
+        };
+        await set(ref(db, 'games/'+inv.gameId), gameData);
+        await update(ref(db, `users/${user.id}`), { activeGameId: inv.gameId, gameInvite: null });
+        await update(ref(db, `users/${inv.fromId}`), { activeGameId: inv.gameId });
+    };
+
+    window.declineGame = async () => {
+        await update(ref(db, `users/${user.id}`), { gameInvite: null });
+    };
+
+    function listenGame(gid) {
+        currentGameId = gid;
+        document.getElementById('game-lobby').style.display = 'none';
+        document.getElementById('game-invite-box').style.display = 'none';
+        document.getElementById('game-play').style.display = 'block';
+        
+        onValue(ref(db, 'games/'+gid), async (s) => {
+            const g = s.val(); if(!g) return;
+            const isP1 = g.p1 === user.id;
+            const myChoice = isP1 ? g.p1Choice : g.p2Choice;
+            const otherChoice = isP1 ? g.p2Choice : g.p1Choice;
+
+            if(myChoice) {
+                document.getElementById('game-controls').style.display = 'none';
+                document.getElementById('game-status').innerText = otherChoice ? "Бросаем..." : "Ждем хода друга...";
+            } else {
+                document.getElementById('game-controls').style.display = 'flex';
+                document.getElementById('game-status').innerText = "Твой ход!";
+            }
+
+            if(g.p1Choice && g.p2Choice && !g.result) {
+                if(isP1) { // Считает результат один раз (P1)
+                    const side = Math.random() > 0.5 ? 'eagle' : 'tails';
+                    await update(ref(db, 'games/'+gid), { result: side });
+                }
+            }
+
+            if(g.result) {
+                const coin = document.getElementById('game-coin');
+                coin.className = 'coin ' + (g.result === 'eagle' ? 'spin-eagle' : 'spin-tails');
+                
+                setTimeout(async () => {
+                    const win = (isP1 && g.p1Choice === g.result) || (!isP1 && g.p2Choice === g.result);
+                    const draw = g.p1Choice === g.p2Choice; // Если оба выбрали одно и то же, выигрывает тот, чья сторона выпала
+
+                    // Награждение
+                    if(!g.paid) {
+                        if(isP1) await update(ref(db, 'games/'+gid), { paid: true });
+                        const reward = win ? 100 : -100;
+                        const userS = await get(ref(db, 'users/'+user.id));
+                        await update(ref(db, 'users/'+user.id), { balance: userS.val().balance + reward });
+                    }
+
+                    document.getElementById('game-status').innerHTML = win ? 
+                        `<b style="color:var(--green)">ТЫ ВЫИГРАЛ 100💰!</b>` : 
+                        `<b style="color:var(--err)">ТЫ ПРОИГРАЛ...</b>`;
+                    
+                    setTimeout(() => {
+                        resetGame();
+                    }, 4000);
+                }, 3100);
+            }
+        });
+    }
+
+    async function resetGame() {
+        if(!currentGameId) return;
+        await update(ref(db, `users/${user.id}`), { activeGameId: null });
+        document.getElementById('game-play').style.display = 'none';
+        document.getElementById('game-lobby').style.display = 'block';
+        document.getElementById('game-coin').className = 'coin';
+        currentGameId = null;
+    }
+
+    window.makeChoice = async (c) => {
+        const isP1 = (await get(ref(db, 'games/'+currentGameId))).val().p1 === user.id;
+        const upd = {};
+        if(isP1) upd.p1Choice = c; else upd.p2Choice = c;
+        await update(ref(db, 'games/'+currentGameId), upd);
+    };
+
+    // --- (ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ) ---
     function initAdmin() {
         onValue(ref(db, 'users'), s => {
             const users = s.val(); if(!users) return;
@@ -244,7 +410,6 @@
         showToast("Выдано!");
     };
 
-    // --- LOGIC ---
     window.togglePin = async (inst) => {
         const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
         let pinned = d.pinned || [];
