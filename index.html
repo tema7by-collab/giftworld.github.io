@@ -320,4 +320,133 @@
 
     window.viewUser = async (uid) => {
         const s = await get(ref(db, 'users/'+uid)), d = s.val();
-        document.getElementById('modal-content').innerHTML = `<img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar"><h3>${d.username}</h3><p style="color:var(--secondary);">${d.bio || ''}</p><div class="pinned-section">${(d.pinned || []).map(x => `<div class="pin-item"><span>${x.i}</span><br><small>${x.n}</small></div>`).join('')}</div><button class="bt
+        document.getElementById('modal-content').innerHTML = `<img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar"><h3>${d.username}</h3><p style="color:var(--secondary);">${d.bio || ''}</p><div class="pinned-section">${(d.pinned || []).map(x => `<div class="pin-item"><span>${x.i}</span><br><small>${x.n}</small></div>`).join('')}</div><button class="btn" style="background:var(--green); margin-bottom:10px;" onclick="giftPrompt('${uid}')">Подарить</button><button class="btn" style="background:none" onclick="closeModal()">Закрыть</button>`;
+        document.getElementById('modal-overlay').style.display = 'flex';
+    };
+
+    window.giftPrompt = async (fid) => {
+        const s = await get(ref(db, 'users/'+user.id)), inv = s.val().cloudInv || [];
+        if(inv.length === 0) return showToast("Пусто!", 'var(--err)');
+        let h = `<h3>Выбери:</h3><div class="gift-grid">`;
+        inv.forEach(x => { h += `<div class="gift-choice-card" onclick="sendGift('${fid}', ${x.inst})"><span style="font-size:40px; display:block;">${x.i}</span><span>${x.n}</span></div>`; });
+        h += `</div><button class="btn" style="background:var(--err); margin-top:20px;" onclick="closeModal()">Отмена</button>`;
+        document.getElementById('modal-content').innerHTML = h;
+    };
+
+    window.sendGift = async (fid, inst) => {
+        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = [...(d.cloudInv || [])];
+        const idx = inv.findIndex(x => x.inst === inst), itm = inv.splice(idx, 1)[0];
+        await update(r, { cloudInv: inv, pinned: (d.pinned || []).filter(x => x.inst !== inst) });
+        const tS = await get(ref(db, 'users/'+fid)), tInv = [...(tS.val().cloudInv || [])];
+        tInv.push({...itm, inst: Date.now(), from: user.name, seen: false});
+        await update(ref(db, 'users/'+fid), { cloudInv: tInv });
+        closeModal(); showToast("Отправлено!", 'var(--green)');
+    };
+
+    function loadAdmin() {
+        onValue(ref(db, 'users/'), s => {
+            const users = s.val(); let h = "";
+            for(let id in users) {
+                h += `<div class="card" style="margin-bottom:10px; text-align:left; padding:15px;"><b>@${users[id].username}</b> (${users[id].balance}💰)<div style="display:flex; gap:5px; margin-top:8px;"><input type="number" id="adm-bal-${id}" placeholder="Баланс" style="margin:0; flex:1; padding:8px;"><button class="btn" style="width:60px; padding:8px;" onclick="adminSetBal('${id}')">Сет</button></div></div>`;
+            }
+            document.getElementById('adm-users-list').innerHTML = h;
+        });
+    }
+
+    window.adminSetBal = async (uid) => {
+        const v = document.getElementById('adm-bal-'+uid).value;
+        if(v) { await update(ref(db, 'users/'+uid), { balance: parseInt(v) }); showToast("Ок"); }
+    };
+
+    window.togglePin = async (inst) => {
+        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
+        let pins = d.pinned || [];
+        if(pins.some(p => p.inst === inst)) pins = pins.filter(p => p.inst !== inst);
+        else { if(pins.length >= 10) return showToast("Лимит 10!", 'var(--err)'); pins.push(d.cloudInv.find(x => x.inst === inst)); }
+        await update(r, { pinned: pins }); window.renderInv();
+    };
+
+    window.tab = (id, btn) => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+        if(id === 'inv') window.renderInv();
+    };
+
+    window.logout = () => { localStorage.removeItem('gifts_user'); location.reload(); };
+    window.closeModal = () => document.getElementById('modal-overlay').style.display = 'none';
+    window.searchFriend = async () => {
+        const t = document.getElementById('friend-search').value.trim().toLowerCase();
+        if(t && t !== user.id) { await update(ref(db, `users/${t}/requests/${user.id}`), { from: user.id, name: user.name }); showToast("Запрос отправлен"); }
+    };
+    function renderFriends(d) {
+        const reqs = d.requests || {}, frs = d.friends || {};
+        document.getElementById('friend-requests').innerHTML = Object.entries(reqs).map(([id, data]) => `<div class="card" style="margin-bottom:10px;">Запрос от ${data.name} <button class="btn" onclick="acceptFriend('${id}','${data.name}')">Принять</button></div>`).join('');
+        document.getElementById('friends-list').innerHTML = Object.entries(frs).map(([id, data]) => `<div class="card" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;" onclick="viewUser('${id}')"><span>${data.name}</span> <span>➔</span></div>`).join('');
+    }
+    window.acceptFriend = async (fid, fname) => {
+        await update(ref(db, `users/${user.id}/friends/${fid}`), { name: fname });
+        await update(ref(db, `users/${fid}/friends/${user.id}`), { name: user.name });
+        await remove(ref(db, `users/${user.id}/requests/${fid}`));
+        showToast("Друг добавлен!");
+    };
+    window.openEdit = async () => {
+        const s = await get(ref(db, 'users/'+user.id));
+        document.getElementById('modal-content').innerHTML = `<h3>Настройки</h3><textarea id="edit-bio" placeholder="О себе...">${s.val().bio || ''}</textarea><input type="file" accept="image/*" onchange="uploadImg(this)"><button class="btn" style="margin-top:15px" onclick="saveProfile()">Сохранить</button>`;
+        document.getElementById('modal-overlay').style.display = 'flex';
+    };
+    window.uploadImg = (el) => {
+        const r = new FileReader();
+        r.onloadend = async () => { await update(ref(db, 'users/'+user.id), { pic: r.result }); showToast("Фото обновлено"); };
+        r.readAsDataURL(el.files[0]);
+    };
+    window.saveProfile = async () => { await update(ref(db, 'users/'+user.id), { bio: document.getElementById('edit-bio').value }); closeModal(); showToast("Сохранено"); };
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
