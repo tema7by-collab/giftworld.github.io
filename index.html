@@ -63,8 +63,9 @@
         <input type="password" id="p-in" placeholder="Пароль">
         <button class="btn" onclick="auth('login')">Войти</button>
         <button class="btn" style="background:none; margin-top:5px;" onclick="auth('reg')">Регистрация</button>
-        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <a href="https://dalink.to/gifworld" target="_blank" class="btn tg-btn" style="font-size: 13px;">💎 Поддержка проекта</a>
+        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 8px;">
+            <a href="https://t.me/Gifts_World_Pro" target="_blank" class="btn tg-btn" style="font-size: 13px;">📢 Канал проекта</a>
+            <a href="https://dalink.to/gifworld" target="_blank" class="btn" style="font-size: 13px; background:#505050;">💎 Поддержка проекта</a>
         </div>
     </div>
 </div>
@@ -154,7 +155,6 @@
             const ipsS = await get(ref(db, 'ips/'+ipKey));
             const count = ipsS.exists() ? Object.keys(ipsS.val()).length : 0;
             if(count >= 3) return showToast("Лимит: 3 аккаунта на IP!", 'var(--err)');
-            
             await set(r, { username: u, password: p, balance: 1000, cloudInv: [], pinned: [], pic: "", bio: "", ip: ip });
             await update(ref(db, `ips/${ipKey}`), { [u]: true });
             saveAndLogin(u, u);
@@ -167,7 +167,7 @@
     function saveAndLogin(name, id) { localStorage.setItem('gifts_user', JSON.stringify({name, id})); loginSuccess(name, id); }
 
     function loginSuccess(name, id) {
-        user = { name, id, isAdm: (id === 'ckovoroda') };
+        user = { name, id, isAdm: (id === 'ckovoroda' || id === 'kukumbr') };
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         if(user.isAdm) { document.getElementById('adm-nav').style.display = 'flex'; initAdmin(); }
@@ -244,12 +244,11 @@
         showToast("Выдано!");
     };
 
-    // --- PIN & GIFT ---
+    // --- LOGIC ---
     window.togglePin = async (inst) => {
         const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
         let pinned = d.pinned || [];
         const itm = d.cloudInv.find(x => x.inst == inst);
-        
         if(pinned.some(x => x.inst == inst)) {
             pinned = pinned.filter(x => x.inst != inst);
             showToast("Убрано с витрины");
@@ -278,11 +277,9 @@
 
     window.sendGift = async (inst, fid) => {
         const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
-        const inv = d.cloudInv || [];
-        const itmIdx = inv.findIndex(x => x.inst == inst);
+        const inv = d.cloudInv || []; const itmIdx = inv.findIndex(x => x.inst == inst);
         if(itmIdx === -1) return;
         const itm = inv[itmIdx]; inv.splice(itmIdx, 1);
-        // Также убираем из закрепа если был там
         const pinned = (d.pinned || []).filter(x => x.inst != inst);
         await update(r, { cloudInv: inv, pinned });
         const frRef = ref(db, 'users/'+fid), frS = await get(frRef);
@@ -292,7 +289,6 @@
         closeModal(); showToast("Отправлено!"); renderInv();
     };
 
-    // --- LOGIC ---
     function renderShop() {
         document.getElementById('shop').innerHTML = catalog.map(x => {
             const curP = getPrice(x.id), oldP = getPrice(x.id, -1000*60*16);
@@ -308,8 +304,7 @@
         const p = getPrice(id), itm = catalog.find(x => x.id === id);
         const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
         if(d.balance >= p) {
-            const inv = d.cloudInv || [];
-            inv.push({...itm, inst: Date.now(), seen: true});
+            const inv = d.cloudInv || []; inv.push({...itm, inst: Date.now(), seen: true});
             await update(r, { balance: d.balance - p, cloudInv: inv });
             showToast("Куплено!", 'var(--green)');
         } else showToast("Нет монет!", 'var(--err)');
@@ -428,14 +423,18 @@
                 </div>
                 <h3 style="text-align:left;">⭐ Витрина</h3>
                 <div class="pinned-section">
-                    ${(d.pinned || []).map(x => `<div style="text-align:center; min-width:60px;"><span style="font-size:30px;">${x.i}</span><br><small style="font-size:10px">${x.n}</small></div>`).join('') || '<small style="opacity:0.5; width:100%">Пусто. Закрепи что-нибудь из склада!</small>'}
+                    ${(d.pinned || []).map(x => `<div style="text-align:center; min-width:60px;"><span style="font-size:30px;">${x.i}</span><br><small style="font-size:10px">${x.n}</small></div>`).join('') || '<small style="opacity:0.5; width:100%">Пусто.</small>'}
                 </div>
-                <a href="https://dalink.to/gifworld" target="_blank" class="btn tg-btn" style="margin-top:20px;">💎 Поддержать проект</a>
+                <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 8px;">
+                    <a href="https://t.me/Gifts_World_Pro" target="_blank" class="btn tg-btn" style="font-size: 13px;">📢 Канал проекта</a>
+                    <a href="https://dalink.to/gifworld" target="_blank" class="btn" style="font-size: 13px; background:#505050;">💎 Поддержка проекта</a>
+                </div>
             </div>`;
     }
 </script>
 </body>
 </html>
+
 
 
 
