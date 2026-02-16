@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎁</text></svg>">
-    <title>Gifts World Pro Market</title>
+    <title>Gifts World Pro</title>
     <style>
         :root { 
             --bg: #070d14; --card: #111b21; --accent: #2481cc; --text: #ffffff; 
             --secondary: #7f91a4; --err: #e74c3c; --green: #2ecc71; --orange: #f39c12;
             --glass: rgba(23, 33, 43, 0.95);
+            --tg: #229ED9; /* Telegram Color */
         }
         * { box-sizing: border-box; }
 
@@ -61,6 +62,9 @@
         /* Стили индикаторов цен */
         .price-up { color: var(--err); font-size: 12px; font-weight: bold; }
         .price-down { color: var(--green); font-size: 12px; font-weight: bold; }
+
+        /* Стиль для ТГ кнопок */
+        .tg-btn { background: var(--tg); display: flex; align-items: center; justify-content: center; gap: 5px; }
     </style>
 </head>
 <body>
@@ -75,6 +79,15 @@
         <input type="password" id="p-in" placeholder="Пароль">
         <button class="btn" onclick="auth('login')">Войти</button>
         <button class="btn" style="background:none; margin-top:10px;" onclick="auth('reg')">Регистрация</button>
+        
+        <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="font-size: 12px; color: var(--secondary); margin-bottom: 10px;">Сообщество</p>
+            <div style="display: flex; gap: 10px;">
+                <a href="https://t.me/gift_crome" target="_blank" class="btn tg-btn" style="font-size: 12px; padding: 10px;">📢 Канал</a>
+                <a href="https://t.me/gift_in_crome_bot" target="_blank" class="btn tg-btn" style="font-size: 12px; padding: 10px;">💬 Саппорт</a>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -188,7 +201,7 @@
             renderFriends(d); renderMyProfile(d);
         });
         renderShop(); listenMarket();
-        // Обновляем магазин раз в минуту на случай смены часа
+        // Обновляем магазин раз в минуту
         setInterval(renderShop, 60000);
     }
 
@@ -236,6 +249,12 @@
                     <button class="btn" onclick="openEdit()">Настройки</button>
                     <button class="btn" style="background:var(--err)" onclick="logout()">Выход</button>
                 </div>
+                
+                <div style="display:flex; gap:10px; width:100%; margin-bottom:15px;">
+                     <a href="https://t.me/gift_crome" target="_blank" class="btn tg-btn">📢 Канал</a>
+                     <a href="https://t.me/gift_in_crome_bot" target="_blank" class="btn tg-btn">💬 Поддержка</a>
+                </div>
+
                 <h3 style="align-self:flex-start; margin:20px 0 10px 5px; font-size:18px;">⭐ Витрина</h3>
                 <div class="pinned-section">
                     ${(d.pinned || []).map(x => `
@@ -405,6 +424,7 @@
 </script>
 </body>
 </html>
+
 
 
 
