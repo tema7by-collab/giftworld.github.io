@@ -51,8 +51,10 @@
         .price-up { color: var(--err); font-size: 12px; }
         .price-down { color: var(--green); font-size: 12px; }
         .tg-btn { background: var(--tg); margin-bottom: 8px; }
-        .adm-user-card { background: #1c2833; border-radius: 20px; padding: 15px; margin-bottom: 15px; text-align: left; border-left: 4px solid var(--orange); }
+        
+        .adm-user-card { background: #1c2833; border-radius: 20px; padding: 15px; margin-bottom: 15px; text-align: left; border-left: 4px solid var(--orange); font-size: 13px; }
         .adm-row { display: flex; gap: 5px; align-items: center; margin-top: 5px; }
+        .adm-details { margin: 10px 0; color: var(--secondary); background: #0e1621; padding: 10px; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -268,15 +270,70 @@
     window.giftOpen = async (inst) => { const s = await get(ref(db, 'users/'+user.id)), frs = s.val().friends || {}; if(!Object.keys(frs).length) return showToast("Нет друзей", 'var(--err)'); document.getElementById('modal-content').innerHTML = `<h3>Подарить</h3><div style="max-height:200px;overflow-y:auto;">${Object.entries(frs).map(([id, d]) => `<button class="btn" style="margin-bottom:10px;" onclick="sendG('${inst}','${id}')">🎁 ${d.name}</button>`).join('')}</div><button class="btn" style="background:none" onclick="closeModal()">Отмена</button>`; document.getElementById('modal-overlay').style.display='flex'; };
     window.sendG = async (inst, fid) => { const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = d.cloudInv || [], itm = inv.find(x => x.inst == inst); await update(r, { cloudInv: inv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) }); const frS = await get(ref(db, 'users/'+fid)), frInv = frS.val().cloudInv || []; frInv.push({...itm, from: user.name, seen: false, inst: Date.now()}); await update(ref(db, 'users/'+fid), { cloudInv: frInv }); closeModal(); showToast("Отправлено!"); renderInv(); };
 
-    // --- PROFILE ---
+    // --- PROFILE & PHOTO UPLOAD ---
     function renderMyProfile(d) { document.getElementById('profile').innerHTML = `<div style="text-align:center;"><img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar"><h2>${d.username}</h2><p>${d.bio || 'Нет описания'}</p><div style="display:flex; gap:10px; margin-bottom:15px;"><button class="btn" onclick="openEdit()">⚙️ Настройки</button><button class="btn" style="background:var(--err)" onclick="logout()">Выход</button></div><h3>⭐ Витрина</h3><div class="pinned-section">${(d.pinned || []).map(x => `<div style="text-align:center; min-width:60px;"><span style="font-size:30px;">${x.i}</span><br><small style="font-size:10px">${x.n}</small></div>`).join('') || 'Пусто'}</div><div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;"><a href="https://t.me/Gifts_World_Pro" target="_blank" class="btn tg-btn">📢 Канал проекта</a><a href="https://dalink.to/gifworld" target="_blank" class="btn" style="background:#505050;">💎 Поддержка проекта</a></div></div>`; }
-    window.openEdit = async () => { const s = await get(ref(db, 'users/'+user.id)); document.getElementById('modal-content').innerHTML = `<h3>Настройки</h3><textarea id="ebio" placeholder="О себе">${s.val().bio||''}</textarea><input id="epic" placeholder="URL фото" value="${s.val().pic||''}" ><button class="btn" onclick="saveP()">Сохранить</button>`; document.getElementById('modal-overlay').style.display='flex'; };
-    window.saveP = async () => { await update(ref(db, 'users/'+user.id), { bio: document.getElementById('ebio').value, pic: document.getElementById('epic').value }); closeModal(); showToast("Ок!"); };
+    window.openEdit = async () => { 
+        const s = await get(ref(db, 'users/'+user.id)); 
+        document.getElementById('modal-content').innerHTML = `
+            <h3>Настройки</h3>
+            <textarea id="ebio" placeholder="О себе">${s.val().bio||''}</textarea>
+            <p style="font-size:12px;color:var(--secondary)">Аватар (с устройства):</p>
+            <input type="file" id="efile" accept="image/*" style="padding:5px; font-size:12px;">
+            <input type="hidden" id="epic" value="${s.val().pic||''}">
+            <button class="btn" onclick="saveP()">Сохранить</button>`; 
+        document.getElementById('modal-overlay').style.display='flex'; 
+    };
+    window.saveP = async () => { 
+        const file = document.getElementById('efile').files[0];
+        let picUrl = document.getElementById('epic').value;
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                picUrl = e.target.result; // base64 фото
+                await update(ref(db, 'users/'+user.id), { bio: document.getElementById('ebio').value, pic: picUrl });
+                closeModal(); showToast("Ок!");
+            };
+            reader.readAsDataURL(file);
+        } else {
+            await update(ref(db, 'users/'+user.id), { bio: document.getElementById('ebio').value });
+            closeModal(); showToast("Ок!");
+        }
+    };
     window.logout = () => { localStorage.removeItem('gifts_user'); location.reload(); };
 
-    // --- ADMIN ---
+    // --- ADMIN (NEW DELETE & VIEW) ---
     window.clearAllShowcases = async () => { if(!confirm("Очистить все витрины?")) return; const s = await get(ref(db, 'users')), us = s.val(); const up = {}; for(let id in us) up[`users/${id}/pinned`] = []; await update(ref(db), up); showToast("Очищено!", 'var(--err)'); };
-    function initAdmin() { onValue(ref(db, 'users'), s => { const us = s.val(); if(!us) return; document.getElementById('adm-stats').innerText = `Игроков: ${Object.keys(us).length}`; let h = ""; for(let id in us) { const u = us[id]; h += `<div class="adm-user-card"><b>@${u.username}</b><div class="adm-row"><input type="number" id="ab-${id}" placeholder="${u.balance}" style="flex:1;"><button class="btn" style="width:50px;" onclick="setB('${id}')">💰</button></div><div class="adm-row"><select id="ag-${id}">${catalog.map(x=>`<option value="${x.id}">${x.i}</option>`).join('')}</select><button class="btn" style="width:50px; background:var(--orange)" onclick="giveI('${id}')">🎁</button></div></div>`; } document.getElementById('adm-users-list').innerHTML = h; }); }
+    function initAdmin() { 
+        onValue(ref(db, 'users'), s => { 
+            const us = s.val(); if(!us) return; 
+            document.getElementById('adm-stats').innerText = `Игроков: ${Object.keys(us).length}`; 
+            let h = ""; 
+            for(let id in us) { 
+                const u = us[id]; 
+                const invStr = (u.cloudInv || []).map(x => x.i).join(' ') || 'пусто';
+                h += `
+                <div class="adm-user-card">
+                    <b>@${u.username}</b>
+                    <div class="adm-details">
+                        🔑 Пароль: ${u.password}<br>
+                        🌐 IP: ${u.ip || 'неизв.'}<br>
+                        📦 Инв: ${invStr}
+                    </div>
+                    <div class="adm-row">
+                        <input type="number" id="ab-${id}" placeholder="${u.balance}" style="flex:1; margin:0; padding:8px; height:36px;">
+                        <button class="btn" style="width:40px; padding:0; height:36px;" onclick="setB('${id}')">💰</button>
+                    </div>
+                    <div class="adm-row">
+                        <select id="ag-${id}" style="margin:0; padding:5px; height:36px;">${catalog.map(x=>`<option value="${x.id}">${x.i} ${x.n}</option>`).join('')}</select>
+                        <button class="btn" style="width:40px; padding:0; height:36px; background:var(--orange)" onclick="giveI('${id}')">🎁</button>
+                    </div>
+                    <button class="btn" style="background:var(--err); margin-top:10px; padding:5px; font-size:11px;" onclick="delUser('${id}')">🗑️ Удалить профиль</button>
+                </div>`; 
+            } 
+            document.getElementById('adm-users-list').innerHTML = h; 
+        }); 
+    }
+    window.delUser = async (id) => { if(confirm(`Удалить игрока @${id} навсегда?`)) await remove(ref(db, 'users/'+id)); };
     window.setB = async (id) => { const v = document.getElementById('ab-'+id).value; if(v) await update(ref(db,'users/'+id), {balance: parseInt(v)}); };
     window.giveI = async (id) => { const itm = catalog.find(x => x.id == document.getElementById('ag-'+id).value), s = await get(ref(db, 'users/'+id)), inv = s.val().cloudInv || []; inv.push({...itm, inst: Date.now(), from: "ADMIN", seen: false}); await update(ref(db, 'users/'+id), { cloudInv: inv }); };
 
@@ -285,6 +342,7 @@
 </script>
 </body>
 </html>
+
 
 
 
