@@ -76,8 +76,8 @@
         <button class="btn" style="background:none; margin-top:5px;" onclick="auth('reg')">Регистрация</button>
     </div>
     <div style="margin-top:20px; width:100%; max-width:340px;">
-        <a href="https://t.me/+-R1z995v1TljYWEy" class="btn tg-btn">📢 Наш канал</a>
-        <a href="https://t.me/Ckovoroda" class="btn tg-btn" style="background:#444;">🛠️ Поддержка</a>
+        <a href="https://t.me/Gifts_World_Pro" target="_blank" class="btn tg-btn">📢 Наш канал</a>
+        <a href="https://dalink.to/gifworld" target="_blank" class="btn tg-btn" style="background:#444;">💎 Поддержка проекта</a>
     </div>
 </div>
 
@@ -245,7 +245,7 @@
         renderShop(); listenMarket();
     }
 
-    // --- GAME (WITH 30 MIN RESET) ---
+    // --- GAME ---
     function renderGameFriends(d) { const frs = d.friends || {}; document.getElementById('game-friends-list').innerHTML = Object.entries(frs).map(([id, data]) => `<button class="btn" style="margin-top:10px; background:var(--card); border:1px solid var(--accent);" onclick="inviteGame('${id}', '${data.name}')">🎮 ${data.name}</button>`).join('') || "Нет друзей"; }
     window.inviteGame = async (fid, fname) => { const s = await get(ref(db, 'users/'+user.id)); if(s.val().balance < 100) return showToast("Нет монет!", 'var(--err)'); const gid = 'game_'+Date.now(); await update(ref(db, `users/${fid}`), { gameInvite: { fromId: user.id, fromName: user.name, gameId: gid } }); showToast("Вызов отправлен!"); };
     window.acceptGame = async () => { 
@@ -296,7 +296,7 @@
     };
     window.buy = async (id) => { const p = getPrice(id), itm = catalog.find(x => x.id === id), r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); if(d.balance >= p) { const inv = d.cloudInv || []; inv.push({...itm, inst: Date.now(), seen: true}); await update(r, { balance: d.balance - p, cloudInv: inv }); showToast("Куплено!", 'var(--green)'); } else showToast("Нет монет!", 'var(--err)'); };
 
-    // --- INV & LETTERS ---
+    // --- INV ---
     window.renderInv = async () => {
         const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = d.cloudInv || [], pin = d.pinned || [];
         const upd = inv.map(x => ({...x, seen:true})); await update(r, { cloudInv: upd });
@@ -310,7 +310,7 @@
     };
     window.readMsg = (m) => { document.getElementById('modal-content').innerHTML = `<h3>Письмо</h3><p style="background:#0e1621; padding:15px; border-radius:15px; text-align:left; line-height:1.5;">${m}</p><button class="btn" onclick="closeModal()">Закрыть</button>`; document.getElementById('modal-overlay').style.display='flex'; };
 
-    // --- GIFTING WITH LETTERS ---
+    // --- GIFTING ---
     window.giftOpen = async (inst) => { 
         const s = await get(ref(db, 'users/'+user.id)), frs = s.val().friends || {}; 
         if(!Object.keys(frs).length) return showToast("Нет друзей", 'var(--err)'); 
@@ -348,13 +348,13 @@
     window.buyM = async (k, p, si) => { const bR = ref(db, 'users/'+user.id), bS = await get(bR); if(bS.val().balance < p) return showToast("Нет монет!", 'var(--err)'); const mS = await get(ref(db, 'market/'+k)); if(!mS.exists()) return; const itm = mS.val(); await remove(ref(db, 'market/'+k)); const inv = bS.val().cloudInv || []; inv.push({...itm, inst: Date.now(), seen:true}); await update(bR, { balance: bS.val().balance - p, cloudInv: inv }); const sS = await get(ref(db, 'users/'+si)); if(sS.exists()) await update(ref(db, 'users/'+si), { balance: sS.val().balance + parseInt(p) }); showToast("Куплено!"); };
     window.remM = async (k) => { const mS = await get(ref(db, 'market/'+k)), itm = mS.val(); await remove(ref(db, 'market/'+k)); const r = ref(db, 'users/'+user.id), s = await get(r), inv = s.val().cloudInv || []; inv.push({...itm, inst: Date.now(), seen:true}); await update(r, { cloudInv: inv }); showToast("Снято!"); };
 
-    // --- PROFILE & SETTINGS ---
+    // --- PROFILE ---
     function renderMyProfile(d) { 
         document.getElementById('profile').innerHTML = `
         <div style="text-align:center;"><img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar"><h2>${d.username}${getVerify(user.id)}</h2><p>${d.bio || 'Нет описания'}</p>
         <div style="margin: 15px 0;">
-            <a href="https://t.me/+-R1z995v1TljYWEy" class="btn tg-btn">📢 Наш канал</a>
-            <a href="https://t.me/Ckovoroda" class="btn tg-btn" style="background:#444;">🛠️ Поддержка</a>
+            <a href="https://t.me/Gifts_World_Pro" target="_blank" class="btn tg-btn">📢 Наш канал</a>
+            <a href="https://dalink.to/gifworld" target="_blank" class="btn tg-btn" style="background:#444;">💎 Поддержка проекта</a>
         </div>
         <input type="text" id="promo-input" placeholder="Промокод"><button class="btn" style="background:var(--orange); margin-bottom:15px;" onclick="usePromo()">Активировать</button>
         <div style="display:flex; gap:10px; margin-bottom:15px;"><button class="btn" onclick="openEdit()">⚙️ Настройки</button><button class="btn" style="background:var(--err)" onclick="logout()">Выход</button></div>
@@ -386,6 +386,7 @@
 </script>
 </body>
 </html>
+
 
 
 
