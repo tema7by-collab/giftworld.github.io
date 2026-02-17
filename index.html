@@ -15,11 +15,9 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
 
-        /* --- Animations --- */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* --- NFT Styles --- */
+        /* --- НОВЫЕ СТИЛИ ДЛЯ NFT ТАНКА --- */
         .nft-locked { position: relative; filter: grayscale(0.9); }
         .nft-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -27,82 +25,35 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 10; color: white; pointer-events: none;
         }
-        .nft-overlay i { font-style: normal; font-size: 30px; }
-        .nft-overlay b { font-size: 14px; text-align: center; margin-top: 5px; }
         .nft-badge {
             position: absolute; top: 12px; left: 12px;
             background: linear-gradient(45deg, #f39c12, #d35400);
             padding: 4px 10px; border-radius: 10px; font-size: 10px; font-weight: bold; z-index: 11;
-            box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
         }
+        /* ---------------------------------- */
 
         .container { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
-        
-        .header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 15px; background: var(--glass); backdrop-filter: blur(10px);
-            position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .balance-card { 
-            background: linear-gradient(135deg, var(--accent), #1a6fb3); 
-            padding: 20px; border-radius: 20px; margin-bottom: 20px; 
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--glass); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .balance-card { background: linear-gradient(135deg, var(--accent), #1a6fb3); padding: 20px; border-radius: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .card { 
-            background: var(--card); padding: 20px; border-radius: 25px; text-align: center; 
-            transition: 0.3s; border: 1px solid rgba(255,255,255,0.03);
-            position: relative; overflow: hidden;
-        }
-        .card:active { transform: scale(0.95); }
-        
-        .btn { 
-            background: var(--accent); color: white; border: none; padding: 12px 20px; 
-            border-radius: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s;
-        }
-        .btn:disabled { background: #34495e; opacity: 0.6; }
-        
-        .nav { 
-            position: fixed; bottom: 0; left: 0; right: 0; background: var(--glass); 
-            backdrop-filter: blur(15px); display: flex; justify-content: space-around; 
-            padding: 15px; border-top: 1px solid rgba(255,255,255,0.05); z-index: 1000;
-        }
+        .card { background: var(--card); padding: 20px; border-radius: 25px; text-align: center; transition: 0.3s; border: 1px solid rgba(255,255,255,0.03); position: relative; overflow: hidden; }
+        .btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s; }
+        .nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--glass); backdrop-filter: blur(15px); display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid rgba(255,255,255,0.05); z-index: 1000; }
         .nav-btn { color: var(--secondary); text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .nav-btn.active { color: var(--accent); }
-        .nav-btn i { font-style: normal; font-size: 20px; }
-
         .page { display: none; animation: fadeInUp 0.4s ease; }
         .page.active { display: block; }
-
-        input, select { 
-            background: #1c2833; border: 1px solid rgba(255,255,255,0.1); 
-            color: white; padding: 12px 15px; border-radius: 15px; width: 100%; margin-bottom: 10px; 
-        }
-
-        #toast { 
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); 
-            padding: 12px 25px; border-radius: 50px; color: white; z-index: 10000; 
-            display: none; animation: fadeInUp 0.3s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            font-weight: bold; text-align: center; white-space: nowrap;
-        }
-
+        input, select { background: #1c2833; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px 15px; border-radius: 15px; width: 100%; margin-bottom: 10px; }
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 50px; color: white; z-index: 10000; display: none; animation: fadeInUp 0.3s ease; }
         .price-up { color: var(--err); font-size: 12px; }
         .price-down { color: var(--green); font-size: 12px; }
-
-        /* Admin Styles */
-        .admin-stat { background: #1c2833; padding: 15px; border-radius: 15px; margin-bottom: 10px; border-left: 4px solid var(--accent); }
     </style>
 </head>
 <body>
-
     <div id="toast"></div>
-
     <div id="auth-page" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
         <div class="card" style="width: 100%; max-width: 400px;">
             <h2 style="margin-top:0">Gifts World PRO</h2>
-            <p style="color:var(--secondary)">Добро пожаловать в элитный клуб подарков</p>
             <input type="text" id="auth-user" placeholder="Логин">
             <input type="password" id="auth-pass" placeholder="Пароль">
             <button class="btn" onclick="auth()">Войти / Регистрация</button>
@@ -114,31 +65,22 @@
             <b style="font-size:18px">Gifts World</b>
             <div id="user-info" style="font-size:14px; color:var(--secondary)"></div>
         </div>
-
         <div class="container">
             <div id="home" class="page active">
                 <div class="balance-card">
-                    <div>
-                        <div style="font-size:14px; opacity:0.8">Мой баланс</div>
-                        <div style="font-size:32px; font-weight:bold" id="balance">0 💰</div>
-                    </div>
-                    <button class="btn" style="width:auto; background:rgba(255,255,255,0.2)" onclick="tab('shop')">Магазин</button>
+                    <div><div style="font-size:14px; opacity:0.8">Баланс</div><div style="font-size:32px; font-weight:bold" id="balance">0 💰</div></div>
+                    <button class="btn" style="width:auto; background:rgba(255,255,255,0.2)" onclick="tab('shop')">В магазин</button>
                 </div>
-
-                <div class="card" style="margin-bottom:20px; padding:15px; background:linear-gradient(45deg, #1c2833, #111b21)">
-                    <div style="margin-bottom:10px">Ввести промокод</div>
-                    <div style="display:flex; gap:10px">
-                        <input type="text" id="promo-input" placeholder="GIFT2024" style="margin:0">
-                        <button class="btn" style="width:auto" onclick="usePromo()">OK</button>
-                    </div>
+                <div class="card" style="margin-bottom:20px; display:flex; gap:10px">
+                    <input type="text" id="promo-input" placeholder="Промокод" style="margin:0">
+                    <button class="btn" style="width:auto" onclick="usePromo()">OK</button>
                 </div>
-
                 <h3>Топ игроков</h3>
                 <div id="leaderboard"></div>
             </div>
 
             <div id="shop" class="page">
-                <h3>Магазин подарков</h3>
+                <h3>Магазин</h3>
                 <div style="display:flex; gap:10px; margin-bottom:15px">
                     <input type="text" id="s-search" placeholder="Поиск..." oninput="renderShop()" style="margin:0">
                     <select id="s-sort" onchange="renderShop()" style="margin:0; width:150px">
@@ -150,60 +92,16 @@
                 <div id="shop-list" class="grid"></div>
             </div>
 
-            <div id="inv" class="page">
-                <h3>Мои подарки</h3>
-                <div id="inv-list" class="grid"></div>
-            </div>
-
-            <div id="market" class="page">
-                <h3>Рынок игроков</h3>
-                <button class="btn" style="margin-bottom:15px" onclick="openMarketSell()">Выставить на продажу</button>
-                <div id="market-list" class="grid"></div>
-            </div>
-
-            <div id="profile" class="page">
-                <div id="profile-header" style="text-align:center; margin-bottom:20px"></div>
-                
-                <div class="card" style="margin-bottom:20px">
-                    <h4>Витрина</h4>
-                    <div id="pinned-items" style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap"></div>
-                </div>
-
-                <div class="card">
-                    <h4>Друзья</h4>
-                    <div style="display:flex; gap:10px; margin-bottom:15px">
-                        <input type="text" id="f-id" placeholder="ID друга" style="margin:0">
-                        <button class="btn" style="width:auto" onclick="addFriend()">+</button>
-                    </div>
-                    <div id="friends-list"></div>
-                </div>
-            </div>
-
+            <div id="inv" class="page"><h3>Инвентарь</h3><div id="inv-list" class="grid"></div></div>
+            <div id="market" class="page"><h3>Рынок</h3><button class="btn" style="margin-bottom:15px" onclick="openMarketSell()">Продать предмет</button><div id="market-list" class="grid"></div></div>
+            <div id="profile" class="page"><div id="profile-header" style="text-align:center; margin-bottom:20px"></div><div class="card"><h4>Витрина</h4><div id="pinned-items" style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap"></div></div></div>
+            
             <div id="admin" class="page">
-                <h3>Панель управления</h3>
+                <h3>Админ-панель</h3>
                 <div id="admin-stats"></div>
-                <hr style="opacity:0.1; margin:20px 0">
-                
-                <div class="card" style="margin-bottom:10px">
-                    <h4>Управление балансом</h4>
-                    <input type="text" id="adm-uid" placeholder="ID пользователя">
-                    <input type="number" id="adm-amt" placeholder="Сумма (можно -)">
-                    <button class="btn" onclick="adminEditBalance()">Применить</button>
-                </div>
-
-                <div class="card" style="margin-bottom:10px">
-                    <h4>Выдать предмет</h4>
-                    <input type="text" id="adm-gift-uid" placeholder="ID пользователя">
-                    <select id="adm-gift-id"></select>
-                    <button class="btn" onclick="adminGiveGift()">Выдать</button>
-                </div>
-
-                <div class="card">
-                    <h4>Рассылка / Уведомление</h4>
-                    <input type="text" id="adm-msg" placeholder="Текст сообщения">
-                    <button class="btn" onclick="adminBroadcast()">Отправить всем</button>
-                </div>
-                <button class="btn" style="background:var(--err); margin-top:20px" onclick="adminClearPins()">Очистить все витрины</button>
+                <input type="text" id="adm-uid" placeholder="ID игрока">
+                <input type="number" id="adm-amt" placeholder="Сумма">
+                <button class="btn" onclick="adminEditBalance()">Изменить баланс</button>
             </div>
         </div>
 
@@ -221,17 +119,13 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, update, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // ТВОИ ДАННЫЕ FIREBASE ЗДЕСЬ
-        const firebaseConfig = {
-            databaseURL: "https://gifts-world-pro-default-rtdb.firebaseio.com"
-        };
-
+        const firebaseConfig = { databaseURL: "https://gifts-world-pro-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // КАТАЛОГ ПОДАРКОВ (С НОВЫМ ТАНКОМ)
+        // КАТАЛОГ С ТАНКОМ
         const catalog = [
-            {id:2302, n:"NFT Танк T-34", i:"🚜", isNFT: true}, 
+            {id:2302, n:"NFT Танк T-34", i:"🚜", isNFT: true},
             {id:1, n:"Печенька", i:"🍪"}, {id:2, n:"Кофе", i:"☕"}, {id:3, n:"Пицца", i:"🍕"},
             {id:4, n:"Бургер", i:"🍔"}, {id:5, n:"Торт", i:"🎂"}, {id:6, n:"Арбуз", i:"🍉"},
             {id:7, n:"Мишка", i:"🧸"}, {id:8, n:"Роза", i:"🌹"}, {id:9, n:"Букет", i:"💐"},
@@ -246,7 +140,6 @@
 
         let user = null;
 
-        // Вспомогательные функции
         window.showToast = (m, c = 'var(--accent)') => {
             const t = document.getElementById('toast');
             t.innerText = m; t.style.background = c; t.style.display = 'block';
@@ -254,53 +147,12 @@
         };
 
         const getPrice = (id, offset = 0) => {
-            if(id === 2302) return 5000; // ФИКСИРОВАННАЯ ЦЕНА ДЛЯ ТАНКА
+            if(id === 2302) return 5000;
             const base = (id * 100) + 50;
             const time = (Date.now() + offset) / 3600000;
             return Math.floor(base + (Math.sin(time + id) * (base * 0.3)));
         };
 
-        // Авторизация
-        window.auth = async () => {
-            const u = document.getElementById('auth-user').value.trim();
-            const p = document.getElementById('auth-pass').value.trim();
-            if(u.length < 3 || p.length < 3) return showToast("Минимум 3 символа!", 'var(--err)');
-            
-            const ipS = await fetch('https://api.ipify.org?format=json').then(r => r.json());
-            const ip = ipS.ip.replace(/\./g, '_');
-            
-            const r = ref(db, 'users/'+u), s = await get(r);
-            if(s.exists()) {
-                if(s.val().pass === p) login(u, s.val());
-                else showToast("Неверный пароль!", 'var(--err)');
-            } else {
-                const ipR = ref(db, 'ips/'+ip), ipS = await get(ipR), count = ipS.val() || 0;
-                if(count >= 5) return showToast("Лимит аккаунтов на 1 IP (5)!", 'var(--err)');
-                
-                const newUser = { id: u, pass: p, balance: 1000, cloudInv: [], friends: [], pinned: [], isAdmin: u==='admin' };
-                await set(r, newUser);
-                await set(ipR, count + 1);
-                login(u, newUser);
-            }
-        };
-
-        const login = (id, data) => {
-            user = data;
-            document.getElementById('auth-page').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            if(user.isAdmin) document.getElementById('adm-nav').style.display = 'flex';
-            
-            onValue(ref(db, 'users/'+id), s => {
-                user = s.val();
-                document.getElementById('balance').innerText = user.balance + ' 💰';
-                document.getElementById('user-info').innerText = 'ID: ' + user.id;
-            });
-            
-            initAdmin();
-            renderLeaderboard();
-        };
-
-        // МАГАЗИН
         window.renderShop = () => { 
             const search = document.getElementById('s-search').value.toLowerCase();
             const sort = document.getElementById('s-sort').value;
@@ -313,7 +165,6 @@
             const isOver = now >= startFeb24;   
 
             let items = [...catalog];
-
             if (isOver) items = items.filter(x => x.id !== 2302);
             if(search) items = items.filter(x => x.n.toLowerCase().includes(search));
             
@@ -324,114 +175,66 @@
                 const isTank = x.id === 2302;
                 const cP = isTank ? 5000 : getPrice(x.id);
                 const oP = isTank ? 5000 : getPrice(x.id, -900000);
-                
-                let cardAttr = "";
-                let overlay = "";
-
-                if (isTank && isLocked) {
-                    cardAttr = "nft-locked";
-                    overlay = `<div class="nft-overlay"><i>🔒</i><b>Откроется<br>23 февраля</b></div>`;
-                }
+                let lock = (isTank && isLocked);
 
                 return `
-                    <div class="card ${cardAttr}" style="animation: fadeInUp 0.3s ease;">
+                    <div class="card ${lock ? 'nft-locked' : ''}">
                         ${isTank ? '<div class="nft-badge">23 ФЕВРАЛЯ NFT</div>' : ''}
-                        ${overlay}
+                        ${lock ? '<div class="nft-overlay"><i>🔒</i><b>Откроется 23.02</b></div>' : ''}
                         <span style="font-size:45px; display:block; margin-bottom:10px;">${x.i}</span>
-                        <b style="font-size:16px">${x.n}</b><br>
-                        <div style="margin:10px 0; font-weight:bold; font-size:18px;">${cP}💰 ${!isTank ? (cP>oP?'<span class="price-up">▲</span>':'<span class="price-down">▼</span>') : ''}</div>
-                        <button class="btn" onclick="${(isTank && isLocked) ? "showToast('Товар еще заблокирован!','var(--err)')" : `buy(${x.id})`}">
-                            ${(isTank && isLocked) ? 'Закрыто' : 'Приобрести'}
-                        </button>
+                        <b>${x.n}</b><br>
+                        <div style="margin:10px 0; font-weight:bold;">${cP}💰</div>
+                        <button class="btn" onclick="${lock ? "showToast('Закрыто до 23 февраля!')" : `buy(${x.id})`}">Купить</button>
                     </div>`;
             }).join(''); 
         };
 
         window.buy = async (id) => { 
             const p = id === 2302 ? 5000 : getPrice(id);
-            const itm = catalog.find(x => x.id === id); 
             const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); 
             if(d.balance >= p) { 
                 const inv = d.cloudInv || []; 
-                inv.push({...itm, inst: Date.now(), seen: true}); 
+                inv.push({...catalog.find(x => x.id === id), inst: Date.now()}); 
                 await update(r, { balance: d.balance - p, cloudInv: inv }); 
-                showToast("Успешная покупка!", 'var(--green)'); 
-            } else showToast("Недостаточно средств!", 'var(--err)'); 
+                showToast("Успешно!"); 
+            } else showToast("Нет денег!", 'var(--err)'); 
         };
 
-        // ИНВЕНТАРЬ
-        window.renderInv = () => {
-            const list = document.getElementById('inv-list');
-            if(!user.cloudInv || user.cloudInv.length === 0) {
-                list.innerHTML = '<div style="grid-column: 1/3; color:var(--secondary)">Тут пока пусто...</div>';
-                return;
+        window.auth = async () => {
+            const u = document.getElementById('auth-user').value.trim();
+            const p = document.getElementById('auth-pass').value.trim();
+            if(!u || !p) return;
+            const r = ref(db, 'users/'+u), s = await get(r);
+            if(s.exists()) {
+                if(s.val().pass === p) login(u, s.val());
+                else showToast("Ошибка!");
+            } else {
+                const newUser = { id: u, pass: p, balance: 1000, isAdmin: u==='admin' };
+                await set(r, newUser); login(u, newUser);
             }
-            list.innerHTML = user.cloudInv.map(x => `
-                <div class="card">
-                    <span style="font-size:40px; display:block; margin-bottom:10px;">${x.i}</span>
-                    <b>${x.n}</b><br>
-                    <div style="font-size:10px; color:var(--secondary); margin:5px 0;">#${x.inst}</div>
-                    <button class="btn" style="padding:8px; font-size:12px; background:var(--green)" onclick="sendGiftPrompt(${x.inst})">Отправить</button>
-                    <button class="btn" style="padding:8px; font-size:12px; margin-top:5px; background:var(--orange)" onclick="togglePin(${x.inst})">Витрина</button>
-                </div>
-            `).reverse().join('');
         };
 
-        // Навигация
+        const login = (id, data) => {
+            user = data;
+            document.getElementById('auth-page').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            if(user.isAdmin) document.getElementById('adm-nav').style.display = 'flex';
+            onValue(ref(db, 'users/'+id), s => {
+                user = s.val();
+                document.getElementById('balance').innerText = user.balance + ' 💰';
+            });
+            renderShop();
+        };
+
         window.tab = (id, b) => { 
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); 
-            document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active')); 
             document.getElementById(id).classList.add('active'); 
-            if(b) b.classList.add('active'); 
-            if(id === 'inv') renderInv(); 
             if(id === 'shop') renderShop();
-            if(id === 'profile') renderProfile();
-            window.scrollTo(0,0);
         };
-
-        // ... ОСТАЛЬНАЯ ЛОГИКА (Админка, Профиль и т.д. остается без изменений) ...
-        const initAdmin = () => {
-            const sel = document.getElementById('adm-gift-id');
-            catalog.forEach(x => sel.innerHTML += `<option value="${x.id}">${x.n}</option>`);
-            onValue(ref(db, 'users'), s => {
-                const us = s.val(), total = Object.keys(us).length;
-                let bal = 0; for(let i in us) bal += (us[i].balance || 0);
-                document.getElementById('admin-stats').innerHTML = `
-                    <div class="admin-stat">👥 Юзеров: ${total}</div>
-                    <div class="admin-stat">💰 Всего монет: ${bal}</div>
-                `;
-            });
-        };
-
-        window.renderProfile = () => {
-            document.getElementById('profile-header').innerHTML = `<h2>${user.id}</h2><p>Мой уникальный ID</p>`;
-            const pins = document.getElementById('pinned-items');
-            pins.innerHTML = (user.pinned || []).map(x => `
-                <div class="card" style="padding:10px; width:80px;">
-                    <span style="font-size:30px">${x.i}</span>
-                </div>
-            `).join('') || '<p style="color:var(--secondary)">Пусто</p>';
-        };
-
-        window.togglePin = async (inst) => {
-            const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
-            let pinned = d.pinned || [];
-            if(pinned.some(x => x.inst == inst)) {
-                pinned = pinned.filter(x => x.inst != inst);
-                showToast("Убрано");
-            } else {
-                if(pinned.length >= 5) return showToast("Лимит 5!");
-                const itm = d.cloudInv.find(x => x.inst == inst);
-                pinned.push(itm);
-                showToast("Добавлено");
-            }
-            await update(r, {pinned});
-            renderInv();
-        };
-
     </script>
 </body>
 </html>
+
 
 
 
