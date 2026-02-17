@@ -50,7 +50,6 @@
         .pinned-section { width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; min-height: 80px; align-items: center; }
         .price-up { color: var(--err); font-size: 12px; }
         .price-down { color: var(--green); font-size: 12px; }
-        .tg-btn { background: var(--tg); margin-bottom: 8px; }
         
         .adm-user-card { background: #1c2833; border-radius: 20px; padding: 15px; margin-bottom: 15px; text-align: left; border-left: 4px solid var(--orange); font-size: 13px; }
         .adm-row { display: flex; gap: 5px; align-items: center; margin-top: 5px; }
@@ -226,12 +225,10 @@
             const d = s.val(); if(!d) return;
             document.getElementById('header-name').innerText = d.username; document.getElementById('u-bal').innerText = d.balance;
             renderFriends(d); renderMyProfile(d); renderGameFriends(d);
-            
             const bG = document.getElementById('badge-game');
             if(d.gameInvite && !currentGameId) { bG.innerText = "1"; bG.style.display = 'flex'; document.getElementById('game-lobby').style.display='none'; document.getElementById('game-invite-box').style.display='block'; document.getElementById('invite-text').innerText = `Вызов от @${d.gameInvite.fromName}`; }
             else { bG.style.display = 'none'; if(!currentGameId) { document.getElementById('game-invite-box').style.display='none'; document.getElementById('game-lobby').style.display='block'; } }
             if(d.activeGameId && !currentGameId) listenGame(d.activeGameId);
-            
             const bI = document.getElementById('badge-inv');
             const newCount = (d.cloudInv || []).filter(x => x.seen === false).length;
             bI.innerText = newCount; bI.style.display = newCount > 0 ? 'flex' : 'none';
@@ -239,15 +236,9 @@
         renderShop(); listenMarket();
     }
 
-    // --- GAME (FIXED LOGIC) ---
+    // --- GAME (WITH 30 MIN RESET) ---
     function renderGameFriends(d) { const frs = d.friends || {}; document.getElementById('game-friends-list').innerHTML = Object.entries(frs).map(([id, data]) => `<button class="btn" style="margin-top:10px; background:var(--card); border:1px solid var(--accent);" onclick="inviteGame('${id}', '${data.name}')">🎮 ${data.name}</button>`).join('') || "Нет друзей"; }
-    window.inviteGame = async (fid, fname) => { 
-        const s = await get(ref(db, 'users/'+user.id)); 
-        if(s.val().balance < 100) return showToast("Минимум 100💰", 'var(--err)'); 
-        const gid = 'game_'+Date.now(); 
-        await update(ref(db, `users/${fid}`), { gameInvite: { fromId: user.id, fromName: user.name, gameId: gid } }); 
-        showToast("Вызов отправлен!"); 
-    };
+    window.inviteGame = async (fid, fname) => { const s = await get(ref(db, 'users/'+user.id)); if(s.val().balance < 100) return showToast("Нет монет!", 'var(--err)'); const gid = 'game_'+Date.now(); await update(ref(db, `users/${fid}`), { gameInvite: { fromId: user.id, fromName: user.name, gameId: gid } }); showToast("Вызов отправлен!"); };
     window.acceptGame = async () => { 
         const s = await get(ref(db, 'users/'+user.id)), inv = s.val().gameInvite; 
         if(s.val().balance < 100) return showToast("Нет монет!", 'var(--err)'); 
@@ -259,36 +250,25 @@
     
     function listenGame(gid) {
         currentGameId = gid; document.getElementById('game-lobby').style.display='none'; document.getElementById('game-invite-box').style.display='none'; document.getElementById('game-play').style.display='block';
-        if(gameListener) gameListener(); 
-        gameListener = onValue(ref(db, 'games/'+gid), async (s) => {
-            const g = s.val(); if(!g) return; 
-            const isP1 = g.p1 === user.id;
-            const myChoice = isP1 ? g.p1Choice : g.p2Choice;
-            const opChoice = isP1 ? g.p2Choice : g.p1Choice;
-
-            if(myChoice) { 
-                document.getElementById('game-controls').style.display='none'; 
-                document.getElementById('game-status').innerText = opChoice ? "Бросок..." : "Ждем оппонента..."; 
-            } else { 
-                document.getElementById('game-controls').style.display='block'; 
-                document.getElementById('game-status').innerText = "Твой выбор!"; 
+        if(gameListener) gameListener(); gameListener = onValue(ref(db, 'games/'+gid), async (s) => {
+            const g = s.val(); if(!g) { resetG(); return; }
+            
+            // Сброс через 30 минут (1800000 мс)
+            if(g.createdAt && (Date.now() - g.createdAt > 1800000) && !g.result) {
+                showToast("Игра просрочена", 'var(--err)');
+                resetG(); return;
             }
 
-            if(g.p1Choice && g.p2Choice && !g.result) { 
-                if(isP1) { // Рандом генерит только p1
-                    const r = Math.random() > 0.5 ? 'eagle' : 'tails'; 
-                    await update(ref(db, 'games/'+gid), { result: r }); 
-                } 
-            }
-
+            const isP1 = g.p1 === user.id, myChoice = isP1 ? g.p1Choice : g.p2Choice, opChoice = isP1 ? g.p2Choice : g.p1Choice;
+            if(myChoice) { document.getElementById('game-controls').style.display='none'; document.getElementById('game-status').innerText = opChoice ? "Бросок..." : "Ждем оппонента..."; }
+            else { document.getElementById('game-controls').style.display='block'; document.getElementById('game-status').innerText = "Твой выбор!"; }
+            if(g.p1Choice && g.p2Choice && !g.result) { if(isP1) { const r = Math.random() > 0.5 ? 'eagle' : 'tails'; await update(ref(db, 'games/'+gid), { result: r }); } }
             if(g.result) {
                 document.getElementById('game-coin').className = 'coin ' + (g.result === 'eagle' ? 'spin-eagle' : 'spin-tails');
                 setTimeout(async () => {
                     const win = (isP1 && g.p1Choice === g.result) || (!isP1 && g.p2Choice === g.result);
                     if(!g[user.id+'_paid']) { 
-                        const rew = win ? 100 : -100;
-                        const uRef = ref(db, 'users/'+user.id);
-                        const us = await get(uRef);
+                        const rew = win ? 100 : -100; const uRef = ref(db, 'users/'+user.id); const us = await get(uRef);
                         await update(uRef, { balance: us.val().balance + rew });
                         await update(ref(db, 'games/'+gid), { [user.id+'_paid']: true });
                     }
@@ -299,29 +279,53 @@
         });
     }
     async function resetG() { if(!currentGameId) return; if(gameListener) gameListener(); gameListener = null; await update(ref(db, `users/${user.id}`), { activeGameId: null }); document.getElementById('game-play').style.display='none'; document.getElementById('game-lobby').style.display='block'; document.getElementById('game-coin').className='coin'; currentGameId=null; }
-    window.makeChoice = async (c) => { 
-        const gSnap = await get(ref(db, 'games/'+currentGameId));
-        const isP1 = gSnap.val().p1 === user.id; 
-        await update(ref(db, 'games/'+currentGameId), isP1 ? {p1Choice: c} : {p2Choice: c}); 
-    };
+    window.makeChoice = async (c) => { const gs = await get(ref(db, 'games/'+currentGameId)); if(!gs.exists()) return; await update(ref(db, 'games/'+currentGameId), (gs.val().p1 === user.id) ? {p1Choice: c} : {p2Choice: c}); };
 
-    // --- SHOP (WITH FILTERS) ---
+    // --- SHOP ---
     window.renderShop = () => { 
         const search = document.getElementById('s-search').value.toLowerCase();
         const sort = document.getElementById('s-sort').value;
         let items = [...catalog];
-
         if(search) items = items.filter(x => x.n.toLowerCase().includes(search));
-        
         if(sort === 'cheap') items.sort((a,b) => getPrice(a.id) - getPrice(b.id));
         else if(sort === 'expensive') items.sort((a,b) => getPrice(b.id) - getPrice(a.id));
-
-        document.getElementById('shop-list').innerHTML = items.map(x => { 
-            const cP = getPrice(x.id), oP = getPrice(x.id, -900000); 
-            return `<div class="card"><span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b><br><div style="font-weight:bold;">${cP}💰 ${cP>oP?'<span class="price-up">▲</span>':'<span class="price-down">▼</span>'}</div><button class="btn" style="margin-top:10px;" onclick="buy(${x.id})">Купить</button></div>`
-        }).join(''); 
+        document.getElementById('shop-list').innerHTML = items.map(x => { const cP = getPrice(x.id), oP = getPrice(x.id, -900000); return `<div class="card"><span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b><br><div style="font-weight:bold;">${cP}💰 ${cP>oP?'<span class="price-up">▲</span>':'<span class="price-down">▼</span>'}</div><button class="btn" style="margin-top:10px;" onclick="buy(${x.id})">Купить</button></div>`}).join(''); 
     };
     window.buy = async (id) => { const p = getPrice(id), itm = catalog.find(x => x.id === id), r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); if(d.balance >= p) { const inv = d.cloudInv || []; inv.push({...itm, inst: Date.now(), seen: true}); await update(r, { balance: d.balance - p, cloudInv: inv }); showToast("Куплено!", 'var(--green)'); } else showToast("Нет монет!", 'var(--err)'); };
+
+    // --- INV & LETTERS ---
+    window.renderInv = async () => {
+        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = d.cloudInv || [], pin = d.pinned || [];
+        const upd = inv.map(x => ({...x, seen:true})); await update(r, { cloudInv: upd });
+        document.getElementById('inv').innerHTML = upd.map(x => {
+            const isP = pin.some(p => p.inst == x.inst);
+            return `<div class="card">${x.from?`<small style="color:var(--orange)">От: ${x.from}</small>`:''}<span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b>
+            ${x.msg ? `<button class="btn" style="background:var(--secondary); margin-top:5px; font-size:11px;" onclick="readMsg('${x.msg.replace(/'/g, "\\'")}')">📜 Письмо</button>` : ''}
+            <button class="btn" style="margin-top:10px; font-size:11px; background:var(--green)" onclick="giftOpen('${x.inst}')">🎁 Подарить</button>
+            <button class="btn" style="margin-top:5px; font-size:11px; background:${isP?'var(--err)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isP?'❌ Снять':'📌 Витрина'}</button>
+            <button class="btn" style="margin-top:5px; font-size:11px; background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button></div>`}).join('');
+    };
+    window.readMsg = (m) => { document.getElementById('modal-content').innerHTML = `<h3>Письмо</h3><p style="background:#0e1621; padding:15px; border-radius:15px; text-align:left; line-height:1.5;">${m}</p><button class="btn" onclick="closeModal()">Закрыть</button>`; document.getElementById('modal-overlay').style.display='flex'; };
+
+    // --- GIFTING WITH LETTERS ---
+    window.giftOpen = async (inst) => { 
+        const s = await get(ref(db, 'users/'+user.id)), frs = s.val().friends || {}; 
+        if(!Object.keys(frs).length) return showToast("Нет друзей", 'var(--err)'); 
+        document.getElementById('modal-content').innerHTML = `<h3>Кому подарок?</h3>
+        <textarea id="gift-msg" placeholder="Напиши письмо (необязательно)" style="font-size:14px; height:80px;"></textarea>
+        <div style="max-height:200px;overflow-y:auto;">${Object.entries(frs).map(([id, d]) => `<button class="btn" style="margin-bottom:10px;" onclick="sendG('${inst}','${id}')">🎁 ${d.name}</button>`).join('')}</div>
+        <button class="btn" style="background:none" onclick="closeModal()">Отмена</button>`; 
+        document.getElementById('modal-overlay').style.display='flex'; 
+    };
+    window.sendG = async (inst, fid) => { 
+        const msg = document.getElementById('gift-msg').value.trim();
+        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = d.cloudInv || [], itm = inv.find(x => x.inst == inst); 
+        await update(r, { cloudInv: inv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) }); 
+        const frS = await get(ref(db, 'users/'+fid)), frInv = frS.val().cloudInv || []; 
+        frInv.push({...itm, from: user.name, seen: false, inst: Date.now(), msg: msg || null}); 
+        await update(ref(db, 'users/'+fid), { cloudInv: frInv }); 
+        closeModal(); showToast("Отправлено!"); renderInv(); 
+    };
 
     // --- MARKET ---
     window.listenMarket = () => { 
@@ -341,26 +345,11 @@
     window.buyM = async (k, p, si) => { const bR = ref(db, 'users/'+user.id), bS = await get(bR); if(bS.val().balance < p) return showToast("Нет монет!", 'var(--err)'); const mS = await get(ref(db, 'market/'+k)); if(!mS.exists()) return; const itm = mS.val(); await remove(ref(db, 'market/'+k)); const inv = bS.val().cloudInv || []; inv.push({...itm, inst: Date.now(), seen:true}); await update(bR, { balance: bS.val().balance - p, cloudInv: inv }); const sS = await get(ref(db, 'users/'+si)); if(sS.exists()) await update(ref(db, 'users/'+si), { balance: sS.val().balance + parseInt(p) }); showToast("Куплено!"); };
     window.remM = async (k) => { const mS = await get(ref(db, 'market/'+k)), itm = mS.val(); await remove(ref(db, 'market/'+k)); const r = ref(db, 'users/'+user.id), s = await get(r), inv = s.val().cloudInv || []; inv.push({...itm, inst: Date.now(), seen:true}); await update(r, { cloudInv: inv }); showToast("Снято!"); };
 
-    // --- INV, FRIENDS, PROFILE, PROMO, ADMIN (REMAINING CODE) ---
-    window.renderInv = async () => {
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = d.cloudInv || [], pin = d.pinned || [];
-        const upd = inv.map(x => ({...x, seen:true})); await update(r, { cloudInv: upd });
-        document.getElementById('inv').innerHTML = upd.map(x => {
-            const isP = pin.some(p => p.inst == x.inst);
-            return `<div class="card">${x.from?`<small style="color:var(--orange)">От: ${x.from}</small>`:''}<span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b><button class="btn" style="margin-top:10px; font-size:11px; background:var(--green)" onclick="giftOpen('${x.inst}')">🎁 Подарить</button><button class="btn" style="margin-top:5px; font-size:11px; background:${isP?'var(--err)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isP?'❌ Снять':'📌 Витрина'}</button><button class="btn" style="margin-top:5px; font-size:11px; background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button></div>`}).join('');
-    };
-    window.togglePin = async (inst) => {
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); let pinned = d.pinned || [];
-        const isP = pinned.some(x => x.inst == inst);
-        if(isP) { pinned = pinned.filter(x => x.inst != inst); showToast("Снято"); }
-        else { if(pinned.length >= 5) return showToast("Макс. 5!", 'var(--err)'); const itm = d.cloudInv.find(x => x.inst == inst); pinned.push(itm); showToast("Закреплено"); }
-        await update(r, { pinned }); renderInv();
-    };
+    // --- OTHER ---
+    window.togglePin = async (inst) => { const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); let pinned = d.pinned || []; const isP = pinned.some(x => x.inst == inst); if(isP) { pinned = pinned.filter(x => x.inst != inst); showToast("Снято"); } else { if(pinned.length >= 5) return showToast("Макс. 5!", 'var(--err)'); const itm = d.cloudInv.find(x => x.inst == inst); pinned.push(itm); showToast("Закреплено"); } await update(r, { pinned }); renderInv(); };
     window.searchFriend = async () => { const t = document.getElementById('friend-search').value.trim().toLowerCase(); if(t && t !== user.id) { await update(ref(db, `users/${t}/requests/${user.id}`), { from: user.id, name: user.name }); showToast("Отправлено"); } };
     function renderFriends(d) { const reqs = d.requests || {}, frs = d.friends || {}, bF = document.getElementById('badge-fr'), c = Object.keys(reqs).length; bF.innerText = c; bF.style.display = c>0?'flex':'none'; document.getElementById('friend-requests').innerHTML = Object.entries(reqs).map(([id, data]) => `<div class="card" style="margin-bottom:10px;">Запрос от ${data.name} <button class="btn" style="padding:5px;" onclick="acceptFr('${id}','${data.name}')">Принять</button></div>`).join(''); document.getElementById('friends-list').innerHTML = Object.entries(frs).map(([id, data]) => `<div class="card" style="margin-bottom:5px;">👤 ${data.name}</div>`).join(''); }
     window.acceptFr = async (fid, fn) => { await update(ref(db, `users/${user.id}/friends/${fid}`), { name: fn }); await update(ref(db, `users/${fid}/friends/${user.id}`), { name: user.name }); await remove(ref(db, `users/${user.id}/requests/${fid}`)); showToast("Добавлен!"); };
-    window.giftOpen = async (inst) => { const s = await get(ref(db, 'users/'+user.id)), frs = s.val().friends || {}; if(!Object.keys(frs).length) return showToast("Нет друзей", 'var(--err)'); document.getElementById('modal-content').innerHTML = `<h3>Подарить</h3><div style="max-height:200px;overflow-y:auto;">${Object.entries(frs).map(([id, d]) => `<button class="btn" style="margin-bottom:10px;" onclick="sendG('${inst}','${id}')">🎁 ${d.name}</button>`).join('')}</div><button class="btn" style="background:none" onclick="closeModal()">Отмена</button>`; document.getElementById('modal-overlay').style.display='flex'; };
-    window.sendG = async (inst, fid) => { const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = d.cloudInv || [], itm = inv.find(x => x.inst == inst); await update(r, { cloudInv: inv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) }); const frS = await get(ref(db, 'users/'+fid)), frInv = frS.val().cloudInv || []; frInv.push({...itm, from: user.name, seen: false, inst: Date.now()}); await update(ref(db, 'users/'+fid), { cloudInv: frInv }); closeModal(); showToast("Отправлено!"); renderInv(); };
     function renderMyProfile(d) { 
         document.getElementById('profile').innerHTML = `
         <div style="text-align:center;"><img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar"><h2>${d.username}</h2><p>${d.bio || 'Нет описания'}</p>
@@ -368,15 +357,7 @@
         <div style="display:flex; gap:10px; margin-bottom:15px;"><button class="btn" onclick="openEdit()">⚙️ Настройки</button><button class="btn" style="background:var(--err)" onclick="logout()">Выход</button></div>
         <h3>⭐ Витрина</h3><div class="pinned-section">${(d.pinned || []).map(x => `<div style="text-align:center; min-width:60px;"><span style="font-size:30px;">${x.i}</span><br><small style="font-size:10px">${x.n}</small></div>`).join('') || 'Пусто'}</div></div>`; 
     }
-    window.usePromo = async () => {
-        const code = document.getElementById('promo-input').value.trim().toUpperCase(); if(!code) return;
-        const s = await get(ref(db, 'promos/'+code)); if(!s.exists()) return showToast("Нет кода", 'var(--err)');
-        const p = s.val(); if(p.limit <= 0) return showToast("Лимит исчерпан", 'var(--err)');
-        const uS = await get(ref(db, 'users/'+user.id)); const used = uS.val().usedPromos || {};
-        if(used[code]) return showToast("Уже юзал", 'var(--err)');
-        await update(ref(db, 'users/'+user.id), { balance: uS.val().balance + p.sum, [`usedPromos/${code}`]: true });
-        await update(ref(db, 'promos/'+code), { limit: p.limit - 1 }); showToast(`+${p.sum}💰`, 'var(--green)');
-    };
+    window.usePromo = async () => { const code = document.getElementById('promo-input').value.trim().toUpperCase(); if(!code) return; const s = await get(ref(db, 'promos/'+code)); if(!s.exists()) return showToast("Нет кода", 'var(--err)'); const p = s.val(); if(p.limit <= 0) return showToast("Лимит исчерпан", 'var(--err)'); const uS = await get(ref(db, 'users/'+user.id)); const used = uS.val().usedPromos || {}; if(used[code]) return showToast("Уже юзал", 'var(--err)'); await update(ref(db, 'users/'+user.id), { balance: uS.val().balance + p.sum, [`usedPromos/${code}`]: true }); await update(ref(db, 'promos/'+code), { limit: p.limit - 1 }); showToast(`+${p.sum}💰`, 'var(--green)'); };
     window.openEdit = async () => { const s = await get(ref(db, 'users/'+user.id)); document.getElementById('modal-content').innerHTML = `<h3>Настройки</h3><textarea id="ebio" placeholder="О себе">${s.val().bio||''}</textarea><input type="file" id="efile" accept="image/*"><button class="btn" onclick="saveP()">Сохранить</button>`; document.getElementById('modal-overlay').style.display='flex'; };
     window.saveP = async () => { const file = document.getElementById('efile').files[0]; let bio = document.getElementById('ebio').value; if(file) { const reader = new FileReader(); reader.onload = async (e) => { await update(ref(db, 'users/'+user.id), { bio: bio, pic: e.target.result }); closeModal(); showToast("Ок!"); }; reader.readAsDataURL(file); } else { await update(ref(db, 'users/'+user.id), { bio: bio }); closeModal(); showToast("Ок!"); } };
     window.logout = () => { localStorage.removeItem('gifts_user'); location.reload(); };
@@ -395,6 +376,7 @@
 </script>
 </body>
 </html>
+
 
 
 
