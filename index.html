@@ -250,72 +250,69 @@
     async function resetG() { if(!currentGameId) return; if(gameListener) gameListener(); gameListener = null; await update(ref(db, `users/${user.id}`), { activeGameId: null }); document.getElementById('game-play').style.display='none'; document.getElementById('game-lobby').style.display='block'; document.getElementById('game-coin').className='coin'; currentGameId=null; }
     window.makeChoice = async (c) => { const isP1 = (await get(ref(db, 'games/'+currentGameId))).val().p1 === user.id; await update(ref(db, 'games/'+currentGameId), isP1 ? {p1Choice: c} : {p2Choice: c}); };
 
-    // --- MARKET FILTER ---
-    window.listenMarket = () => {
-        onValue(ref(db, 'market/'), s => {
-            const data = s.val();
-            renderMarketUI(data);
-        });
-    };
-
+    // --- MARKET ---
+    window.listenMarket = () => { onValue(ref(db, 'market/'), s => { renderMarketUI(s.val()); }); };
     function renderMarketUI(data, sortType = 'new') {
         let items = data ? Object.entries(data) : [];
         if(sortType === 'low') items.sort((a,b) => a[1].mP - b[1].mP);
         if(sortType === 'high') items.sort((a,b) => b[1].mP - a[1].mP);
         if(sortType === 'new') items.reverse();
-
-        let h = `<div class="market-header">
-            <select style="margin:0;" onchange="renderMarketUI(lastMarketData, this.value)">
-                <option value="new">Новинки</option>
-                <option value="low">Сначала дешевые</option>
-                <option value="high">Сначала дорогие</option>
-            </select>
-        </div>`;
         window.lastMarketData = data;
-        
+        let h = `<div class="market-header"><select onchange="renderMarketUI(lastMarketData, this.value)"><option value="new">Новинки</option><option value="low">Сначала дешевые</option><option value="high">Сначала дорогие</option></select></div>`;
         document.getElementById('market').innerHTML = h + (items.length ? items.map(([k, x]) => `<div class="card" style="padding:10px;"><span style="font-size:30px;">${x.i}</span><br><b>${x.n}</b><div style="color:var(--accent);">${x.mP}💰</div><small>@${x.sN}</small><button class="btn" style="padding:5px; margin-top:5px; font-size:11px;" onclick="${x.sI===user.id?`remM('${k}')`:`buyM('${k}',${x.mP},'${x.sI}')`}">${x.sI===user.id?'Снять':'Купить'}</button></div>`).join('') : "Пусто");
     }
-
-    window.toMarket = async (inst) => { const p = prompt("Цена:"); if(!p || p <= 0) return; const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); const itm = d.cloudInv.find(x => x.inst == inst); await update(r, { cloudInv: d.cloudInv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) }); push(ref(db, 'market/'), {...itm, mP: parseInt(p), sI: user.id, sN: user.name, ts: Date.now()}); showToast("Выставлено!"); renderInv(); };
+    window.toMarket = async (inst) => { const p = prompt("Цена:"); if(!p || p <= 0) return; const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); const itm = d.cloudInv.find(x => x.inst == inst); await update(r, { cloudInv: d.cloudInv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) }); push(ref(db, 'market/'), {...itm, mP: parseInt(p), sI: user.id, sN: user.name, ts: Date.now()}); showToast("Выставлено!"); };
     window.buyM = async (k, p, si) => { 
         const bR = ref(db, 'users/'+user.id), bS = await get(bR); 
         if(bS.val().balance < p) return showToast("Нет монет!", 'var(--err)'); 
         const mS = await get(ref(db, 'market/'+k)); if(!mS.exists()) return; 
-        const itm = mS.val(); 
-        await remove(ref(db, 'market/'+k)); 
+        const itm = mS.val(); await remove(ref(db, 'market/'+k)); 
         const inv = bS.val().cloudInv || []; inv.push({...itm, inst: Date.now(), seen:true}); 
         await update(bR, { balance: bS.val().balance - p, cloudInv: inv }); 
         const sR = ref(db, 'users/'+si), sS = await get(sR);
-        if(sS.exists()) {
-            const curSales = sS.val().sales || 0;
-            await update(sR, { balance: sS.val().balance + parseInt(p), sales: curSales + 1 });
-        }
+        if(sS.exists()) await update(sR, { balance: sS.val().balance + parseInt(p), sales: (sS.val().sales || 0) + 1 });
         showToast("Куплено!"); 
     };
-    window.remM = async (k) => { const mS = await get(ref(db, 'market/'+k)), itm = mS.val(); await remove(ref(db, 'market/'+k)); const r = ref(db, 'users/'+user.id), s = await get(r), inv = s.val().cloudInv || []; inv.push({...itm, inst: Date.now(), seen:true}); await update(r, { cloudInv: inv }); showToast("Снято!"); };
+    window.remM = async (k) => { const mS = await get(ref(db, 'market/'+k)), itm = mS.val(); await remove(ref(db, 'market/'+k)); const r = ref(db, 'users/'+user.id), s = await get(r), inv = s.val().cloudInv || []; inv.push({...itm, inst: Date.now(), seen:true}); await update(r, { cloudInv: inv }); };
 
-    // --- PROMO CODES ---
+    // --- PROMO CODES (FIXED) ---
     window.usePromo = async () => {
-        const code = document.getElementById('promo-input').value.trim();
-        if(!code) return;
-        const pS = await get(ref(db, 'promos/'+code));
-        if(!pS.exists()) return showToast("Неверный код", 'var(--err)');
-        const p = pS.val(), uS = await get(ref(db, 'users/'+user.id)), d = uS.val();
-        if(d.usedPromos && d.usedPromos[code]) return showToast("Уже использован", 'var(--err)');
+        const codeInput = document.getElementById('promo-input');
+        const code = codeInput.value.trim();
+        if(!code) return showToast("Введите код", 'var(--err)');
         
-        let up = { [`users/${user.id}/usedPromos/${code}`]: true };
-        if(p.type === 'coins') {
-            up[`users/${user.id}/balance`] = d.balance + parseInt(p.val());
-            showToast(`Получено ${p.val()}💰`, 'var(--green)');
-        } else {
-            const itm = catalog.find(x => x.id == p.val());
-            const inv = d.cloudInv || [];
-            inv.push({...itm, inst: Date.now(), from: "PROMO", seen: false});
-            up[`users/${user.id}/cloudInv`] = inv;
-            showToast(`Получен подарок!`, 'var(--green)');
+        const pRef = ref(db, 'promos/' + code);
+        const pSnap = await get(pRef);
+        
+        if(!pSnap.exists()) return showToast("Код не существует", 'var(--err)');
+        
+        const promo = pSnap.val();
+        const uRef = ref(db, 'users/' + user.id);
+        const uSnap = await get(uRef);
+        const userData = uSnap.val();
+        
+        if(userData.usedPromos && userData.usedPromos[code]) {
+            return showToast("Уже использован", 'var(--err)');
         }
-        await update(ref(db), up);
-        document.getElementById('promo-input').value = "";
+        
+        let updates = {};
+        updates[`usedPromos/${code}`] = true;
+        
+        if(promo.type === 'coins') {
+            updates[`balance`] = (userData.balance || 0) + parseInt(promo.val);
+            showToast(`Получено ${promo.val}💰`, 'var(--green)');
+        } else {
+            const item = catalog.find(x => x.id == promo.val);
+            if(item) {
+                const inv = userData.cloudInv || [];
+                inv.push({...item, inst: Date.now(), from: "PROMO", seen: false});
+                updates[`cloudInv`] = inv;
+                showToast(`Подарок получен!`, 'var(--green)');
+            }
+        }
+        
+        await update(uRef, updates);
+        codeInput.value = "";
     };
 
     // --- ADMIN PROMO ---
@@ -325,36 +322,48 @@
         const v = document.getElementById('adm-promo-val').value;
         if(!c || !v) return showToast("Заполни данные", 'var(--err)');
         await set(ref(db, 'promos/'+c), { type: t, val: v });
-        showToast("Промокод создан!");
+        showToast("Код создан!");
+        document.getElementById('adm-promo-code').value = "";
     };
 
-    // --- INV & PIN ---
-    window.togglePin = async (inst) => {
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); let pinned = d.pinned || [];
-        const isP = pinned.some(x => x.inst == inst);
-        if(isP) { pinned = pinned.filter(x => x.inst != inst); showToast("Снято"); }
-        else { if(pinned.length >= 5) return showToast("Макс. 5!", 'var(--err)'); const itm = d.cloudInv.find(x => x.inst == inst); pinned.push(itm); showToast("Закреплено"); }
-        await update(r, { pinned }); renderInv();
-    };
-
+    // --- INV ---
     window.renderInv = async () => {
         const s = await get(ref(db, 'users/'+user.id)), d = s.val(), inv = d.cloudInv || [], pin = d.pinned || [];
-        const upd = inv.map(x => ({...x, seen:true})); await update(ref(db, 'users/'+user.id), { cloudInv: upd });
-        document.getElementById('inv').innerHTML = upd.map(x => {
+        document.getElementById('inv').innerHTML = inv.map(x => {
             const isP = pin.some(p => p.inst == x.inst);
             return `<div class="card">${x.from?`<small style="color:var(--orange)">От: ${x.from}</small>`:''}<span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b><button class="btn" style="margin-top:10px; font-size:11px; background:var(--green)" onclick="giftOpen('${x.inst}')">🎁 Подарить</button><button class="btn" style="margin-top:5px; font-size:11px; background:${isP?'var(--err)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isP?'❌ Снять':'📌 Витрина'}</button><button class="btn" style="margin-top:5px; font-size:11px; background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button></div>`}).join('');
     };
+    window.togglePin = async (inst) => {
+        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); let pinned = d.pinned || [];
+        if(pinned.some(x => x.inst == inst)) pinned = pinned.filter(x => x.inst != inst);
+        else { if(pinned.length >= 5) return showToast("Макс. 5!"); pinned.push(d.cloudInv.find(x => x.inst == inst)); }
+        await update(r, { pinned }); renderInv();
+    };
 
     // --- SHOP ---
-    window.renderShop = () => { document.getElementById('shop').innerHTML = catalog.map(x => { const cP = getPrice(x.id), oP = getPrice(x.id, -900000); return `<div class="card"><span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b><br><div style="font-weight:bold;">${cP}💰 ${cP>oP?'<span class="price-up">▲</span>':'<span class="price-down">▼</span>'}</div><button class="btn" style="margin-top:10px;" onclick="buy(${x.id})">Купить</button></div>`}).join(''); };
-    window.buy = async (id) => { const p = getPrice(id), itm = catalog.find(x => x.id === id), r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); if(d.balance >= p) { const inv = d.cloudInv || []; inv.push({...itm, inst: Date.now(), seen: true}); await update(r, { balance: d.balance - p, cloudInv: inv }); showToast("Куплено!", 'var(--green)'); } else showToast("Нет монет!", 'var(--err)'); };
+    window.renderShop = () => { document.getElementById('shop').innerHTML = catalog.map(x => `<div class="card"><span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b><br><div style="font-weight:bold;">${getPrice(x.id)}💰</div><button class="btn" style="margin-top:10px;" onclick="buy(${x.id})">Купить</button></div>`).join(''); };
+    window.buy = async (id) => { const p = getPrice(id), r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); if(d.balance >= p) { const inv = d.cloudInv || []; inv.push({...catalog.find(x => x.id === id), inst: Date.now(), seen: true}); await update(r, { balance: d.balance - p, cloudInv: inv }); showToast("Куплено!"); } };
 
     // --- FRIENDS ---
-    window.searchFriend = async () => { const t = document.getElementById('friend-search').value.trim().toLowerCase(); if(t && t !== user.id) { await update(ref(db, `users/${t}/requests/${user.id}`), { from: user.id, name: user.name }); showToast("Отправлено"); } };
-    function renderFriends(d) { const reqs = d.requests || {}, frs = d.friends || {}, bF = document.getElementById('badge-fr'), c = Object.keys(reqs).length; bF.innerText = c; bF.style.display = c>0?'flex':'none'; document.getElementById('friend-requests').innerHTML = Object.entries(reqs).map(([id, data]) => `<div class="card" style="margin-bottom:10px;">Запрос от ${data.name} <button class="btn" style="padding:5px;" onclick="acceptFr('${id}','${data.name}')">Принять</button></div>`).join(''); document.getElementById('friends-list').innerHTML = Object.entries(frs).map(([id, data]) => `<div class="card" style="margin-bottom:5px;">👤 ${data.name}</div>`).join(''); }
-    window.acceptFr = async (fid, fn) => { await update(ref(db, `users/${user.id}/friends/${fid}`), { name: fn }); await update(ref(db, `users/${fid}/friends/${user.id}`), { name: user.name }); await remove(ref(db, `users/${user.id}/requests/${fid}`)); showToast("Добавлен!"); };
-    window.giftOpen = async (inst) => { const s = await get(ref(db, 'users/'+user.id)), frs = s.val().friends || {}; if(!Object.keys(frs).length) return showToast("Нет друзей", 'var(--err)'); document.getElementById('modal-content').innerHTML = `<h3>Подарить</h3><div style="max-height:200px;overflow-y:auto;">${Object.entries(frs).map(([id, d]) => `<button class="btn" style="margin-bottom:10px;" onclick="sendG('${inst}','${id}')">🎁 ${d.name}</button>`).join('')}</div><button class="btn" style="background:none" onclick="closeModal()">Отмена</button>`; document.getElementById('modal-overlay').style.display='flex'; };
-    window.sendG = async (inst, fid) => { const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = d.cloudInv || [], itm = inv.find(x => x.inst == inst); await update(r, { cloudInv: inv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) }); const frS = await get(ref(db, 'users/'+fid)), frInv = frS.val().cloudInv || []; frInv.push({...itm, from: user.name, seen: false, inst: Date.now()}); await update(ref(db, 'users/'+fid), { cloudInv: frInv }); closeModal(); showToast("Отправлено!"); renderInv(); };
+    window.searchFriend = async () => { const t = document.getElementById('friend-search').value.trim().toLowerCase(); if(t && t !== user.id) await update(ref(db, `users/${t}/requests/${user.id}`), { from: user.id, name: user.name }); };
+    function renderFriends(d) { 
+        const reqs = d.requests || {}, frs = d.friends || {}; 
+        document.getElementById('friend-requests').innerHTML = Object.entries(reqs).map(([id, data]) => `<div class="card" style="margin-bottom:10px;">Запрос от ${data.name} <button class="btn" style="padding:5px;" onclick="acceptFr('${id}','${data.name}')">Принять</button></div>`).join(''); 
+        document.getElementById('friends-list').innerHTML = Object.entries(frs).map(([id, data]) => `<div class="card" style="margin-bottom:5px;">👤 ${data.name}</div>`).join(''); 
+    }
+    window.acceptFr = async (fid, fn) => { await update(ref(db, `users/${user.id}/friends/${fid}`), { name: fn }); await update(ref(db, `users/${fid}/friends/${user.id}`), { name: user.name }); await remove(ref(db, `users/${user.id}/requests/${fid}`)); };
+    window.giftOpen = async (inst) => { 
+        const s = await get(ref(db, 'users/'+user.id)), frs = s.val().friends || {}; 
+        document.getElementById('modal-content').innerHTML = `<h3>Подарить</h3>${Object.entries(frs).map(([id, d]) => `<button class="btn" style="margin-bottom:10px;" onclick="sendG('${inst}','${id}')">🎁 ${d.name}</button>`).join('')}<button class="btn" style="background:none" onclick="closeModal()">Отмена</button>`;
+        document.getElementById('modal-overlay').style.display='flex'; 
+    };
+    window.sendG = async (inst, fid) => { 
+        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), itm = d.cloudInv.find(x => x.inst == inst); 
+        await update(r, { cloudInv: d.cloudInv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) }); 
+        const frS = await get(ref(db, 'users/'+fid)), frInv = frS.val().cloudInv || []; 
+        frInv.push({...itm, from: user.name, seen: false, inst: Date.now()}); 
+        await update(ref(db, 'users/'+fid), { cloudInv: frInv }); closeModal(); showToast("Отправлено!"); 
+    };
 
     // --- PROFILE ---
     function renderMyProfile(d) { 
@@ -363,10 +372,7 @@
             <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar">
             <h2>${d.username} ${d.sales >= 10 ? '<span class="verify-badge">✔️</span>' : ''}</h2>
             <p>${d.bio || 'Нет описания'}</p>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button class="btn" onclick="openEdit()">⚙️ Настройки</button>
-                <button class="btn" style="background:var(--err)" onclick="logout()">Выход</button>
-            </div>
+            <div style="display:flex; gap:10px; margin-bottom:15px;"><button class="btn" onclick="openEdit()">⚙️ Настройки</button><button class="btn" style="background:var(--err)" onclick="logout()">Выход</button></div>
             <h3>⭐ Витрина</h3>
             <div class="pinned-section">${(d.pinned || []).map(x => `<div style="text-align:center; min-width:60px;"><span style="font-size:30px;">${x.i}</span><br><small style="font-size:10px">${x.n}</small></div>`).join('') || 'Пусто'}</div>
             <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
@@ -382,62 +388,43 @@
     }
     window.openEdit = async () => { 
         const s = await get(ref(db, 'users/'+user.id)); 
-        document.getElementById('modal-content').innerHTML = `
-            <h3>Настройки</h3>
-            <textarea id="ebio" placeholder="О себе">${s.val().bio||''}</textarea>
-            <p style="font-size:12px;color:var(--secondary)">Аватар (с устройства):</p>
-            <input type="file" id="efile" accept="image/*" style="padding:5px; font-size:12px;">
-            <input type="hidden" id="epic" value="${s.val().pic||''}">
-            <button class="btn" onclick="saveP()">Сохранить</button>`; 
+        document.getElementById('modal-content').innerHTML = `<h3>Настройки</h3><textarea id="ebio">${s.val().bio||''}</textarea><p>Аватар:</p><input type="file" id="efile" accept="image/*"><button class="btn" onclick="saveP()">Сохранить</button>`; 
         document.getElementById('modal-overlay').style.display='flex'; 
     };
     window.saveP = async () => { 
         const file = document.getElementById('efile').files[0];
-        let picUrl = document.getElementById('epic').value;
         if(file) {
             const reader = new FileReader();
             reader.onload = async (e) => {
-                picUrl = e.target.result;
-                await update(ref(db, 'users/'+user.id), { bio: document.getElementById('ebio').value, pic: picUrl });
-                closeModal(); showToast("Ок!");
+                await update(ref(db, 'users/'+user.id), { bio: document.getElementById('ebio').value, pic: e.target.result });
+                closeModal();
             };
             reader.readAsDataURL(file);
         } else {
             await update(ref(db, 'users/'+user.id), { bio: document.getElementById('ebio').value });
-            closeModal(); showToast("Ок!");
+            closeModal();
         }
     };
     window.logout = () => { localStorage.removeItem('gifts_user'); location.reload(); };
 
     // --- ADMIN ---
-    window.clearAllShowcases = async () => { if(!confirm("Очистить все витрины?")) return; const s = await get(ref(db, 'users')), us = s.val(); const up = {}; for(let id in us) up[`users/${id}/pinned`] = []; await update(ref(db), up); showToast("Очищено!", 'var(--err)'); };
+    window.clearAllShowcases = async () => { if(confirm("Очистить витрины?")) { const s = await get(ref(db, 'users')), us = s.val(); for(let id in us) await update(ref(db, `users/${id}`), {pinned:[]}); } };
     function initAdmin() { 
         onValue(ref(db, 'users'), s => { 
-            const us = s.val(); if(!us) return; 
-            document.getElementById('adm-stats').innerText = `Игроков: ${Object.keys(us).length}`; 
-            let h = ""; 
-            for(let id in us) { 
-                const u = us[id]; 
-                const invStr = (u.cloudInv || []).map(x => x.i).join(' ') || 'пусто';
-                h += `<div class="adm-user-card"><b>@${u.username}</b> (Прод: ${u.sales||0})
-                    <div class="adm-details">🔑 Пароль: ${u.password}<br>🌐 IP: ${u.ip || 'неизв.'}<br>📦 Инв: ${invStr}</div>
-                    <div class="adm-row"><input type="number" id="ab-${id}" placeholder="${u.balance}" style="flex:1; margin:0; padding:8px; height:36px;"><button class="btn" style="width:40px; padding:0; height:36px;" onclick="setB('${id}')">💰</button></div>
-                    <div class="adm-row"><select id="ag-${id}" style="margin:0; padding:5px; height:36px;">${catalog.map(x=>`<option value="${x.id}">${x.i} ${x.n}</option>`).join('')}</select><button class="btn" style="width:40px; padding:0; height:36px; background:var(--orange)" onclick="giveI('${id}')">🎁</button></div>
-                    <button class="btn" style="background:var(--err); margin-top:10px; padding:5px; font-size:11px;" onclick="delUser('${id}')">🗑️ Удалить профиль</button>
-                </div>`; 
-            } 
+            const us = s.val(); document.getElementById('adm-stats').innerText = `Игроков: ${Object.keys(us||{}).length}`; 
+            let h = ""; for(let id in us) { const u = us[id]; h += `<div class="adm-user-card"><b>@${u.username}</b> (Прод: ${u.sales||0})<div class="adm-details">🔑 ${u.password}<br>🌐 ${u.ip}<br>📦 ${(u.cloudInv||[]).map(x=>x.i).join('')}</div><div class="adm-row"><input type="number" id="ab-${id}" placeholder="${u.balance}"><button class="btn" onclick="setB('${id}')">💰</button></div><button class="btn" style="background:var(--err); margin-top:5px;" onclick="delUser('${id}')">🗑️ Удалить</button></div>`; } 
             document.getElementById('adm-users-list').innerHTML = h; 
         }); 
     }
-    window.delUser = async (id) => { if(confirm(`Удалить игрока @${id} навсегда?`)) await remove(ref(db, 'users/'+id)); };
+    window.delUser = async (id) => { if(confirm("Удалить?")) await remove(ref(db, 'users/'+id)); };
     window.setB = async (id) => { const v = document.getElementById('ab-'+id).value; if(v) await update(ref(db,'users/'+id), {balance: parseInt(v)}); };
-    window.giveI = async (id) => { const itm = catalog.find(x => x.id == document.getElementById('ag-'+id).value), s = await get(ref(db, 'users/'+id)), inv = s.val().cloudInv || []; inv.push({...itm, inst: Date.now(), from: "ADMIN", seen: false}); await update(ref(db, 'users/'+id), { cloudInv: inv }); };
 
     window.tab = (id, b) => { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active')); document.getElementById(id).classList.add('active'); b.classList.add('active'); if(id === 'inv') renderInv(); };
     window.onload = () => { const s = localStorage.getItem('gifts_user'); if(s) { const d = JSON.parse(s); startApp(d.name, d.id); } };
 </script>
 </body>
 </html>
+
 
 
 
