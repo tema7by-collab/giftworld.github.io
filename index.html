@@ -3,894 +3,808 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/gift.png">
-    <title>Gifts World Ultimate Control</title>
+    <title>Gifts World Ultimate Edition 2026</title>
     <style>
-        :root { 
-            --bg: #070d14; --card: #111b21; --accent: #2481cc; --text: #ffffff; 
-            --secondary: #7f91a4; --err: #e74c3c; --green: #2ecc71; --orange: #f39c12;
-            --glass: rgba(23, 33, 43, 0.95);
-            --tg: #229ED9;
+        :root {
+            --bg-color: #0b141a;
+            --card-bg: #111b21;
+            --accent-color: #00a884;
+            --text-main: #e9edef;
+            --text-secondary: #8696a0;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --glass: rgba(17, 27, 33, 0.9);
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; border-spacing: 0; }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; overflow-x: hidden; line-height: 1.5; }
 
-        .btn { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 18px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; font-size: 14px; display: inline-block; text-decoration: none; text-align: center; }
-        .btn:active { transform: scale(0.96); opacity: 0.8; }
-        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 12px; width: auto; }
-        
-        input, textarea, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 15px; border: 2px solid #2b3a4a; background: #0e1621; color: white; outline: none; font-size: 16px; transition: border-color 0.3s; }
-        input:focus { border-color: var(--accent); }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-color) transparent;
+        }
 
-        .page { display: none; padding: 15px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding-bottom: 140px; }
-        .page.active { display: grid; }
-        
-        #friends, #profile, #admin, #game { display: none; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; }
-        #friends.active, #profile.active, #admin.active, #game.active { display: flex; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
 
-        .card { background: var(--card); border-radius: 25px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-        
-        .nav { display: flex; background: var(--glass); backdrop-filter: blur(25px); position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 94%; max-width: 550px; border-radius: 35px; padding: 8px; z-index: 1000; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
-        .nav-btn { flex: 1; background: none; border: none; color: var(--secondary); cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 10px; position: relative; transition: 0.3s; }
-        .nav-btn.active { color: var(--accent); transform: translateY(-3px); }
-        .nav-btn i { font-size: 24px; margin-bottom: 4px; font-style: normal; }
+        /* --- UI COMPONENTS --- */
+        .btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
 
-        .badge { position: absolute; top: -5px; right: 12px; background: var(--err); color: white; font-size: 10px; min-width: 20px; height: 20px; border-radius: 10px; display: none; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--bg); animation: pop 0.3s; }
-        @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        .btn:active { transform: scale(0.97); filter: brightness(0.9); }
+        .btn-danger { background: var(--danger); }
+        .btn-warn { background: var(--warning); color: #000; }
+        .btn-ghost { background: transparent; border: 1px solid var(--text-secondary); color: var(--text-secondary); }
 
-        .avatar { width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--accent); object-fit: cover; background: #0e1621; margin-bottom: 15px; box-shadow: 0 0 20px rgba(36, 129, 204, 0.3); }
-        
-        #toast { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 14px 28px; border-radius: 22px; font-weight: bold; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.6); pointer-events: none; }
-        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        input, textarea, select {
+            width: 100%;
+            background: #202c33;
+            border: 1px solid #2a3942;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 16px;
+            margin: 8px 0;
+        }
 
-        .pinned-section { width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; min-height: 90px; align-items: center; border: 1px dashed rgba(255,255,255,0.1); scrollbar-width: none; }
-        .pinned-section::-webkit-scrollbar { display: none; }
+        /* --- LAYOUT --- */
+        #app { display: none; padding-bottom: 100px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
 
-        .gift-note { background: linear-gradient(135deg, #1e2a38 0%, #0d141d 100%); border: 2px solid var(--accent); border-radius: 20px; padding: 15px; margin-top: 10px; position: relative; font-style: italic; color: #d1d1d1; text-align: left; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        .gift-note::before { content: "💬 Сообщение:"; display: block; font-size: 10px; color: var(--accent); font-weight: bold; margin-bottom: 5px; font-style: normal; }
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
 
-        .adm-user-card { background: #1c2833; border-radius: 20px; padding: 18px; margin-bottom: 15px; text-align: left; border-left: 5px solid var(--orange); position: relative; }
-        .adm-status-ban { position: absolute; top: 10px; right: 10px; background: var(--err); color: white; font-size: 9px; padding: 3px 8px; border-radius: 5px; font-weight: bold; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-        .price-tag { font-weight: bold; font-size: 15px; margin: 8px 0; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .up { color: var(--green); } .down { color: var(--err); }
-        .verify-badge { color: #3498db; font-size: 14px; margin-left: 4px; }
-        
-        /* Modal Styles */
-        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 5000; padding: 20px; backdrop-filter: blur(5px); }
-        #modal-content { width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; background: var(--card); }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* --- NAVIGATION --- */
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 11px;
+            cursor: pointer;
+            position: relative;
+            flex: 1;
+        }
+
+        .nav-item.active { color: var(--accent-color); }
+        .nav-item i { font-size: 22px; margin-bottom: 4px; font-style: normal; }
+
+        /* ИСПРАВЛЕННЫЙ СЧЕТЧИК (BADGE) */
+        .nav-badge {
+            position: absolute;
+            top: -5px;
+            right: 25%;
+            background: var(--danger);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            height: 18px;
+            min-width: 18px;
+            border-radius: 9px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid var(--bg-color);
+        }
+
+        /* --- GAME UI --- */
+        .coin-box {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            margin: 20px 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .flipping { animation: flip 0.6s infinite; }
+        @keyframes flip {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        /* --- GIFT NOTE FRAME --- */
+        .note-container {
+            margin-top: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1d2b33 0%, #111b21 100%);
+            border: 2px solid var(--accent-color);
+            border-radius: 15px;
+            position: relative;
+            box-shadow: inset 0 0 15px rgba(0,168,132,0.2);
+        }
+
+        .note-container::before {
+            content: "✉️ Сообщение:";
+            display: block;
+            font-size: 12px;
+            color: var(--accent-color);
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .note-text {
+            font-style: italic;
+            color: #d1d7db;
+            word-wrap: break-word;
+        }
+
+        /* --- ADMIN PANEL --- */
+        .admin-user-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #202c33;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .status-banned { color: var(--danger); font-weight: bold; }
+
+        /* --- TOAST --- */
+        #toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--accent-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            z-index: 9999;
+            transition: 0.5s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            font-weight: bold;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
 
-<div id="toast"></div>
+<div id="toast">Уведомление</div>
 
-<div id="modal-overlay" onclick="if(event.target==this) closeModal()">
-    <div id="modal-content" class="card"></div>
-</div>
-
-<div id="auth-screen" style="height:100vh; display:flex; align-items:center; justify-content:center; padding: 25px; background: radial-gradient(circle at center, #111b21 0%, #070d14 100%);">
-    <div class="card" style="max-width:360px; width:100%;">
-        <div style="font-size: 50px; margin-bottom: 10px;">🎁</div>
-        <h1 style="color:var(--accent); margin-bottom:10px; letter-spacing: 1px;">Gifts World</h1>
-        <p style="color:var(--secondary); font-size: 13px; margin-bottom: 20px;">Мир цифровых подарков</p>
-        <input type="text" id="u-in" placeholder="Ваш логин">
-        <input type="password" id="p-in" placeholder="Пароль">
-        <button class="btn" onclick="auth('login')" style="margin-top: 10px;">Войти в аккаунт</button>
-        <button class="btn" style="background:transparent; color:var(--secondary); margin-top:10px;" onclick="auth('reg')">Зарегистрироваться</button>
+<div id="auth-page" style="display: flex; align-items: center; height: 100vh; justify-content: center;">
+    <div class="card" style="width: 100%; max-width: 350px;">
+        <h2 style="text-align: center; color: var(--accent-color);">Gifts World</h2>
+        <input type="text" id="auth-login" placeholder="Логин">
+        <input type="password" id="auth-pass" placeholder="Пароль">
+        <button class="btn" onclick="app.handleAuth('login')">Войти</button>
+        <button class="btn btn-ghost" style="margin-top: 10px;" onclick="app.handleAuth('reg')">Регистрация</button>
     </div>
 </div>
 
-<div id="app" style="display:none">
-    <div style="padding:15px 20px; background:var(--glass); position:sticky; top:0; z-index:100; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05);">
-        <b id="header-name">Gifts World</b>
-        <div style="font-weight:bold; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-            <span id="u-bal" style="color:var(--accent);">0</span> 💰
+<div id="app">
+    <header style="padding: 15px; background: var(--card-bg); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 900; border-bottom: 1px solid #2a3942;">
+        <div id="user-display" style="font-weight: bold; display: flex; align-items: center; gap: 8px;">---</div>
+        <div style="color: var(--accent-color); font-weight: bold;"><span id="balance-display">0</span> 💰</div>
+    </header>
+
+    <div class="container">
+        <div id="page-shop" class="page active">
+            <h3 style="margin-top: 0;">Витрина подарков</h3>
+            <div id="shop-items" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
         </div>
-    </div>
 
-    <div id="shop" class="page active"></div>
-    <div id="market" class="page"></div>
-    <div id="inv" class="page"></div>
-    
-    <div id="game" class="page">
-        <div class="card" style="padding: 30px 20px;">
-            <div style="font-size: 50px; margin-bottom: 10px;">🪙</div>
-            <h2>Сыграем в Монетку?</h2>
-            <p style="color:var(--secondary); margin-bottom: 25px;">Ставка всегда 100💰. Победитель забирает всё.</p>
-            
-            <div id="game-lobby">
-                <div id="game-friends-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
-            </div>
+        <div id="page-inventory" class="page">
+            <h3 style="margin-top: 0;">Мой склад</h3>
+            <div id="inventory-items" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
+        </div>
 
-            <div id="game-invite-box" style="display:none; background: rgba(36, 129, 204, 0.1); border-radius: 20px; padding: 20px; border: 1px solid var(--accent);">
-                <p id="invite-text" style="font-weight:bold;"></p>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn" style="background:var(--green)" onclick="acceptGame()">Принять</button>
-                    <button class="btn" style="background:var(--err)" onclick="declineGame()">Отказ</button>
+        <div id="page-market" class="page">
+            <h3 style="margin-top: 0;">Мировой рынок</h3>
+            <div id="market-items" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <div id="page-game" class="page">
+            <div class="card" style="text-align: center;">
+                <h3>Монетка (Ставка 100)</h3>
+                <div id="game-lobby">
+                    <p style="color: var(--text-secondary);">Выберите друга для вызова:</p>
+                    <div id="game-friends" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+                <div id="game-active" style="display: none;">
+                    <div class="coin-box" id="coin-visual">🪙</div>
+                    <p id="game-info">Ваш ход!</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button class="btn" onclick="app.gameAction('eagle')">Орёл</button>
+                        <button class="btn" onclick="app.gameAction('tails')">Решка</button>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div id="game-play" style="display:none;">
-                <div id="coin-anim" style="font-size: 60px; margin: 20px 0;">❓</div>
-                <p id="game-status" style="font-weight: bold; min-height: 40px;">Ваш ход! Выбирайте сторону:</p>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
-                    <button class="btn" onclick="makeChoice('eagle')">🦅 Орёл</button>
-                    <button class="btn" onclick="makeChoice('tails')">🪙 Решка</button>
-                </div>
+        <div id="page-friends" class="page">
+            <div class="card">
+                <input type="text" id="friend-id-input" placeholder="ID пользователя">
+                <button class="btn btn-ghost" onclick="app.addFriend()">Найти друга</button>
+            </div>
+            <div id="friends-list"></div>
+        </div>
+
+        <div id="page-profile" class="page">
+            <div class="card" style="text-align: center;">
+                <div id="profile-pic" style="width: 80px; height: 80px; background: #2a3942; border-radius: 50%; margin: 0 auto 15px; font-size: 40px; display: flex; align-items: center; justify-content: center;">👤</div>
+                <h2 id="profile-name">Имя Фамилия</h2>
+                <p id="profile-bio" style="color: var(--text-secondary);">Привет! Я пользуюсь Gifts World.</p>
+                <button class="btn btn-ghost" onclick="app.openEditProfile()">Настройки</button>
+                <button class="btn btn-danger" style="margin-top: 15px;" onclick="app.logout()">Выйти</button>
             </div>
         </div>
+
+        <div id="page-admin" class="page">
+            <h2 style="color: var(--warning);">🛠 Администрирование</h2>
+            <div class="card">
+                <h4>Глобальная статистика</h4>
+                <p>Всего пользователей: <span id="adm-total-users">0</span></p>
+                <p>Монет в обороте: <span id="adm-total-coins">0</span></p>
+            </div>
+            <div id="adm-user-list"></div>
+        </div>
     </div>
 
-    <div id="friends" class="page">
-        <div class="card" style="margin-bottom: 15px;">
-            <b>Найти друга</b>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <input type="text" id="friend-search" placeholder="Логин друга" style="margin:0;">
-                <button class="btn" style="width: auto; padding: 0 20px;" onclick="searchFriend()">➕</button>
-            </div>
+    <nav class="navbar">
+        <div class="nav-item active" onclick="app.nav('shop', this)"><i>🛍️</i><span>Магазин</span></div>
+        <div class="nav-item" onclick="app.nav('market', this)"><i>⚖️</i><span>Рынок</span></div>
+        <div class="nav-item" onclick="app.nav('inventory', this)">
+            <div class="nav-badge" id="inv-badge">0</div>
+            <i>📦</i><span>Склад</span>
         </div>
-        <div id="friend-requests"></div>
-        <div id="friends-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
-    </div>
-    
-    <div id="profile" class="page"></div>
-    
-    <div id="admin" class="page">
-        <h2 style="color:var(--orange); text-align: center; margin-bottom: 20px;">🛠️ Режим Администратора</h2>
-        <div class="card" style="margin-bottom:15px; text-align:left;">
-            <b>🎟️ Генератор Промокодов</b>
-            <input type="text" id="adm-promo-code" placeholder="Код (например: HELLO2026)">
-            <div style="display: flex; gap: 10px;">
-                <select id="adm-promo-type" style="flex: 1;">
-                    <option value="coins">Валюта (💰)</option>
-                    <option value="item">Предмет (ID)</option>
-                </select>
-                <input type="number" id="adm-promo-val" placeholder="Кол-во" style="flex: 1;">
-            </div>
-            <button class="btn" style="background:var(--green)" onclick="createPromo()">Создать промокод</button>
-        </div>
-        <div class="card" style="margin-bottom:15px; text-align:left;">
-            <b>📊 Глобальные данные</b>
-            <div id="adm-stats" style="margin-top:10px; color:var(--secondary); font-size: 14px;">Загрузка...</div>
-        </div>
-        <div id="adm-users-list"></div>
-    </div>
+        <div class="nav-item" onclick="app.nav('game', this)"><i>🎰</i><span>Игра</span></div>
+        <div class="nav-item" onclick="app.nav('friends', this)"><i>👥</i><span>Друзья</span></div>
+        <div class="nav-item" onclick="app.nav('profile', this)"><i>👤</i><span>Профиль</span></div>
+        <div class="nav-item" id="nav-admin" style="display: none; color: var(--warning);" onclick="app.nav('admin', this)"><i>⚙️</i><span>Админ</span></div>
+    </nav>
+</div>
 
-    <div class="nav">
-        <button class="nav-btn active" onclick="tab('shop', this)"><i>🛍️</i><span>Магазин</span></button>
-        <button class="nav-btn" onclick="tab('market', this)"><i>⚖️</i><span>Рынок</span></button>
-        <button class="nav-btn" onclick="tab('inv', this)"><div id="badge-inv" class="badge">0</div><i>📦</i><span>Склад</span></button>
-        <button class="nav-btn" onclick="tab('game', this)"><i>🪙</i><span>Игра</span></button>
-        <button class="nav-btn" onclick="tab('friends', this)"><i>👥</i><span>Друзья</span></button>
-        <button class="nav-btn" onclick="tab('profile', this)"><i>👤</i><span>Профиль</span></button>
-        <button id="adm-nav" class="nav-btn" style="display:none; color:var(--orange)" onclick="tab('admin', this)"><i>⚙️</i><span>Админ</span></button>
-    </div>
+<div class="modal-overlay" id="modal">
+    <div class="card" id="modal-body" style="width: 100%; max-width: 400px; position: relative;">
+        </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const config = {
+    const firebaseConfig = {
         apiKey: "AIzaSyDK9IMy-DDNXvPcHv7uAjgZ8ZLdXUh8OCw",
         authDomain: "gift-1292c.firebaseapp.com",
         projectId: "gift-1292c",
         databaseURL: "https://gift-1292c-default-rtdb.firebaseio.com",
+        storageBucket: "gift-1292c.appspot.com",
         appId: "1:527659513899:web:4023b323982425ad18526e"
     };
-    const fb = initializeApp(config);
+
+    const fb = initializeApp(firebaseConfig);
     const db = getDatabase(fb);
 
-    let user = null;
-    let marketSort = 'new';
-    let lastMarketData = null;
-    let currentGameId = null;
-
-    const catalog = [
-        {id:1, n:"Печенька", i:"🍪"}, {id:2, n:"Кофе", i:"☕"}, {id:3, n:"Пицца", i:"🍕"},
-        {id:4, n:"Бургер", i:"🍔"}, {id:5, n:"Торт", i:"🎂"}, {id:6, n:"Арбуз", i:"🍉"},
-        {id:7, n:"Мишка", i:"🧸"}, {id:8, n:"Роза", i:"🌹"}, {id:9, n:"Букет", i:"💐"},
-        {id:10, n:"Гитара", i:"🎸"}, {id:11, n:"Кольцо", i:"💍"}, {id:12, n:"Кристалл", i:"💎"},
-        {id:13, n:"Корона", i:"👑"}, {id:14, n:"Спорткар", i:"🏎️"}, {id:15, n:"Яхта", i:"🛥️"},
-        {id:16, n:"Ракета", i:"🚀"}, {id:17, n:"Остров", i:"🏝️"}, {id:18, n:"Кот", i:"🐱"},
-        {id:19, n:"Панда", i:"🐼"}, {id:20, n:"Единорог", i:"🦄"}, {id:21, n:"Золото", i:"📀"},
-        {id:22, n:"Медаль", i:"🥇"}, {id:23, n:"Кубок", i:"🏆"}, {id:24, n:"Джойстик", i:"🎮"},
-        {id:25, n:"Наушники", i:"🎧"}, {id:26, n:"Ноутбук", i:"💻"}, {id:27, n:"Дом", i:"🏠"},
-        {id:28, n:"Замок", i:"🏰"}, {id:29, n:"Планета", i:"🪐"}, {id:30, n:"Галактика", i:"🌌"}
+    const CATALOG = [
+        {id: 1, name: "Золотая Роза", icon: "🌹", price: 500},
+        {id: 2, name: "Алмаз", icon: "💎", price: 2500},
+        {id: 3, name: "Кофе", icon: "☕", price: 100},
+        {id: 4, name: "Пицца", icon: "🍕", price: 350},
+        {id: 5, name: "Торт", icon: "🎂", price: 800},
+        {id: 6, name: "Ракета", icon: "🚀", price: 10000}
     ];
 
-    // Динамическая цена
-    function getPrice(id, timeShift = 0) {
-        const now = Date.now() + timeShift;
-        const seed = Math.floor(now / 900000); 
-        const val = Math.abs(Math.sin(id * 777 + seed * 888));
-        return Math.floor(val * 1500 + 50);
-    }
+    window.app = {
+        user: null,
+        activeGame: null,
 
-    window.showToast = (msg, color = 'var(--accent)') => {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.background = color;
-        t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
-    };
+        showToast(msg, isErr = false) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.background = isErr ? 'var(--danger)' : 'var(--accent-color)';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        },
 
-    window.closeModal = () => document.getElementById('modal-overlay').style.display = 'none';
+        handleAuth: async (type) => {
+            const login = document.getElementById('auth-login').value.trim().toLowerCase();
+            const pass = document.getElementById('auth-pass').value.trim();
 
-    window.auth = async (type) => {
-        const u = document.getElementById('u-in').value.trim().toLowerCase(), p = document.getElementById('p-in').value.trim();
-        if(!u || !p) return showToast("Заполните все поля!", "var(--err)");
-        
-        const r = ref(db, 'users/'+u), s = await get(r);
-        
-        if(type === 'reg') {
-            if(s.exists()) return showToast("Такой ник уже занят!", "var(--err)");
-            await set(r, { username: u, password: p, balance: 500, cloudInv: [], pinned: [], sales: 0, bio: "", pic: "", status: "active" });
-            loginOk(u);
-        } else {
-            if(s.exists()) {
-                const data = s.val();
-                if(data.status === 'banned') return showToast("Ваш аккаунт заблокирован!", "var(--err)");
-                if(data.password == p) loginOk(u);
-                else showToast("Неверный пароль!", "var(--err)");
-            } else showToast("Пользователь не найден!", "var(--err)");
-        }
-    };
+            if (login.length < 3 || pass.length < 3) return app.showToast("Минимум 3 символа", true);
 
-    function loginOk(id) {
-        localStorage.setItem('gifts_user', JSON.stringify({id}));
-        location.reload();
-    }
+            const userRef = ref(db, 'users/' + login);
+            const snap = await get(userRef);
 
-    function startApp() {
-        const local = JSON.parse(localStorage.getItem('gifts_user'));
-        if(!local) return;
-        user = { id: local.id };
-        
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-
-        onValue(ref(db, 'users/' + user.id), snapshot => {
-            const data = snapshot.val();
-            if(!data) {
-                logout();
-                return;
+            if (type === 'reg') {
+                if (snap.exists()) return app.showToast("Логин занят", true);
+                await set(userRef, {
+                    username: login,
+                    password: pass,
+                    balance: 1000,
+                    bio: "Привет! Я новый пользователь.",
+                    inventory: [],
+                    friends: {},
+                    role: (login === 'ckovoroda' || login === 'kukumbr') ? 'admin' : 'user',
+                    status: 'active'
+                });
+                app.login(login);
+            } else {
+                if (!snap.exists() || snap.val().password !== pass) return app.showToast("Ошибка входа", true);
+                if (snap.val().status === 'banned') return app.showToast("Ваш аккаунт заблокирован!", true);
+                app.login(login);
             }
-            if(data.status === 'banned') {
-                alert("Ваш аккаунт был заблокирован администрацией.");
-                logout();
-                return;
-            }
+        },
 
-            user.isAdmin = (user.id === 'ckovoroda' || user.id === 'kukumbr' || data.role === 'admin');
-            if(user.isAdmin) {
-                document.getElementById('adm-nav').style.display = 'flex';
-                initAdmin();
-            }
-            
-            document.getElementById('header-name').innerHTML = `${data.username} ${data.sales >= 10 ? '<span class="verify-badge">✔️</span>' : ''}`;
-            document.getElementById('u-bal').innerText = data.balance.toLocaleString();
-            
-            // Склад и счетчик
-            const myInv = data.cloudInv || [];
-            renderInv(myInv, data.pinned || []);
-            
-            const badge = document.getElementById('badge-inv');
-            badge.innerText = myInv.length;
-            badge.style.display = myInv.length > 0 ? 'flex' : 'none';
+        login(id) {
+            localStorage.setItem('gifts_uid', id);
+            location.reload();
+        },
 
-            renderProfile(data);
-            renderFriendsUI(data);
-            
-            // Проверка приглашений в игру
-            if(data.gameInvite && !currentGameId) {
-                document.getElementById('game-lobby').style.display = 'none';
-                document.getElementById('game-invite-box').style.display = 'block';
-                document.getElementById('invite-text').innerText = `🎁 Вызов от ${data.gameInvite.fromName}!`;
-            } else if (!data.gameInvite && !currentGameId) {
-                document.getElementById('game-invite-box').style.display = 'none';
-                document.getElementById('game-lobby').style.display = 'flex';
-            }
-        });
+        logout() {
+            localStorage.removeItem('gifts_uid');
+            location.reload();
+        },
 
-        onValue(ref(db, 'market'), s => { lastMarketData = s.val(); renderMarket(); });
-        renderShop();
-    }
+        init: () => {
+            const uid = localStorage.getItem('gifts_uid');
+            if (!uid) return;
 
-    // --- МАГАЗИН ---
-    window.renderShop = (sort = 'default') => {
-        let items = catalog.map(x => {
-            const cur = getPrice(x.id);
-            const old = getPrice(x.id, -900000);
-            return {...x, p: cur, d: cur - old};
-        });
-        if(sort === 'low') items.sort((a,b) => a.p - b.p);
-        if(sort === 'high') items.sort((a,b) => b.p - a.p);
+            document.getElementById('auth-page').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
 
-        document.getElementById('shop').innerHTML = `
-            <div style="grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                <b style="font-size: 18px;">Магазин</b>
-                <select onchange="renderShop(this.value)" style="width:auto; margin:0; padding:5px 10px; font-size:12px; height: 35px;">
-                    <option value="default">Сортировка</option>
-                    <option value="low">Дешевле</option>
-                    <option value="high">Дороже</option>
-                </select>
-            </div>
-            ${items.map(x => `
-                <div class="card">
-                    <span style="font-size:45px; display:block; margin-bottom:10px;">${x.i}</span>
-                    <div style="font-weight:bold; font-size: 14px;">${x.n}</div>
-                    <div class="price-tag">${x.p} 💰 <span class="${x.d>=0?'up':'down'}" style="font-size: 10px;">${x.d>=0?'▲':'▼'}</span></div>
-                    <button class="btn" onclick="buyShop(${x.id})" style="padding: 8px;">Купить</button>
-                </div>
-            `).join('')}
-        `;
-    };
-
-    window.buyShop = async (id) => {
-        const p = getPrice(id);
-        const s = await get(ref(db, 'users/'+user.id));
-        const d = s.val();
-        if(d.balance < p) return showToast("Недостаточно монет!", "var(--err)");
-        
-        const inv = d.cloudInv || [];
-        inv.push({...catalog.find(x=>x.id==id), inst: Date.now(), from: "Магазин"});
-        await update(ref(db, 'users/'+user.id), { balance: d.balance - p, cloudInv: inv });
-        showToast("Предмет добавлен на склад!", "var(--green)");
-    };
-
-    // --- СКЛАД ---
-    window.renderInv = (inv, pinned) => {
-        const invPage = document.getElementById('inv');
-        invPage.innerHTML = inv.map(x => {
-            const isPinned = pinned.some(p => p.inst === x.inst);
-            return `
-            <div class="card">
-                <span style="font-size:45px; display:block; margin-bottom:5px;">${x.i}</span>
-                <div style="font-weight:bold; font-size: 13px;">${x.n}</div>
-                ${x.note ? `<div style="font-size:9px; color:var(--accent); margin-bottom:5px;">📩 Есть записка</div>` : ''}
-                <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
-                    <button class="btn btn-sm" onclick="showGiftDetails('${x.inst}')">Инфо</button>
-                    <button class="btn btn-sm" onclick="giftOpen('${x.inst}')">Подарить</button>
-                    <button class="btn btn-sm" style="background:${isPinned?'var(--err)':'var(--green)'};" onclick="togglePin('${x.inst}')">
-                        ${isPinned ? 'Убрать' : 'Закрепить'}
-                    </button>
-                    <button class="btn btn-sm" style="background:var(--orange);" onclick="toMarket('${x.inst}')">Продать</button>
-                </div>
-            </div>
-        `}).join('') || '<div style="grid-column:1/-1; padding: 50px 0; color:var(--secondary); text-align:center;">На складе пока пусто... 📦</div>';
-    };
-
-    window.showGiftDetails = async (inst) => {
-        const s = await get(ref(db, 'users/'+user.id));
-        const itm = s.val().cloudInv.find(x => x.inst == inst);
-        
-        document.getElementById('modal-content').innerHTML = `
-            <div style="font-size: 60px;">${itm.i}</div>
-            <h2 style="margin: 10px 0;">${itm.n}</h2>
-            <div style="color:var(--secondary); font-size: 13px; margin-bottom: 15px;">
-                Происхождение: <span style="color:var(--accent)">${itm.from || 'Неизвестно'}</span><br>
-                ID экземпляра: ${itm.inst}
-            </div>
-            ${itm.note ? `<div class="gift-note">${itm.note}</div>` : `<p style="color:var(--secondary)">Записки нет</p>`}
-            <button class="btn" style="margin-top: 20px;" onclick="closeModal()">Закрыть</button>
-        `;
-        document.getElementById('modal-overlay').style.display = 'flex';
-    };
-
-    window.togglePin = async (inst) => {
-        const s = await get(ref(db, 'users/'+user.id));
-        const d = s.val();
-        let p = d.pinned || [];
-        const itm = d.cloudInv.find(x => x.inst == inst);
-        
-        if(p.some(x => x.inst == inst)) {
-            p = p.filter(x => x.inst != inst);
-            showToast("Предмет убран с витрины");
-        } else {
-            if(p.length >= 6) return showToast("Максимум 6 предметов на витрине!", "var(--err)");
-            p.push(itm);
-            showToast("Предмет закреплен!", "var(--green)");
-        }
-        await update(ref(db, 'users/'+user.id), { pinned: p });
-    };
-
-    // --- РЫНОК ---
-    window.renderMarket = (sort = marketSort) => {
-        marketSort = sort;
-        let items = lastMarketData ? Object.entries(lastMarketData).map(([k,v])=>({k, ...v})) : [];
-        if(sort === 'low') items.sort((a,b) => a.mP - b.mP);
-        else if(sort === 'high') items.sort((a,b) => b.p - a.p);
-        else items.sort((a,b) => b.ts - a.ts);
-
-        document.getElementById('market').innerHTML = `
-            <div style="grid-column:1/-1; display:flex; justify-content:space-between; align-items:center;">
-                <b style="font-size: 18px;">Мировой Рынок</b>
-                <select onchange="renderMarket(this.value)" style="width:auto; margin:0; padding:5px; font-size:12px; height: 35px;">
-                    <option value="new" ${sort==='new'?'selected':''}>Новинки</option>
-                    <option value="low" ${sort==='low'?'selected':''}>Дешевле</option>
-                    <option value="high" ${sort==='high'?'selected':''}>Дороже</option>
-                </select>
-            </div>
-            ${items.map(x => `
-                <div class="card">
-                    <span style="font-size:35px; display:block; margin-bottom:5px;">${x.i}</span>
-                    <div style="font-weight:bold; font-size:13px;">${x.n}</div>
-                    <div style="color:var(--accent); font-weight:bold; font-size: 14px; margin: 5px 0;">${x.mP.toLocaleString()}💰</div>
-                    <div style="font-size:10px; color:var(--secondary); margin-bottom: 8px;">Продавец: @${x.sN}</div>
-                    <button class="btn btn-sm" onclick="${x.sI===user.id?`remM('${x.k}')`:`buyM('${x.k}',${x.mP},'${x.sI}')`}">
-                        ${x.sI===user.id?'Снять':'Купить'}
-                    </button>
-                </div>
-            `).join('')}
-        `;
-    };
-
-    window.toMarket = async (inst) => {
-        const p = prompt("Введите стоимость продажи (💰):");
-        if(!p || isNaN(p) || p <= 0) return;
-        const s = await get(ref(db, 'users/'+user.id));
-        const d = s.val();
-        const item = d.cloudInv.find(x => x.inst == inst);
-        
-        await update(ref(db, 'users/'+user.id), { 
-            cloudInv: d.cloudInv.filter(x => x.inst != inst),
-            pinned: (d.pinned || []).filter(x => x.inst != inst)
-        });
-        
-        await push(ref(db, 'market'), { 
-            ...item, 
-            mP: parseInt(p), 
-            sI: user.id, 
-            sN: d.username, 
-            ts: Date.now() 
-        });
-        showToast("Лот выставлен на рынок!");
-    };
-
-    window.buyM = async (k, p, si) => {
-        const bS = await get(ref(db, 'users/'+user.id));
-        if(bS.val().balance < p) return showToast("Недостаточно монет!", "var(--err)");
-        
-        const mS = await get(ref(db, 'market/'+k));
-        if(!mS.exists()) return showToast("Товар уже купили!", "var(--err)");
-        
-        const itm = mS.val();
-        await remove(ref(db, 'market/'+k));
-        
-        const inv = bS.val().cloudInv || [];
-        inv.push({...itm, inst: Date.now(), from: `Рынок (@${itm.sN})`});
-        
-        await update(ref(db, 'users/'+user.id), { balance: bS.val().balance - p, cloudInv: inv });
-        
-        const sS = await get(ref(db, 'users/'+si));
-        if(sS.exists()) {
-            await update(ref(db, 'users/'+si), { 
-                balance: sS.val().balance + p, 
-                sales: (sS.val().sales||0) + 1 
+            onValue(ref(db, 'users/' + uid), (snap) => {
+                const data = snap.val();
+                if (!data) return app.logout();
+                if (data.status === 'banned') app.logout();
+                
+                app.user = data;
+                app.updateUI();
             });
-        }
-        showToast("Успешная покупка!", "var(--green)");
-    };
 
-    window.remM = async (k) => {
-        const mS = await get(ref(db, 'market/'+k));
-        if(!mS.exists()) return;
-        const itm = mS.val();
-        await remove(ref(db, 'market/'+k));
-        const uS = await get(ref(db, 'users/'+user.id));
-        const inv = uS.val().cloudInv || [];
-        inv.push({...itm, inst: Date.now()});
-        await update(ref(db, 'users/'+user.id), { cloudInv: inv });
-        showToast("Товар возвращен на склад");
-    };
+            // Слушаем рынок
+            onValue(ref(db, 'market'), (snap) => {
+                app.renderMarket(snap.val());
+            });
 
-    // --- ДРУЗЬЯ ---
-    function renderFriendsUI(d) {
-        const frs = d.friends ? Object.entries(d.friends) : [];
-        const reqs = d.requests ? Object.entries(d.requests) : [];
-        
-        document.getElementById('friends-list').innerHTML = frs.map(([id, f]) => `
-            <div class="card" style="margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; padding:12px 20px; text-align: left;">
-                <div>
-                    <b style="font-size: 15px;">${f.name}</b><br>
-                    <small style="color:var(--secondary)">онлайн</small>
-                </div>
-                <div style="display: flex; gap: 5px;">
-                    <button class="btn btn-sm" onclick="viewPublicProfile('${id}')">👤</button>
-                    <button class="btn btn-sm" onclick="tab('inv', document.querySelectorAll('.nav-btn')[2])">🎁</button>
-                </div>
-            </div>
-        `).join('') || "<p style='color:var(--secondary); text-align:center;'>Список друзей пуст</p>";
+            // Слушаем игры
+            onValue(ref(db, 'games'), (snap) => {
+                app.checkGames(snap.val());
+            });
 
-        document.getElementById('friend-requests').innerHTML = reqs.map(([id, r]) => `
-            <div class="card" style="border:1px solid var(--accent); margin-bottom:15px; background: rgba(36, 129, 204, 0.05);">
-                <span>Входящий запрос от <b>@${r.name}</b></span>
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button class="btn btn-sm" style="background:var(--green); flex:1;" onclick="acceptFr('${id}','${r.name}')">Принять</button>
-                    <button class="btn btn-sm" style="background:var(--err); flex:1;" onclick="rejectFr('${id}')">Отклонить</button>
-                </div>
-            </div>
-        `).join('');
+            app.renderShop();
+        },
 
-        document.getElementById('game-friends-list').innerHTML = frs.map(([id, f]) => `
-            <button class="btn" style="background:var(--card); border:1px solid rgba(255,255,255,0.1); padding: 15px;" onclick="inviteGame('${id}','${f.name}')">
-                Вызвать <b>${f.name}</b> ⚔️
-            </button>
-        `).join('') || "<p style='color:var(--secondary)'>Сначала добавьте друзей, чтобы играть</p>";
-    }
-
-    window.searchFriend = async () => {
-        const t = document.getElementById('friend-search').value.trim().toLowerCase();
-        if(!t || t === user.id) return showToast("Некорректный ID", "var(--err)");
-        const targetRef = ref(db, 'users/'+t), s = await get(targetRef);
-        if(!s.exists()) return showToast("Игрок не найден", "var(--err)");
-        
-        const myData = await get(ref(db, 'users/'+user.id));
-        await update(ref(db, `users/${t}/requests/${user.id}`), { from: user.id, name: myData.val().username });
-        showToast("Запрос отправлен!");
-        document.getElementById('friend-search').value = "";
-    };
-
-    window.acceptFr = async (fid, fn) => {
-        const s = await get(ref(db, 'users/'+user.id));
-        await update(ref(db, `users/${user.id}/friends/${fid}`), { name: fn });
-        await update(ref(db, `users/${fid}/friends/${user.id}`), { name: s.val().username });
-        await remove(ref(db, `users/${user.id}/requests/${fid}`));
-        showToast("Друг добавлен!");
-    };
-    
-    window.rejectFr = async (fid) => {
-        await remove(ref(db, `users/${user.id}/requests/${fid}`));
-        showToast("Запрос отклонен");
-    };
-
-    // --- ИГРА МОНЕТКА ---
-    window.inviteGame = async (fid, fn) => {
-        const s = await get(ref(db, 'users/'+user.id));
-        if(s.val().balance < 100) return showToast("Мало монет для ставки!", "var(--err)");
-        
-        const gid = 'g_'+Date.now();
-        await update(ref(db, `users/${fid}`), { gameInvite: { fromId: user.id, fromName: s.val().username, gid } });
-        showToast("Вызов отправлен!");
-        listenGame(gid); 
-    };
-
-    window.acceptGame = async () => {
-        const s = await get(ref(db, 'users/'+user.id));
-        if(s.val().balance < 100) return showToast("Мало монет для ставки!", "var(--err)");
-        
-        const inv = s.val().gameInvite;
-        await set(ref(db, 'games/'+inv.gid), { p1: inv.fromId, p2: user.id, p1C: "", p2C: "", status: "active" });
-        await update(ref(db, `users/${user.id}`), { gameInvite: null });
-        listenGame(inv.gid);
-    };
-
-    window.declineGame = async () => await update(ref(db, `users/${user.id}`), { gameInvite: null });
-
-    function listenGame(gid) {
-        currentGameId = gid;
-        document.getElementById('game-lobby').style.display = 'none';
-        document.getElementById('game-invite-box').style.display = 'none';
-        document.getElementById('game-play').style.display = 'block';
-        
-        onValue(ref(db, 'games/'+gid), async (s) => {
-            const g = s.val(); if(!g) return;
-            const isP1 = g.p1 === user.id;
-            const myChoice = isP1 ? g.p1C : g.p2C;
-            const opChoice = isP1 ? g.p2C : g.p1C;
+        updateUI() {
+            document.getElementById('user-display').innerText = '@' + app.user.username;
+            document.getElementById('balance-display').innerText = app.user.balance;
             
-            if(!myChoice) {
-                document.getElementById('game-status').innerText = "Ваш выбор: Орёл или Решка?";
-                document.getElementById('coin-anim').innerText = "❓";
-            } else if (myChoice && !opChoice) {
-                document.getElementById('game-status').innerText = "Ожидаем выбора противника...";
-                document.getElementById('coin-anim').innerText = "⏳";
-            }
+            // ПРОФИЛЬ
+            document.getElementById('profile-name').innerText = app.user.username;
+            document.getElementById('profile-bio').innerText = app.user.bio;
+
+            // СЧЕТЧИК СКЛАДА (ФИКС)
+            const invCount = app.user.inventory ? Object.keys(app.user.inventory).length : 0;
+            const badge = document.getElementById('inv-badge');
+            badge.innerText = invCount;
+            badge.style.display = invCount > 0 ? 'flex' : 'none';
+
+            app.renderInventory();
+            app.renderFriends();
             
-            if(g.p1C && g.p2C && !g.res) {
-                document.getElementById('game-status').innerText = "Бросаем монетку...";
-                if(isP1) {
-                    setTimeout(async () => {
-                        const result = Math.random() > 0.5 ? 'eagle' : 'tails';
-                        await update(ref(db, 'games/'+gid), { res: result });
-                    }, 2000);
-                }
+            if (app.user.role === 'admin') {
+                document.getElementById('nav-admin').style.display = 'flex';
+                app.loadAdminData();
             }
+        },
 
-            if(g.res) {
-                const win = (isP1 && g.p1C === g.res) || (!isP1 && g.p2C === g.res);
-                document.getElementById('coin-anim').innerText = g.res === 'eagle' ? "🦅" : "🪙";
-                document.getElementById('game-status').innerHTML = win ? 
-                    `<span style="color:var(--green)">ПОБЕДА! +100💰</span>` : 
-                    `<span style="color:var(--err)">ПРОИГРЫШ! -100💰</span>`;
-                
-                if(!g[user.id+'_done']) {
-                    const uS = await get(ref(db, 'users/'+user.id));
-                    await update(ref(db, 'users/'+user.id), { balance: uS.val().balance + (win ? 100 : -100) });
-                    await update(ref(db, 'games/'+gid), { [user.id+'_done']: true });
-                    
-                    setTimeout(() => {
-                        remove(ref(db, 'games/'+gid));
-                        currentGameId = null;
-                        location.reload(); 
-                    }, 5000);
-                }
-            }
-        });
-    }
+        nav(pageId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            el.classList.add('active');
+        },
 
-    window.makeChoice = async (c) => {
-        if(!currentGameId) return;
-        const gS = await get(ref(db, 'games/'+currentGameId));
-        const isP1 = gS.val().p1 === user.id;
-        await update(ref(db, 'games/'+currentGameId), isP1 ? {p1C: c} : {p2C: c});
-    };
-
-    // --- ПРОФИЛЬ ---
-    function renderProfile(d) {
-        document.getElementById('profile').innerHTML = `
-            <div class="card">
-                <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar">
-                <h2 style="margin: 0;">${d.username} ${d.sales >= 10 ? '<span class="verify-badge">✔️</span>' : ''}</h2>
-                <p style="color:var(--secondary); font-size: 14px; margin-top: 5px;">${d.bio || 'Пользователь скрыл информацию о себе'}</p>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top: 20px;">
-                    <button class="btn btn-sm" onclick="openSettings()">⚙️ Настройки</button>
-                    <button class="btn btn-sm" style="background:var(--err)" onclick="logout()">🚪 Выйти</button>
+        renderShop() {
+            const container = document.getElementById('shop-items');
+            container.innerHTML = CATALOG.map(item => `
+                <div class="card" style="text-align: center;">
+                    <div style="font-size: 40px;">${item.icon}</div>
+                    <div style="font-weight: bold;">${item.name}</div>
+                    <div style="color: var(--accent-color); margin: 5px 0;">${item.price} 💰</div>
+                    <button class="btn btn-sm" onclick="app.buyItem(${item.id})">Купить</button>
                 </div>
+            `).join('');
+        },
 
-                <div style="margin-top:20px; display: flex; flex-direction: column; gap: 8px;">
-                    <a href="https://t.me/Gifts_World_Pro" target="_blank" class="btn btn-sm tg-btn">📢 Наш Telegram канал</a>
-                    <a href="https://dalink.to/gifworld" target="_blank" class="btn btn-sm support-btn">💎 Поддержать проект</a>
-                </div>
+        buyItem: async (id) => {
+            const item = CATALOG.find(i => i.id === id);
+            if (app.user.balance < item.price) return app.showToast("Недостаточно средств", true);
 
-                <h3 style="margin-top:25px; font-size: 16px; text-align: left;">⭐ Витрина</h3>
-                <div class="pinned-section">
-                    ${(d.pinned || []).map(x => `
-                        <div style="text-align: center; min-width: 50px;">
-                            <span style="font-size:35px;">${x.i}</span>
-                            <div style="font-size: 8px; color: var(--secondary); white-space: nowrap;">${x.n}</div>
-                        </div>
-                    `).join('') || '<small style="color:var(--secondary)">Тут появятся ваши избранные подарки</small>'}
-                </div>
+            const newBalance = app.user.balance - item.price;
+            const newItem = { ...item, instanceId: Date.now() + Math.random().toString(36).substr(2, 9) };
 
-                <div class="card" style="background:rgba(255,255,255,0.02); margin-top:20px; border: 1px solid rgba(255,255,255,0.05);">
-                    <b style="font-size: 14px;">🎁 Активировать промокод</b>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="promo-input" placeholder="Код..." style="margin: 10px 0;">
-                        <button class="btn" style="background:var(--orange); width: auto; margin: 10px 0; padding: 0 15px;" onclick="usePromo()">ОК</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
+            await update(ref(db, 'users/' + app.user.username), { balance: newBalance });
+            await push(ref(db, 'users/' + app.user.username + '/inventory'), newItem);
+            
+            app.showToast("Успешная покупка!");
+        },
 
-    window.openSettings = async () => {
-        const s = await get(ref(db, 'users/'+user.id));
-        const d = s.val();
-        document.getElementById('modal-content').innerHTML = `
-            <h3>Настройки профиля</h3>
-            <div style="text-align: left;">
-                <label style="font-size: 12px; color: var(--secondary);">Ваш статус/БИО:</label>
-                <textarea id="set-bio" placeholder="Пару слов о себе...">${d.bio||''}</textarea>
-                <label style="font-size: 12px; color: var(--secondary);">Ссылка на фото (URL):</label>
-                <input type="text" id="set-pic" value="${d.pic||''}" placeholder="https://...">
-            </div>
-            <button class="btn" onclick="saveSettings()">Сохранить изменения</button>
-            <button class="btn" style="background:none; margin-top:10px;" onclick="closeModal()">Отмена</button>
-        `;
-        document.getElementById('modal-overlay').style.display = 'flex';
-    };
+        renderInventory() {
+            const container = document.getElementById('inventory-items');
+            if (!app.user.inventory) return container.innerHTML = '<p>Тут пока пусто...</p>';
 
-    window.saveSettings = async () => {
-        const bio = document.getElementById('set-bio').value;
-        const pic = document.getElementById('set-pic').value;
-        await update(ref(db, 'users/'+user.id), { bio, pic });
-        closeModal();
-        showToast("Профиль обновлен!");
-    };
-
-    window.usePromo = async () => {
-        const code = document.getElementById('promo-input').value.trim();
-        if(!code) return;
-        const pS = await get(ref(db, 'promos/'+code));
-        if(!pS.exists()) return showToast("Код недействителен!", "var(--err)");
-        
-        const udS = await get(ref(db, 'users/'+user.id));
-        const ud = udS.val();
-        if(ud.usedPromos && ud.usedPromos[code]) return showToast("Вы уже использовали этот код!", "var(--err)");
-        
-        const promo = pS.val();
-        let updateData = { [`usedPromos/${code}`]: true };
-        
-        if(promo.type === 'coins') {
-            updateData.balance = ud.balance + parseInt(promo.val);
-            showToast(`+${promo.val} 💰 получено!`, "var(--green)");
-        } else {
-            const itm = catalog.find(x => x.id == promo.val);
-            const inv = ud.cloudInv || [];
-            inv.push({...itm, inst: Date.now(), from: "Промокод"});
-            updateData.cloudInv = inv;
-            showToast(`Получен подарок: ${itm.n}!`, "var(--green)");
-        }
-        await update(ref(db, 'users/'+user.id), updateData);
-        document.getElementById('promo-input').value = "";
-    };
-
-    // --- ОТПРАВКА ПОДАРКА С ЗАПИСКОЙ ---
-    window.giftOpen = async (inst) => {
-        const s = await get(ref(db, 'users/'+user.id));
-        const frs = Object.entries(s.val().friends || {});
-        if(frs.length === 0) return showToast("У вас еще нет друзей!", "var(--err)");
-        
-        document.getElementById('modal-content').innerHTML = `
-            <h3>Кому отправить?</h3>
-            <select id="gift-target-id" style="margin-bottom: 10px;">
-                ${frs.map(([id, f]) => `<option value="${id}">${f.name}</option>`).join('')}
-            </select>
-            <textarea id="gift-note-text" placeholder="Добавьте записку к подарку (необязательно)..." style="height: 100px;"></textarea>
-            <button class="btn" style="background:var(--green)" onclick="sendGiftWithNote('${inst}')">Отправить подарок</button>
-            <button class="btn" style="background:none; margin-top:10px;" onclick="closeModal()">Отмена</button>
-        `;
-        document.getElementById('modal-overlay').style.display = 'flex';
-    };
-
-    window.sendGiftWithNote = async (inst) => {
-        const targetId = document.getElementById('gift-target-id').value;
-        const note = document.getElementById('gift-note-text').value.trim();
-        
-        const myS = await get(ref(db, 'users/'+user.id));
-        const myD = myS.val();
-        const itm = myD.cloudInv.find(x => x.inst == inst);
-        
-        // Удаляем у меня
-        await update(ref(db, 'users/'+user.id), { 
-            cloudInv: myD.cloudInv.filter(x => x.inst != inst),
-            pinned: (myD.pinned || []).filter(x => x.inst != inst)
-        });
-        
-        // Добавляем другу
-        const fS = await get(ref(db, 'users/'+targetId));
-        const fInv = fS.val().cloudInv || [];
-        fInv.push({
-            ...itm, 
-            inst: Date.now() + Math.floor(Math.random()*1000), 
-            from: myD.username, 
-            note: note || null 
-        });
-        
-        await update(ref(db, `users/${targetId}`), { cloudInv: fInv });
-        closeModal();
-        showToast("Подарок успешно доставлен!", "var(--green)");
-    };
-
-    // --- АДМИН ПАНЕЛЬ ---
-    function initAdmin() {
-        onValue(ref(db, 'users'), s => {
-            const users = s.val(); if(!users) return;
-            const uKeys = Object.keys(users);
-            let totalCash = 0;
-            uKeys.forEach(k => totalCash += (users[k].balance || 0));
-
-            document.getElementById('adm-stats').innerHTML = `
-                👥 Игроков в базе: <b>${uKeys.length}</b><br>
-                💰 Всего монет в мире: <b>${totalCash.toLocaleString()}</b>
-            `;
-
-            document.getElementById('adm-users-list').innerHTML = Object.entries(users).map(([id, u]) => `
-                <div class="adm-user-card" style="opacity: ${u.status === 'banned' ? '0.6' : '1'}">
-                    ${u.status === 'banned' ? '<div class="adm-status-ban">ЗАБАНЕН</div>' : ''}
-                    <b style="font-size: 16px;">@${u.username}</b><br>
-                    <span style="font-size: 12px; color:var(--secondary)">💰 Баланс: ${u.balance} | Предметов: ${(u.cloudInv||[]).length}</span>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;">
-                        <button class="btn btn-sm" onclick="viewPublicProfile('${id}')">Профиль</button>
-                        <button class="btn btn-sm" style="background:var(--orange)" onclick="admEditBalance('${id}')">Баланс</button>
-                        <button class="btn btn-sm" style="background:var(--err)" onclick="admBan('${id}', '${u.status}')">
-                            ${u.status === 'banned' ? 'Разбанить' : 'БАН'}
-                        </button>
-                        <button class="btn btn-sm" style="background:#000" onclick="admFullDelete('${id}')">Удалить</button>
+            container.innerHTML = Object.entries(app.user.inventory).map(([key, item]) => `
+                <div class="card" style="text-align: center;">
+                    <div style="font-size: 40px;">${item.icon}</div>
+                    <div style="font-weight: bold;">${item.name}</div>
+                    <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
+                        <button class="btn btn-ghost" onclick="app.openGiftModal('${key}')">Подарить</button>
+                        <button class="btn btn-ghost" style="color: var(--warning);" onclick="app.sellMarket('${key}')">На рынок</button>
+                        <button class="btn btn-ghost" style="color: var(--accent-color);" onclick="app.viewItemInfo('${key}')">Инфо</button>
                     </div>
                 </div>
             `).join('');
-        });
-    }
+        },
 
-    window.viewPublicProfile = async (targetId) => {
-        const s = await get(ref(db, 'users/'+targetId));
-        const d = s.val();
+        viewItemInfo(key) {
+            const item = app.user.inventory[key];
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            body.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 60px;">${item.icon}</div>
+                    <h2>${item.name}</h2>
+                    <p style="color: var(--text-secondary);">ID Экземпляра: ${item.instanceId}</p>
+                    ${item.note ? `
+                        <div class="note-container">
+                            <div class="note-text">${item.note}</div>
+                        </div>
+                    ` : '<p>Записки нет</p>'}
+                    <button class="btn" style="margin-top: 20px;" onclick="app.closeModal()">Закрыть</button>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        },
+
+        openGiftModal(key) {
+            const item = app.user.inventory[key];
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const friends = app.user.friends ? Object.keys(app.user.friends) : [];
+            if (friends.length === 0) return app.showToast("У вас нет друзей", true);
+
+            body.innerHTML = `
+                <h3>Подарить ${item.icon}</h3>
+                <label>Выберите получателя:</label>
+                <select id="gift-target">
+                    ${friends.map(f => `<option value="${f}">${f}</option>`).join('')}
+                </select>
+                <label>Текст записки:</label>
+                <textarea id="gift-note" placeholder="Напиши что-нибудь приятное..."></textarea>
+                <button class="btn" onclick="app.sendGift('${key}')">Отправить</button>
+                <button class="btn btn-ghost" style="margin-top:10px" onclick="app.closeModal()">Отмена</button>
+            `;
+            modal.style.display = 'flex';
+        },
+
+        sendGift: async (key) => {
+            const target = document.getElementById('gift-target').value;
+            const note = document.getElementById('gift-note').value;
+            const item = app.user.inventory[key];
+
+            // Удаляем у себя
+            await remove(ref(db, `users/${app.user.username}/inventory/${key}`));
+            
+            // Добавляем другому
+            const gift = { ...item, note: note || null, from: app.user.username };
+            await push(ref(db, `users/${target}/inventory`), gift);
+
+            app.closeModal();
+            app.showToast("Подарок отправлен!");
+        },
+
+        sellMarket: async (key) => {
+            const price = prompt("Введите цену продажи:");
+            if (!price || isNaN(price)) return;
+
+            const item = app.user.inventory[key];
+            await remove(ref(db, `users/${app.user.username}/inventory/${key}`));
+            
+            await push(ref(db, 'market'), {
+                ...item,
+                marketPrice: parseInt(price),
+                seller: app.user.username
+            });
+            app.showToast("Лот выставлен");
+        },
+
+        renderMarket(data) {
+            const container = document.getElementById('market-items');
+            if (!data) return container.innerHTML = '<p>Рынок пуст</p>';
+
+            container.innerHTML = Object.entries(data).map(([key, item]) => `
+                <div class="admin-user-row">
+                    <div style="display:flex; align-items:center; gap:10px">
+                        <span style="font-size: 24px;">${item.icon}</span>
+                        <div>
+                            <b>${item.name}</b><br>
+                            <small>Продавец: @${item.seller}</small>
+                        </div>
+                    </div>
+                    <div style="text-align: right">
+                        <div style="color: var(--accent-color); font-weight: bold;">${item.marketPrice} 💰</div>
+                        <button class="btn btn-sm" style="padding: 5px 10px; height:auto; width:auto;" onclick="app.buyFromMarket('${key}')">Купить</button>
+                    </div>
+                </div>
+            `).join('');
+        },
+
+        buyFromMarket: async (key) => {
+            const snap = await get(ref(db, 'market/' + key));
+            const item = snap.val();
+            if (item.seller === app.user.username) return app.showToast("Это ваш лот", true);
+            if (app.user.balance < item.marketPrice) return app.showToast("Нет денег", true);
+
+            // Сделка
+            const sellerRef = ref(db, 'users/' + item.seller);
+            const sellerSnap = await get(sellerRef);
+            
+            await update(sellerRef, { balance: sellerSnap.val().balance + item.marketPrice });
+            await update(ref(db, 'users/' + app.user.username), { balance: app.user.balance - item.marketPrice });
+            await push(ref(db, 'users/' + app.user.username + '/inventory'), item);
+            await remove(ref(db, 'market/' + key));
+
+            app.showToast("Куплено на рынке!");
+        },
+
+        // --- GAME LOGIC ---
+        checkGames(games) {
+            if (!games) return;
+            Object.entries(games).forEach(([gid, g]) => {
+                if (g.target === app.user.username && g.status === 'pending') {
+                    if (confirm(`Вызов от ${g.host}! Принять за 100 монет?`)) {
+                        app.acceptGame(gid);
+                    } else {
+                        remove(ref(db, 'games/' + gid));
+                    }
+                }
+            });
+        },
+
+        acceptGame: async (gid) => {
+            if (app.user.balance < 100) return app.showToast("Мало монет", true);
+            app.activeGame = gid;
+            await update(ref(db, 'games/' + gid), { status: 'playing' });
+            app.nav('game', document.querySelectorAll('.nav-item')[3]);
+            document.getElementById('game-lobby').style.display = 'none';
+            document.getElementById('game-active').style.display = 'block';
+        },
+
+        inviteGame: async (target) => {
+            if (app.user.balance < 100) return app.showToast("Нужно 100 монет", true);
+            const gid = 'game_' + Date.now();
+            await set(ref(db, 'games/' + gid), {
+                host: app.user.username,
+                target: target,
+                status: 'pending',
+                bet: 100
+            });
+            app.showToast("Вызов отправлен");
+        },
+
+        gameAction: async (choice) => {
+            const visual = document.getElementById('coin-visual');
+            visual.classList.add('flipping');
+            document.getElementById('game-info').innerText = "Монетка крутится...";
+
+            setTimeout(async () => {
+                visual.classList.remove('flipping');
+                const result = Math.random() > 0.5 ? 'eagle' : 'tails';
+                visual.innerText = result === 'eagle' ? '🦅' : '🪙';
+
+                const win = choice === result;
+                const change = win ? 100 : -100;
+
+                await update(ref(db, 'users/' + app.user.username), { balance: app.user.balance + change });
+                document.getElementById('game-info').innerHTML = win ? 
+                    `<span style="color:var(--success)">ВЫИГРЫШ! +100</span>` : 
+                    `<span style="color:var(--danger)">ПРОИГРЫШ! -100</span>`;
+
+                setTimeout(() => {
+                    document.getElementById('game-lobby').style.display = 'block';
+                    document.getElementById('game-active').style.display = 'none';
+                    remove(ref(db, 'games/' + app.activeGame));
+                    app.activeGame = null;
+                }, 3000);
+            }, 2000);
+        },
+
+        // --- ADMIN SYSTEM ---
+        loadAdminData: async () => {
+            onValue(ref(db, 'users'), (snap) => {
+                const users = snap.val();
+                if (!users) return;
+                
+                let totalCoins = 0;
+                const list = Object.entries(users).map(([id, u]) => {
+                    totalCoins += u.balance;
+                    return `
+                        <div class="admin-user-row">
+                            <div>
+                                <b class="${u.status === 'banned' ? 'status-banned' : ''}">${u.username}</b><br>
+                                <small>${u.balance} 💰 | ${u.role}</small>
+                            </div>
+                            <div style="display:flex; gap:5px">
+                                <button class="btn btn-sm btn-ghost" onclick="app.viewUserProfile('${id}')">🔎</button>
+                                <button class="btn btn-sm btn-warn" onclick="app.admToggleBan('${id}', '${u.status}')">🚫</button>
+                                <button class="btn btn-sm btn-danger" onclick="app.admDeleteUser('${id}')">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('adm-total-users').innerText = Object.keys(users).length;
+                document.getElementById('adm-total-coins').innerText = totalCoins;
+                document.getElementById('adm-user-list').innerHTML = list;
+            });
+        },
+
+        viewUserProfile: async (id) => {
+            const snap = await get(ref(db, 'users/' + id));
+            const u = snap.val();
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            body.innerHTML = `
+                <h3>Профиль @${u.username}</h3>
+                <p>Роль: ${u.role}</p>
+                <p>Баланс: ${u.balance} 💰</p>
+                <p>О себе: ${u.bio}</p>
+                <hr>
+                <button class="btn" onclick="app.admAddCoins('${id}')">Начислить 1000 💰</button>
+                <button class="btn btn-ghost" style="margin-top:10px" onclick="app.closeModal()">Закрыть</button>
+            `;
+            modal.style.display = 'flex';
+        },
+
+        admAddCoins: async (id) => {
+            const snap = await get(ref(db, 'users/' + id));
+            await update(ref(db, 'users/' + id), { balance: snap.val().balance + 1000 });
+            app.showToast("Монеты начислены");
+            app.closeModal();
+        },
+
+        admToggleBan: async (id, currentStatus) => {
+            if (id === 'ckovoroda' || id === 'kukumbr') return app.showToast("Нельзя забанить создателя", true);
+            const next = currentStatus === 'banned' ? 'active' : 'banned';
+            await update(ref(db, 'users/' + id), { status: next });
+            app.showToast("Статус изменен");
+        },
+
+        admDeleteUser: async (id) => {
+            if (id === 'ckovoroda' || id === 'kukumbr') return app.showToast("Нельзя удалить создателя", true);
+            if (confirm(`Удалить аккаунт ${id} навсегда?`)) {
+                await remove(ref(db, 'users/' + id));
+                app.showToast("Пользователь удален");
+            }
+        },
+
+        // --- HELPERS ---
+        renderFriends() {
+            const container = document.getElementById('friends-list');
+            if (!app.user.friends) return container.innerHTML = '<p>Список друзей пуст</p>';
+            
+            container.innerHTML = Object.keys(app.user.friends).map(f => `
+                <div class="admin-user-row">
+                    <b>${f}</b>
+                    <button class="btn btn-sm" style="width:auto;" onclick="app.inviteGame('${f}')">Вызвать ⚔️</button>
+                </div>
+            `).join('');
+
+            // Друзья для игры
+            document.getElementById('game-friends').innerHTML = Object.keys(app.user.friends).map(f => `
+                <button class="btn btn-ghost" onclick="app.inviteGame('${f}')">⚔️ ${f}</button>
+            `).join('');
+        },
+
+        addFriend: async () => {
+            const fid = document.getElementById('friend-id-input').value.trim().toLowerCase();
+            if (!fid || fid === app.user.username) return;
+
+            const snap = await get(ref(db, 'users/' + fid));
+            if (!snap.exists()) return app.showToast("Пользователь не найден", true);
+
+            await update(ref(db, `users/${app.user.username}/friends/${fid}`), { status: 'friend' });
+            await update(ref(db, `users/${fid}/friends/${app.user.username}`), { status: 'friend' });
+            
+            document.getElementById('friend-id-input').value = "";
+            app.showToast("Друг добавлен!");
+        },
+
+        closeModal() { document.getElementById('modal').style.display = 'none'; },
         
-        document.getElementById('modal-content').innerHTML = `
-            <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar">
-            <h2>${d.username}</h2>
-            <p style="color:var(--secondary)">${d.bio || 'Нет описания'}</p>
-            <div style="background: rgba(255,255,255,0.03); border-radius: 15px; padding: 10px; margin: 15px 0;">
-                💰 Баланс: <b>${d.balance}</b><br>
-                🏷️ Продаж на рынке: <b>${d.sales || 0}</b>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-                ${(d.pinned || []).map(x => `<span style="font-size: 30px;">${x.i}</span>`).join('') || '<span style="color:var(--secondary)">Витрина пуста</span>'}
-            </div>
-            <button class="btn" style="margin-top: 20px;" onclick="closeModal()">Закрыть</button>
-        `;
-        document.getElementById('modal-overlay').style.display = 'flex';
-    };
+        openEditProfile() {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+            body.innerHTML = `
+                <h3>Настройки</h3>
+                <label>О себе:</label>
+                <textarea id="edit-bio">${app.user.bio}</textarea>
+                <button class="btn" onclick="app.saveProfile()">Сохранить</button>
+            `;
+            modal.style.display = 'flex';
+        },
 
-    window.admEditBalance = async (id) => {
-        const newBal = prompt("Введите новый баланс для пользователя:");
-        if(newBal !== null && !isNaN(newBal)) {
-            await update(ref(db, 'users/'+id), { balance: parseInt(newBal) });
-            showToast("Баланс обновлен");
+        saveProfile: async () => {
+            const bio = document.getElementById('edit-bio').value;
+            await update(ref(db, 'users/' + app.user.username), { bio });
+            app.closeModal();
+            app.showToast("Сохранено");
         }
     };
 
-    window.admBan = async (id, curStatus) => {
-        const nextStatus = curStatus === 'banned' ? 'active' : 'banned';
-        await update(ref(db, 'users/'+id), { status: nextStatus });
-        showToast(nextStatus === 'banned' ? "Пользователь забанен" : "Пользователь разбанен");
-    };
-
-    window.admFullDelete = async (id) => {
-        if(confirm(`ВНИМАНИЕ! Вы уверены, что хотите ПОЛНОСТЬЮ удалить аккаунт ${id}? Это действие необратимо.`)) {
-            await remove(ref(db, 'users/'+id));
-            showToast("Аккаунт полностью удален из базы");
-        }
-    };
-
-    window.createPromo = async () => {
-        const c = document.getElementById('adm-promo-code').value.trim();
-        const t = document.getElementById('adm-promo-type').value;
-        const v = document.getElementById('adm-promo-val').value;
-        if(!c || !v) return showToast("Заполните все данные!", "var(--err)");
-        
-        await set(ref(db, 'promos/'+c), { type: t, val: v });
-        showToast(`Промокод ${c} создан!`, "var(--green)");
-        document.getElementById('adm-promo-code').value = "";
-    };
-
-    window.logout = () => { localStorage.removeItem('gifts_user'); location.reload(); };
-
-    window.tab = (id, b) => {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        b.classList.add('active');
-    };
-
-    window.onload = startApp;
+    app.init();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
