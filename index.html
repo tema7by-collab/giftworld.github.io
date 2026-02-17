@@ -3,801 +3,539 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gifts World Ultimate Edition 2026</title>
+    <title>Gifts World Pro Max v2.0</title>
     <style>
         :root {
-            --bg-color: #0b141a;
-            --card-bg: #111b21;
-            --accent-color: #00a884;
-            --text-main: #e9edef;
-            --text-secondary: #8696a0;
-            --danger: #ef4444;
+            --bg: #070d14;
+            --card: #111b21;
+            --accent: #2481cc;
+            --accent-soft: rgba(36, 129, 204, 0.2);
+            --text: #ffffff;
+            --secondary: #8696a0;
+            --error: #ef4444;
+            --success: #00a884;
             --warning: #f59e0b;
-            --success: #10b981;
-            --glass: rgba(17, 27, 33, 0.9);
+            --glass: rgba(17, 27, 33, 0.95);
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.4);
         }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            scrollbar-width: thin;
-            scrollbar-color: var(--accent-color) transparent;
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 0; 
             overflow-x: hidden;
+            -webkit-user-select: none;
         }
 
-        /* --- UI COMPONENTS --- */
-        .btn {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
+        /* --- СКРОЛЛБАР --- */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        /* --- АНИМАЦИИ --- */
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- ЛОУДЕР --- */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center;
+        }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--accent-soft); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+
+        /* --- ГЛАВНЫЙ ИНТЕРФЕЙС --- */
+        .app-container { display: none; max-width: 600px; margin: 0 auto; min-height: 100vh; position: relative; }
+        
+        .header {
+            position: sticky; top: 0; background: var(--glass); backdrop-filter: blur(10px);
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 1000;
         }
 
-        .btn:active { transform: scale(0.97); filter: brightness(0.9); }
-        .btn-danger { background: var(--danger); }
-        .btn-warn { background: var(--warning); color: #000; }
-        .btn-ghost { background: transparent; border: 1px solid var(--text-secondary); color: var(--text-secondary); }
-
-        input, textarea, select {
-            width: 100%;
-            background: #202c33;
-            border: 1px solid #2a3942;
-            padding: 12px 16px;
-            border-radius: 10px;
-            color: var(--text-main);
-            font-size: 16px;
-            margin: 8px 0;
+        .balance-badge {
+            background: var(--accent-soft); color: var(--accent); padding: 8px 16px;
+            border-radius: 50px; font-weight: 800; display: flex; align-items: center; gap: 6px;
+            border: 1px solid var(--accent);
         }
 
-        /* --- LAYOUT --- */
-        #app { display: none; padding-bottom: 100px; }
-        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
-
-        .page { display: none; animation: fadeIn 0.3s ease; }
+        /* --- СТРАНИЦЫ --- */
+        .page { display: none; padding: 20px; animation: slideUp 0.4s ease forwards; }
         .page.active { display: block; }
+        
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        /* --- КАРТОЧКИ --- */
         .card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: var(--card); border-radius: var(--radius-lg); padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05); box-shadow: var(--shadow);
+            transition: 0.3s; position: relative; overflow: hidden;
         }
+        .card:active { transform: scale(0.98); }
 
-        /* --- NAVIGATION --- */
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            z-index: 1000;
+        .item-icon { font-size: 48px; margin-bottom: 10px; display: block; }
+        .item-name { font-weight: bold; font-size: 16px; display: block; margin-bottom: 5px; }
+        .item-price { color: var(--accent); font-weight: 700; font-size: 14px; }
+
+        /* --- КНОПКИ --- */
+        .btn {
+            background: var(--accent); color: white; border: none; padding: 12px 20px;
+            border-radius: var(--radius-md); font-weight: bold; cursor: pointer;
+            transition: 0.2s; width: 100%; margin-top: 10px; font-size: 14px;
         }
+        .btn:hover { filter: brightness(1.1); }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: var(--text); }
+        .btn-danger { background: var(--error); }
+        .btn-success { background: var(--success); }
 
+        /* --- НАВИГАЦИЯ --- */
+        .nav {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 450px; background: var(--glass);
+            backdrop-filter: blur(20px); border-radius: 30px; padding: 8px;
+            display: flex; justify-content: space-around; align-items: center;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 2000;
+        }
         .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 11px;
-            cursor: pointer;
-            position: relative;
-            flex: 1;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            color: var(--secondary); cursor: pointer; transition: 0.3s; flex: 1; position: relative;
+        }
+        .nav-item.active { color: var(--accent); }
+        .nav-item i { font-size: 20px; font-style: normal; }
+        .nav-item span { font-size: 10px; font-weight: 600; }
+
+        /* --- ТОТ САМЫЙ БЕЙДЖ (ФИКС) --- */
+        .badge {
+            position: absolute; top: -6px; right: 18px; background: var(--error);
+            color: white; font-size: 10px; font-weight: 900; min-width: 18px; height: 18px;
+            border-radius: 50%; display: none; align-items: center; justify-content: center;
+            border: 2px solid var(--bg); pointer-events: none; z-index: 10;
         }
 
-        .nav-item.active { color: var(--accent-color); }
-        .nav-item i { font-size: 22px; margin-bottom: 4px; font-style: normal; }
+        /* --- ИГРОВАЯ ЗОНА --- */
+        .game-zone { text-align: center; padding: 30px 10px; }
+        .coin-wrapper { width: 120px; height: 120px; margin: 0 auto 30px; position: relative; perspective: 1000px; }
+        .coin-inner {
+            width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d; font-size: 80px; display: flex; align-items: center; justify-content: center;
+        }
+        .coin-flipping { animation: spin 0.2s linear infinite; }
 
-        /* ИСПРАВЛЕННЫЙ СЧЕТЧИК (BADGE) */
-        .nav-badge {
-            position: absolute;
-            top: -5px;
-            right: 25%;
-            background: var(--danger);
-            color: white;
-            font-size: 10px;
-            font-weight: bold;
-            height: 18px;
-            min-width: 18px;
-            border-radius: 9px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 0 4px;
-            border: 2px solid var(--bg-color);
+        /* --- ЗАПИСКИ (ОФОРМЛЕНИЕ) --- */
+        .note-frame {
+            margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.2);
+            border-left: 3px solid var(--accent); border-radius: 4px;
+            font-style: italic; font-size: 13px; color: #ced4da; text-align: left;
         }
 
-        /* --- GAME UI --- */
-        .coin-box {
-            height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 80px;
-            margin: 20px 0;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        /* --- АДМИН ПАНЕЛЬ --- */
+        .admin-section { margin-top: 20px; }
+        .user-row {
+            background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
         }
 
-        .flipping { animation: flip 0.6s infinite; }
-        @keyframes flip {
-            0% { transform: rotateY(0deg); }
-            100% { transform: rotateY(360deg); }
+        /* --- ОВЕРЛЕЙ / МОДАЛКИ --- */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 5000; display: none;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal {
+            background: var(--card); width: 100%; max-width: 400px;
+            border-radius: var(--radius-lg); padding: 25px; position: relative;
         }
 
-        /* --- GIFT NOTE FRAME --- */
-        .note-container {
-            margin-top: 15px;
-            padding: 20px;
-            background: linear-gradient(135deg, #1d2b33 0%, #111b21 100%);
-            border: 2px solid var(--accent-color);
-            border-radius: 15px;
-            position: relative;
-            box-shadow: inset 0 0 15px rgba(0,168,132,0.2);
+        /* --- АВТОРИЗАЦИЯ --- */
+        .auth-box {
+            display: flex; flex-direction: column; height: 100vh;
+            justify-content: center; align-items: center; padding: 30px;
         }
-
-        .note-container::before {
-            content: "✉️ Сообщение:";
-            display: block;
-            font-size: 12px;
-            color: var(--accent-color);
-            margin-bottom: 8px;
-            font-weight: bold;
+        .input-group { width: 100%; max-width: 320px; margin-bottom: 20px; }
+        input {
+            width: 100%; background: #202c33; border: 1px solid #2a3942;
+            padding: 14px 18px; border-radius: 12px; color: white; font-size: 16px; margin-bottom: 10px;
         }
+        input:focus { border-color: var(--accent); outline: none; }
 
-        .note-text {
-            font-style: italic;
-            color: #d1d7db;
-            word-wrap: break-word;
-        }
-
-        /* --- ADMIN PANEL --- */
-        .admin-user-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px;
-            background: #202c33;
-            border-radius: 10px;
-            margin-bottom: 8px;
-        }
-
-        .status-banned { color: var(--danger); font-weight: bold; }
-
-        /* --- TOAST --- */
+        /* --- ТОСТЕР --- */
         #toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-100px);
-            background: var(--accent-color);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            z-index: 9999;
-            transition: 0.5s;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            font-weight: bold;
+            position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            background: var(--accent); color: white; padding: 12px 24px; border-radius: 50px;
+            font-weight: bold; transition: 0.5s; z-index: 9999; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
-
-        /* --- MODAL --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            padding: 20px;
-        }
     </style>
 </head>
 <body>
 
+<div id="loader"><div class="spinner"></div></div>
 <div id="toast">Уведомление</div>
 
-<div id="auth-page" style="display: flex; align-items: center; height: 100vh; justify-content: center;">
-    <div class="card" style="width: 100%; max-width: 350px;">
-        <h2 style="text-align: center; color: var(--accent-color);">Gifts World</h2>
-        <input type="text" id="auth-login" placeholder="Логин">
-        <input type="password" id="auth-pass" placeholder="Пароль">
+<div class="overlay" id="overlay" onclick="if(event.target===this) app.closeModal()">
+    <div class="modal" id="modal-content"></div>
+</div>
+
+<div id="auth-screen" class="auth-box">
+    <div style="font-size: 60px; margin-bottom: 20px;">🌍</div>
+    <h1 style="margin: 0 0 10px 0;">Gifts World</h1>
+    <p style="color: var(--secondary); margin-bottom: 30px;">Войдите или создайте аккаунт</p>
+    <div class="input-group">
+        <input type="text" id="login-input" placeholder="Ваш логин">
+        <input type="password" id="pass-input" placeholder="Ваш пароль">
         <button class="btn" onclick="app.handleAuth('login')">Войти</button>
-        <button class="btn btn-ghost" style="margin-top: 10px;" onclick="app.handleAuth('reg')">Регистрация</button>
+        <button class="btn btn-secondary" onclick="app.handleAuth('reg')">Регистрация</button>
     </div>
 </div>
 
-<div id="app">
-    <header style="padding: 15px; background: var(--card-bg); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 900; border-bottom: 1px solid #2a3942;">
-        <div id="user-display" style="font-weight: bold; display: flex; align-items: center; gap: 8px;">---</div>
-        <div style="color: var(--accent-color); font-weight: bold;"><span id="balance-display">0</span> 💰</div>
+<div id="app-ui" class="app-container">
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="u-avatar" style="width: 35px; height: 35px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold;">?</div>
+            <b id="u-name">User</b>
+        </div>
+        <div class="balance-badge">
+            <span id="u-balance">0</span> 💰
+        </div>
     </header>
 
-    <div class="container">
+    <main>
         <div id="page-shop" class="page active">
-            <h3 style="margin-top: 0;">Витрина подарков</h3>
-            <div id="shop-items" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
+            <h2 style="margin-top: 0;">Магазин</h2>
+            <div id="shop-container" class="grid-layout"></div>
         </div>
 
-        <div id="page-inventory" class="page">
-            <h3 style="margin-top: 0;">Мой склад</h3>
-            <div id="inventory-items" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
-        </div>
-
-        <div id="page-market" class="page">
-            <h3 style="margin-top: 0;">Мировой рынок</h3>
-            <div id="market-items" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        <div id="page-inv" class="page">
+            <h2 style="margin-top: 0;">Мой склад</h2>
+            <div id="inv-container" class="grid-layout"></div>
         </div>
 
         <div id="page-game" class="page">
-            <div class="card" style="text-align: center;">
-                <h3>Монетка (Ставка 100)</h3>
-                <div id="game-lobby">
-                    <p style="color: var(--text-secondary);">Выберите друга для вызова:</p>
-                    <div id="game-friends" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <div class="card game-zone">
+                <h2 style="margin-top: 0;">Бросок монеты</h2>
+                <p style="color: var(--secondary);">Ставка: 100 монет</p>
+                
+                <div class="coin-wrapper">
+                    <div id="coin-obj" class="coin-inner">🪙</div>
                 </div>
-                <div id="game-active" style="display: none;">
-                    <div class="coin-box" id="coin-visual">🪙</div>
-                    <p id="game-info">Ваш ход!</p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <button class="btn" onclick="app.gameAction('eagle')">Орёл</button>
-                        <button class="btn" onclick="app.gameAction('tails')">Решка</button>
+
+                <div id="game-controls">
+                    <p id="game-status">Выберите сторону:</p>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn" onclick="app.playGame('eagle')">Орёл</button>
+                        <button class="btn" onclick="app.playGame('tails')">Решка</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="page-friends" class="page">
-            <div class="card">
-                <input type="text" id="friend-id-input" placeholder="ID пользователя">
-                <button class="btn btn-ghost" onclick="app.addFriend()">Найти друга</button>
-            </div>
-            <div id="friends-list"></div>
-        </div>
-
-        <div id="page-profile" class="page">
-            <div class="card" style="text-align: center;">
-                <div id="profile-pic" style="width: 80px; height: 80px; background: #2a3942; border-radius: 50%; margin: 0 auto 15px; font-size: 40px; display: flex; align-items: center; justify-content: center;">👤</div>
-                <h2 id="profile-name">Имя Фамилия</h2>
-                <p id="profile-bio" style="color: var(--text-secondary);">Привет! Я пользуюсь Gifts World.</p>
-                <button class="btn btn-ghost" onclick="app.openEditProfile()">Настройки</button>
-                <button class="btn btn-danger" style="margin-top: 15px;" onclick="app.logout()">Выйти</button>
-            </div>
-        </div>
-
         <div id="page-admin" class="page">
-            <h2 style="color: var(--warning);">🛠 Администрирование</h2>
-            <div class="card">
-                <h4>Глобальная статистика</h4>
-                <p>Всего пользователей: <span id="adm-total-users">0</span></p>
-                <p>Монет в обороте: <span id="adm-total-coins">0</span></p>
-            </div>
-            <div id="adm-user-list"></div>
+            <h2 style="color: var(--warning);">Панель управления</h2>
+            <div id="admin-users" class="admin-section"></div>
         </div>
-    </div>
+    </main>
 
-    <nav class="navbar">
-        <div class="nav-item active" onclick="app.nav('shop', this)"><i>🛍️</i><span>Магазин</span></div>
-        <div class="nav-item" onclick="app.nav('market', this)"><i>⚖️</i><span>Рынок</span></div>
-        <div class="nav-item" onclick="app.nav('inventory', this)">
-            <div class="nav-badge" id="inv-badge">0</div>
+    <nav class="nav">
+        <div class="nav-item active" onclick="app.tab('shop', this)">
+            <i>🛍️</i><span>Магазин</span>
+        </div>
+        <div class="nav-item" onclick="app.tab('inv', this)">
+            <div id="inv-badge" class="badge">0</div>
             <i>📦</i><span>Склад</span>
         </div>
-        <div class="nav-item" onclick="app.nav('game', this)"><i>🎰</i><span>Игра</span></div>
-        <div class="nav-item" onclick="app.nav('friends', this)"><i>👥</i><span>Друзья</span></div>
-        <div class="nav-item" onclick="app.nav('profile', this)"><i>👤</i><span>Профиль</span></div>
-        <div class="nav-item" id="nav-admin" style="display: none; color: var(--warning);" onclick="app.nav('admin', this)"><i>⚙️</i><span>Админ</span></div>
-    </nav>
-</div>
-
-<div class="modal-overlay" id="modal">
-    <div class="card" id="modal-body" style="width: 100%; max-width: 400px; position: relative;">
+        <div class="nav-item" onclick="app.tab('game', this)">
+            <i>🪙</i><span>Игра</span>
         </div>
+        <div class="nav-item" id="nav-adm-btn" style="display: none;" onclick="app.tab('admin', this)">
+            <i>⚙️</i><span>Админ</span>
+        </div>
+        <div class="nav-item" onclick="app.logout()">
+            <i>🚪</i><span>Выход</span>
+        </div>
+    </nav>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, onValue, update, remove, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDK9IMy-DDNXvPcHv7uAjgZ8ZLdXUh8OCw",
         authDomain: "gift-1292c.firebaseapp.com",
         projectId: "gift-1292c",
         databaseURL: "https://gift-1292c-default-rtdb.firebaseio.com",
-        storageBucket: "gift-1292c.appspot.com",
         appId: "1:527659513899:web:4023b323982425ad18526e"
     };
 
-    const fb = initializeApp(firebaseConfig);
-    const db = getDatabase(fb);
+    const app_fb = initializeApp(firebaseConfig);
+    const db = getDatabase(app_fb);
 
+    // КАТАЛОГ ПРЕДМЕТОВ (РАСШИРЕННЫЙ)
     const CATALOG = [
-        {id: 1, name: "Золотая Роза", icon: "🌹", price: 500},
-        {id: 2, name: "Алмаз", icon: "💎", price: 2500},
-        {id: 3, name: "Кофе", icon: "☕", price: 100},
-        {id: 4, name: "Пицца", icon: "🍕", price: 350},
-        {id: 5, name: "Торт", icon: "🎂", price: 800},
-        {id: 6, name: "Ракета", icon: "🚀", price: 10000}
+        {id: 1, name: "Красная Роза", icon: "🌹", price: 100},
+        {id: 2, name: "Кофе с собой", icon: "☕", price: 50},
+        {id: 3, name: "Бриллиант", icon: "💎", price: 1500},
+        {id: 4, name: "Пицца Пепперони", icon: "🍕", price: 300},
+        {id: 5, name: "Игровой ПК", icon: "🖥️", price: 5000},
+        {id: 6, name: "Торт", icon: "🎂", price: 400},
+        {id: 7, name: "Котёнок", icon: "🐱", price: 2000},
+        {id: 8, name: "Ракета", icon: "🚀", price: 10000}
     ];
 
     window.app = {
-        user: null,
-        activeGame: null,
+        currentUser: localStorage.getItem('gw_session'),
+        data: null,
 
-        showToast(msg, isErr = false) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.background = isErr ? 'var(--danger)' : 'var(--accent-color)';
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
+        init() {
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                if (this.currentUser) {
+                    this.startSession();
+                }
+            }, 1000);
         },
 
-        handleAuth: async (type) => {
-            const login = document.getElementById('auth-login').value.trim().toLowerCase();
-            const pass = document.getElementById('auth-pass').value.trim();
+        showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        },
 
-            if (login.length < 3 || pass.length < 3) return app.showToast("Минимум 3 символа", true);
+        async handleAuth(type) {
+            const login = document.getElementById('login-input').value.trim().toLowerCase();
+            const pass = document.getElementById('pass-input').value.trim();
+
+            if (login.length < 3) return this.showToast("Логин слишком короткий");
+            if (pass.length < 4) return this.showToast("Пароль слишком простой");
 
             const userRef = ref(db, 'users/' + login);
             const snap = await get(userRef);
 
             if (type === 'reg') {
-                if (snap.exists()) return app.showToast("Логин занят", true);
+                if (snap.exists()) return this.showToast("Логин уже занят");
                 await set(userRef, {
                     username: login,
                     password: pass,
                     balance: 1000,
-                    bio: "Привет! Я новый пользователь.",
-                    inventory: [],
-                    friends: {},
-                    role: (login === 'ckovoroda' || login === 'kukumbr') ? 'admin' : 'user',
-                    status: 'active'
+                    inventory: {},
+                    role: (login === 'ckovoroda' || login === 'kukumbr') ? 'admin' : 'user'
                 });
-                app.login(login);
+                this.loginOk(login);
             } else {
-                if (!snap.exists() || snap.val().password !== pass) return app.showToast("Ошибка входа", true);
-                if (snap.val().status === 'banned') return app.showToast("Ваш аккаунт заблокирован!", true);
-                app.login(login);
+                if (!snap.exists() || snap.val().password !== pass) return this.showToast("Ошибка входа");
+                this.loginOk(login);
             }
         },
 
-        login(id) {
-            localStorage.setItem('gifts_uid', id);
+        loginOk(id) {
+            localStorage.setItem('gw_session', id);
             location.reload();
         },
 
         logout() {
-            localStorage.removeItem('gifts_uid');
+            localStorage.removeItem('gw_session');
             location.reload();
         },
 
-        init: () => {
-            const uid = localStorage.getItem('gifts_uid');
-            if (!uid) return;
+        startSession() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-ui').style.display = 'block';
 
-            document.getElementById('auth-page').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-
-            onValue(ref(db, 'users/' + uid), (snap) => {
+            onValue(ref(db, 'users/' + this.currentUser), (snap) => {
                 const data = snap.val();
-                if (!data) return app.logout();
-                if (data.status === 'banned') app.logout();
-                
-                app.user = data;
-                app.updateUI();
+                if (!data) return;
+                this.data = data;
+                this.syncUI();
             });
 
-            // Слушаем рынок
-            onValue(ref(db, 'market'), (snap) => {
-                app.renderMarket(snap.val());
-            });
-
-            // Слушаем игры
-            onValue(ref(db, 'games'), (snap) => {
-                app.checkGames(snap.val());
-            });
-
-            app.renderShop();
+            this.renderShop();
+            this.initAdmin();
         },
 
-        updateUI() {
-            document.getElementById('user-display').innerText = '@' + app.user.username;
-            document.getElementById('balance-display').innerText = app.user.balance;
-            
-            // ПРОФИЛЬ
-            document.getElementById('profile-name').innerText = app.user.username;
-            document.getElementById('profile-bio').innerText = app.user.bio;
+        syncUI() {
+            document.getElementById('u-name').innerText = this.data.username;
+            document.getElementById('u-balance').innerText = this.data.balance.toLocaleString();
+            document.getElementById('u-avatar').innerText = this.data.username[0].toUpperCase();
 
-            // СЧЕТЧИК СКЛАДА (ФИКС)
-            const invCount = app.user.inventory ? Object.keys(app.user.inventory).length : 0;
-            const badge = document.getElementById('inv-badge');
-            badge.innerText = invCount;
-            badge.style.display = invCount > 0 ? 'flex' : 'none';
-
-            app.renderInventory();
-            app.renderFriends();
-            
-            if (app.user.role === 'admin') {
-                document.getElementById('nav-admin').style.display = 'flex';
-                app.loadAdminData();
+            if (this.data.role === 'admin') {
+                document.getElementById('nav-adm-btn').style.display = 'flex';
             }
-        },
 
-        nav(pageId, el) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.getElementById('page-' + pageId).classList.add('active');
-            el.classList.add('active');
+            // ПРИНУДИТЕЛЬНЫЙ ФИКС СКЛАДА (ТО САМОЕ ЧИСЛО 84)
+            const invData = this.data.inventory || {};
+            const itemsArray = Object.keys(invData);
+            const count = itemsArray.length;
+
+            const badge = document.getElementById('inv-badge');
+            badge.innerText = count;
+            // Если предметов 0 - бейдж скрывается полностью!
+            badge.style.display = count > 0 ? 'flex' : 'none';
+
+            this.renderInventory(invData);
         },
 
         renderShop() {
-            const container = document.getElementById('shop-items');
+            const container = document.getElementById('shop-container');
             container.innerHTML = CATALOG.map(item => `
-                <div class="card" style="text-align: center;">
-                    <div style="font-size: 40px;">${item.icon}</div>
-                    <div style="font-weight: bold;">${item.name}</div>
-                    <div style="color: var(--accent-color); margin: 5px 0;">${item.price} 💰</div>
-                    <button class="btn btn-sm" onclick="app.buyItem(${item.id})">Купить</button>
+                <div class="card">
+                    <span class="item-icon">${item.icon}</span>
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-price">${item.price} 💰</span>
+                    <button class="btn" onclick="app.buyItem(${item.id})">Купить</button>
                 </div>
             `).join('');
         },
 
-        buyItem: async (id) => {
+        async buyItem(id) {
             const item = CATALOG.find(i => i.id === id);
-            if (app.user.balance < item.price) return app.showToast("Недостаточно средств", true);
+            if (this.data.balance < item.price) return this.showToast("Недостаточно монет");
 
-            const newBalance = app.user.balance - item.price;
-            const newItem = { ...item, instanceId: Date.now() + Math.random().toString(36).substr(2, 9) };
+            const newBalance = this.data.balance - item.price;
+            await update(ref(db, 'users/' + this.currentUser), { balance: newBalance });
+            await push(ref(db, `users/${this.currentUser}/inventory`), {
+                ...item,
+                boughtAt: Date.now()
+            });
 
-            await update(ref(db, 'users/' + app.user.username), { balance: newBalance });
-            await push(ref(db, 'users/' + app.user.username + '/inventory'), newItem);
-            
-            app.showToast("Успешная покупка!");
+            this.showToast("Успешно куплено!");
         },
 
-        renderInventory() {
-            const container = document.getElementById('inventory-items');
-            if (!app.user.inventory) return container.innerHTML = '<p>Тут пока пусто...</p>';
+        renderInventory(inv) {
+            const container = document.getElementById('inv-container');
+            const keys = Object.keys(inv);
 
-            container.innerHTML = Object.entries(app.user.inventory).map(([key, item]) => `
-                <div class="card" style="text-align: center;">
-                    <div style="font-size: 40px;">${item.icon}</div>
-                    <div style="font-weight: bold;">${item.name}</div>
-                    <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
-                        <button class="btn btn-ghost" onclick="app.openGiftModal('${key}')">Подарить</button>
-                        <button class="btn btn-ghost" style="color: var(--warning);" onclick="app.sellMarket('${key}')">На рынок</button>
-                        <button class="btn btn-ghost" style="color: var(--accent-color);" onclick="app.viewItemInfo('${key}')">Инфо</button>
+            if (keys.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color: var(--secondary); padding: 40px;">Ваш склад пуст</div>`;
+                return;
+            }
+
+            container.innerHTML = keys.map(key => {
+                const it = inv[key];
+                return `
+                    <div class="card">
+                        <span class="item-icon">${it.icon}</span>
+                        <span class="item-name">${it.name}</span>
+                        ${it.note ? `<div class="note-frame">"${it.note}"</div>` : ''}
+                        <button class="btn btn-secondary" onclick="app.openGiftModal('${key}')">Подарить</button>
                     </div>
-                </div>
-            `).join('');
-        },
-
-        viewItemInfo(key) {
-            const item = app.user.inventory[key];
-            const modal = document.getElementById('modal');
-            const body = document.getElementById('modal-body');
-
-            body.innerHTML = `
-                <div style="text-align: center;">
-                    <div style="font-size: 60px;">${item.icon}</div>
-                    <h2>${item.name}</h2>
-                    <p style="color: var(--text-secondary);">ID Экземпляра: ${item.instanceId}</p>
-                    ${item.note ? `
-                        <div class="note-container">
-                            <div class="note-text">${item.note}</div>
-                        </div>
-                    ` : '<p>Записки нет</p>'}
-                    <button class="btn" style="margin-top: 20px;" onclick="app.closeModal()">Закрыть</button>
-                </div>
-            `;
-            modal.style.display = 'flex';
+                `;
+            }).join('');
         },
 
         openGiftModal(key) {
-            const item = app.user.inventory[key];
-            const modal = document.getElementById('modal');
-            const body = document.getElementById('modal-body');
-
-            const friends = app.user.friends ? Object.keys(app.user.friends) : [];
-            if (friends.length === 0) return app.showToast("У вас нет друзей", true);
-
-            body.innerHTML = `
-                <h3>Подарить ${item.icon}</h3>
-                <label>Выберите получателя:</label>
-                <select id="gift-target">
-                    ${friends.map(f => `<option value="${f}">${f}</option>`).join('')}
-                </select>
-                <label>Текст записки:</label>
-                <textarea id="gift-note" placeholder="Напиши что-нибудь приятное..."></textarea>
-                <button class="btn" onclick="app.sendGift('${key}')">Отправить</button>
-                <button class="btn btn-ghost" style="margin-top:10px" onclick="app.closeModal()">Отмена</button>
+            const content = document.getElementById('modal-content');
+            content.innerHTML = `
+                <h2 style="margin-top:0">Подарить предмет</h2>
+                <p style="color: var(--secondary)">Введите логин получателя и записку</p>
+                <input type="text" id="gift-target" placeholder="Кому дарим?">
+                <input type="text" id="gift-note" placeholder="Текст записки (необязательно)">
+                <button class="btn btn-success" onclick="app.confirmGift('${key}')">Отправить</button>
+                <button class="btn btn-secondary" onclick="app.closeModal()">Отмена</button>
             `;
-            modal.style.display = 'flex';
+            document.getElementById('overlay').style.display = 'flex';
         },
 
-        sendGift: async (key) => {
-            const target = document.getElementById('gift-target').value;
-            const note = document.getElementById('gift-note').value;
-            const item = app.user.inventory[key];
+        async confirmGift(key) {
+            const target = document.getElementById('gift-target').value.trim().toLowerCase();
+            const note = document.getElementById('gift-note').value.trim();
 
+            if (!target || target === this.currentUser) return this.showToast("Некорректный логин");
+
+            const targetRef = ref(db, 'users/' + target);
+            const snap = await get(targetRef);
+
+            if (!snap.exists()) return this.showToast("Пользователь не найден");
+
+            const item = this.data.inventory[key];
+            
             // Удаляем у себя
-            await remove(ref(db, `users/${app.user.username}/inventory/${key}`));
+            await remove(ref(db, `users/${this.currentUser}/inventory/${key}`));
             
-            // Добавляем другому
-            const gift = { ...item, note: note || null, from: app.user.username };
-            await push(ref(db, `users/${target}/inventory`), gift);
-
-            app.closeModal();
-            app.showToast("Подарок отправлен!");
-        },
-
-        sellMarket: async (key) => {
-            const price = prompt("Введите цену продажи:");
-            if (!price || isNaN(price)) return;
-
-            const item = app.user.inventory[key];
-            await remove(ref(db, `users/${app.user.username}/inventory/${key}`));
-            
-            await push(ref(db, 'market'), {
+            // Добавляем другому с запиской
+            await push(ref(db, `users/${target}/inventory`), {
                 ...item,
-                marketPrice: parseInt(price),
-                seller: app.user.username
+                from: this.currentUser,
+                note: note || null
             });
-            app.showToast("Лот выставлен");
+
+            this.closeModal();
+            this.showToast("Подарок успешно отправлен!");
         },
 
-        renderMarket(data) {
-            const container = document.getElementById('market-items');
-            if (!data) return container.innerHTML = '<p>Рынок пуст</p>';
+        playGame(choice) {
+            if (this.data.balance < 100) return this.showToast("Нужно минимум 100 монет");
 
-            container.innerHTML = Object.entries(data).map(([key, item]) => `
-                <div class="admin-user-row">
-                    <div style="display:flex; align-items:center; gap:10px">
-                        <span style="font-size: 24px;">${item.icon}</span>
-                        <div>
-                            <b>${item.name}</b><br>
-                            <small>Продавец: @${item.seller}</small>
-                        </div>
-                    </div>
-                    <div style="text-align: right">
-                        <div style="color: var(--accent-color); font-weight: bold;">${item.marketPrice} 💰</div>
-                        <button class="btn btn-sm" style="padding: 5px 10px; height:auto; width:auto;" onclick="app.buyFromMarket('${key}')">Купить</button>
-                    </div>
-                </div>
-            `).join('');
-        },
-
-        buyFromMarket: async (key) => {
-            const snap = await get(ref(db, 'market/' + key));
-            const item = snap.val();
-            if (item.seller === app.user.username) return app.showToast("Это ваш лот", true);
-            if (app.user.balance < item.marketPrice) return app.showToast("Нет денег", true);
-
-            // Сделка
-            const sellerRef = ref(db, 'users/' + item.seller);
-            const sellerSnap = await get(sellerRef);
+            const coin = document.getElementById('coin-obj');
+            const status = document.getElementById('game-status');
             
-            await update(sellerRef, { balance: sellerSnap.val().balance + item.marketPrice });
-            await update(ref(db, 'users/' + app.user.username), { balance: app.user.balance - item.marketPrice });
-            await push(ref(db, 'users/' + app.user.username + '/inventory'), item);
-            await remove(ref(db, 'market/' + key));
-
-            app.showToast("Куплено на рынке!");
-        },
-
-        // --- GAME LOGIC ---
-        checkGames(games) {
-            if (!games) return;
-            Object.entries(games).forEach(([gid, g]) => {
-                if (g.target === app.user.username && g.status === 'pending') {
-                    if (confirm(`Вызов от ${g.host}! Принять за 100 монет?`)) {
-                        app.acceptGame(gid);
-                    } else {
-                        remove(ref(db, 'games/' + gid));
-                    }
-                }
-            });
-        },
-
-        acceptGame: async (gid) => {
-            if (app.user.balance < 100) return app.showToast("Мало монет", true);
-            app.activeGame = gid;
-            await update(ref(db, 'games/' + gid), { status: 'playing' });
-            app.nav('game', document.querySelectorAll('.nav-item')[3]);
-            document.getElementById('game-lobby').style.display = 'none';
-            document.getElementById('game-active').style.display = 'block';
-        },
-
-        inviteGame: async (target) => {
-            if (app.user.balance < 100) return app.showToast("Нужно 100 монет", true);
-            const gid = 'game_' + Date.now();
-            await set(ref(db, 'games/' + gid), {
-                host: app.user.username,
-                target: target,
-                status: 'pending',
-                bet: 100
-            });
-            app.showToast("Вызов отправлен");
-        },
-
-        gameAction: async (choice) => {
-            const visual = document.getElementById('coin-visual');
-            visual.classList.add('flipping');
-            document.getElementById('game-info').innerText = "Монетка крутится...";
+            coin.classList.add('coin-flipping');
+            status.innerText = "Монета в воздухе...";
 
             setTimeout(async () => {
-                visual.classList.remove('flipping');
+                coin.classList.remove('coin-flipping');
                 const result = Math.random() > 0.5 ? 'eagle' : 'tails';
-                visual.innerText = result === 'eagle' ? '🦅' : '🪙';
+                coin.innerText = result === 'eagle' ? '🦅' : '🪙';
 
                 const win = choice === result;
                 const change = win ? 100 : -100;
 
-                await update(ref(db, 'users/' + app.user.username), { balance: app.user.balance + change });
-                document.getElementById('game-info').innerHTML = win ? 
-                    `<span style="color:var(--success)">ВЫИГРЫШ! +100</span>` : 
-                    `<span style="color:var(--danger)">ПРОИГРЫШ! -100</span>`;
+                await update(ref(db, 'users/' + this.currentUser), {
+                    balance: this.data.balance + change
+                });
 
-                setTimeout(() => {
-                    document.getElementById('game-lobby').style.display = 'block';
-                    document.getElementById('game-active').style.display = 'none';
-                    remove(ref(db, 'games/' + app.activeGame));
-                    app.activeGame = null;
-                }, 3000);
-            }, 2000);
+                status.innerHTML = win ? 
+                    `<span style="color:var(--success)">Победа! +100💰</span>` : 
+                    `<span style="color:var(--error)">Проигрыш! -100💰</span>`;
+            }, 1200);
         },
 
-        // --- ADMIN SYSTEM ---
-        loadAdminData: async () => {
+        initAdmin() {
+            if (this.data.role !== 'admin') return;
             onValue(ref(db, 'users'), (snap) => {
                 const users = snap.val();
-                if (!users) return;
-                
-                let totalCoins = 0;
-                const list = Object.entries(users).map(([id, u]) => {
-                    totalCoins += u.balance;
-                    return `
-                        <div class="admin-user-row">
-                            <div>
-                                <b class="${u.status === 'banned' ? 'status-banned' : ''}">${u.username}</b><br>
-                                <small>${u.balance} 💰 | ${u.role}</small>
-                            </div>
-                            <div style="display:flex; gap:5px">
-                                <button class="btn btn-sm btn-ghost" onclick="app.viewUserProfile('${id}')">🔎</button>
-                                <button class="btn btn-sm btn-warn" onclick="app.admToggleBan('${id}', '${u.status}')">🚫</button>
-                                <button class="btn btn-sm btn-danger" onclick="app.admDeleteUser('${id}')">🗑️</button>
-                            </div>
+                const container = document.getElementById('admin-users');
+                container.innerHTML = Object.keys(users).map(u => `
+                    <div class="user-row">
+                        <span>@${u} (${users[u].balance} 💰)</span>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn btn-secondary" style="margin:0; padding:5px 10px;" onclick="app.admAddMoney('${u}')">+1к</button>
+                            <button class="btn btn-danger" style="margin:0; padding:5px 10px;" onclick="app.admDelUser('${u}')">🗑️</button>
                         </div>
-                    `;
-                }).join('');
-
-                document.getElementById('adm-total-users').innerText = Object.keys(users).length;
-                document.getElementById('adm-total-coins').innerText = totalCoins;
-                document.getElementById('adm-user-list').innerHTML = list;
+                    </div>
+                `).join('');
             });
         },
 
-        viewUserProfile: async (id) => {
-            const snap = await get(ref(db, 'users/' + id));
-            const u = snap.val();
-            const modal = document.getElementById('modal');
-            const body = document.getElementById('modal-body');
-
-            body.innerHTML = `
-                <h3>Профиль @${u.username}</h3>
-                <p>Роль: ${u.role}</p>
-                <p>Баланс: ${u.balance} 💰</p>
-                <p>О себе: ${u.bio}</p>
-                <hr>
-                <button class="btn" onclick="app.admAddCoins('${id}')">Начислить 1000 💰</button>
-                <button class="btn btn-ghost" style="margin-top:10px" onclick="app.closeModal()">Закрыть</button>
-            `;
-            modal.style.display = 'flex';
+        async admAddMoney(u) {
+            const snap = await get(ref(db, 'users/' + u));
+            await update(ref(db, 'users/' + u), { balance: snap.val().balance + 1000 });
+            this.showToast("Монеты начислены");
         },
 
-        admAddCoins: async (id) => {
-            const snap = await get(ref(db, 'users/' + id));
-            await update(ref(db, 'users/' + id), { balance: snap.val().balance + 1000 });
-            app.showToast("Монеты начислены");
-            app.closeModal();
-        },
-
-        admToggleBan: async (id, currentStatus) => {
-            if (id === 'ckovoroda' || id === 'kukumbr') return app.showToast("Нельзя забанить создателя", true);
-            const next = currentStatus === 'banned' ? 'active' : 'banned';
-            await update(ref(db, 'users/' + id), { status: next });
-            app.showToast("Статус изменен");
-        },
-
-        admDeleteUser: async (id) => {
-            if (id === 'ckovoroda' || id === 'kukumbr') return app.showToast("Нельзя удалить создателя", true);
-            if (confirm(`Удалить аккаунт ${id} навсегда?`)) {
-                await remove(ref(db, 'users/' + id));
-                app.showToast("Пользователь удален");
+        async admDelUser(u) {
+            if (confirm("Удалить игрока " + u + "?")) {
+                await remove(ref(db, 'users/' + u));
             }
         },
 
-        // --- HELPERS ---
-        renderFriends() {
-            const container = document.getElementById('friends-list');
-            if (!app.user.friends) return container.innerHTML = '<p>Список друзей пуст</p>';
-            
-            container.innerHTML = Object.keys(app.user.friends).map(f => `
-                <div class="admin-user-row">
-                    <b>${f}</b>
-                    <button class="btn btn-sm" style="width:auto;" onclick="app.inviteGame('${f}')">Вызвать ⚔️</button>
-                </div>
-            `).join('');
-
-            // Друзья для игры
-            document.getElementById('game-friends').innerHTML = Object.keys(app.user.friends).map(f => `
-                <button class="btn btn-ghost" onclick="app.inviteGame('${f}')">⚔️ ${f}</button>
-            `).join('');
+        tab(id, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('page-' + id).classList.add('active');
+            el.classList.add('active');
         },
 
-        addFriend: async () => {
-            const fid = document.getElementById('friend-id-input').value.trim().toLowerCase();
-            if (!fid || fid === app.user.username) return;
-
-            const snap = await get(ref(db, 'users/' + fid));
-            if (!snap.exists()) return app.showToast("Пользователь не найден", true);
-
-            await update(ref(db, `users/${app.user.username}/friends/${fid}`), { status: 'friend' });
-            await update(ref(db, `users/${fid}/friends/${app.user.username}`), { status: 'friend' });
-            
-            document.getElementById('friend-id-input').value = "";
-            app.showToast("Друг добавлен!");
-        },
-
-        closeModal() { document.getElementById('modal').style.display = 'none'; },
-        
-        openEditProfile() {
-            const modal = document.getElementById('modal');
-            const body = document.getElementById('modal-body');
-            body.innerHTML = `
-                <h3>Настройки</h3>
-                <label>О себе:</label>
-                <textarea id="edit-bio">${app.user.bio}</textarea>
-                <button class="btn" onclick="app.saveProfile()">Сохранить</button>
-            `;
-            modal.style.display = 'flex';
-        },
-
-        saveProfile: async () => {
-            const bio = document.getElementById('edit-bio').value;
-            await update(ref(db, 'users/' + app.user.username), { bio });
-            app.closeModal();
-            app.showToast("Сохранено");
+        closeModal() {
+            document.getElementById('overlay').style.display = 'none';
         }
     };
 
@@ -805,6 +543,7 @@
 </script>
 </body>
 </html>
+
 
 
 
