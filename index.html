@@ -6,59 +6,401 @@
     <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/gift.png">
     <title>Gifts World Pro</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
+
         :root { 
             --bg: #070d14; --card: #111b21; --accent: #2481cc; --text: #ffffff; 
             --secondary: #7f91a4; --err: #e74c3c; --green: #2ecc71; --orange: #f39c12;
             --glass: rgba(23, 33, 43, 0.95);
             --tg: #229ED9;
         }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        body { background: var(--bg); color: var(--text); font-family: 'Nunito', -apple-system, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
 
-        .btn { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 18px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; font-size: 14px; display: inline-block; text-decoration: none; text-align: center; }
-        .btn:active { transform: scale(0.96); opacity: 0.8; }
-        
-        input, textarea, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 15px; border: 2px solid #2b3a4a; background: #0e1621; color: white; outline: none; font-size: 16px; }
+        /* ===== BACKGROUND PARTICLES ===== */
+        body::before {
+            content: '';
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(36,129,204,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(243,156,18,0.05) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+            animation: bgPulse 8s ease-in-out infinite alternate;
+        }
+        @keyframes bgPulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
 
-        .page { display: none; padding: 15px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding-bottom: 120px; }
+        /* ===== FLOATING PARTICLES ===== */
+        .particle {
+            position: fixed; pointer-events: none; z-index: 0;
+            font-size: 20px; opacity: 0;
+            animation: floatUp linear infinite;
+        }
+        @keyframes floatUp {
+            0%   { transform: translateY(110vh) rotate(0deg) scale(0.5); opacity: 0; }
+            10%  { opacity: 0.4; }
+            90%  { opacity: 0.2; }
+            100% { transform: translateY(-20vh) rotate(360deg) scale(1.2); opacity: 0; }
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn { 
+            background: var(--accent); color: white; border: none; padding: 12px; 
+            border-radius: 18px; font-weight: 800; cursor: pointer; width: 100%; 
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            font-size: 14px; display: inline-block; text-decoration: none; text-align: center;
+            font-family: 'Nunito', sans-serif;
+            position: relative; overflow: hidden;
+        }
+        .btn::after {
+            content: '';
+            position: absolute; top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s, opacity 0.5s;
+            opacity: 0;
+        }
+        .btn:active::after { width: 200px; height: 200px; opacity: 0; }
+        .btn:active { transform: scale(0.93); }
+        .btn:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(36,129,204,0.35); }
+
+        input, textarea, select { 
+            width: 100%; padding: 14px; margin: 10px 0; border-radius: 15px; 
+            border: 2px solid #2b3a4a; background: #0e1621; color: white; 
+            outline: none; font-size: 16px; font-family: 'Nunito', sans-serif;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(36,129,204,0.15);
+        }
+
+        /* ===== PAGES ===== */
+        .page { display: none; padding: 15px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding-bottom: 120px; position: relative; z-index: 1; }
         .page.active { display: grid; }
         
-        #friends, #profile, #admin { display: none; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; }
+        #friends, #profile, #admin { display: none; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; position: relative; z-index: 1; }
         #friends.active, #profile.active, #admin.active { display: flex; }
 
-        .card { background: var(--card); border-radius: 25px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative; }
-        
-        .nav { display: flex; background: var(--glass); backdrop-filter: blur(20px); position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; border-radius: 30px; padding: 10px; z-index: 1000; border: 1px solid rgba(255,255,255,0.1); }
-        .nav-btn { flex: 1; background: none; border: none; color: var(--secondary); cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 11px; position: relative; }
+        /* ===== PAGE ENTER ANIMATION ===== */
+        .page.active, #friends.active, #profile.active, #admin.active {
+            animation: pageEnter 0.4s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+        }
+        @keyframes pageEnter {
+            from { opacity: 0; transform: translateY(18px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ===== CARDS ===== */
+        .card { 
+            background: var(--card); border-radius: 25px; padding: 20px; text-align: center; 
+            border: 1px solid rgba(255,255,255,0.06); position: relative;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s, border-color 0.25s;
+            animation: cardIn 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+        }
+        .card:hover { 
+            transform: translateY(-4px) scale(1.02); 
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+            border-color: rgba(36,129,204,0.25);
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.92); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Staggered card animations */
+        .card:nth-child(1)  { animation-delay: 0.03s; }
+        .card:nth-child(2)  { animation-delay: 0.06s; }
+        .card:nth-child(3)  { animation-delay: 0.09s; }
+        .card:nth-child(4)  { animation-delay: 0.12s; }
+        .card:nth-child(5)  { animation-delay: 0.15s; }
+        .card:nth-child(6)  { animation-delay: 0.18s; }
+        .card:nth-child(7)  { animation-delay: 0.21s; }
+        .card:nth-child(8)  { animation-delay: 0.24s; }
+        .card:nth-child(9)  { animation-delay: 0.27s; }
+        .card:nth-child(10) { animation-delay: 0.30s; }
+
+        /* ===== EMOJI BOUNCE ===== */
+        .gift-emoji {
+            display: block;
+            transition: transform 0.3s cubic-bezier(0.34, 1.8, 0.64, 1);
+            cursor: default;
+        }
+        .card:hover .gift-emoji { transform: scale(1.3) rotate(-8deg); }
+
+        /* ===== PRICE INDICATORS ===== */
+        .price-up   { color: var(--err);   font-size: 12px; animation: pricePulse 2s ease-in-out infinite; }
+        .price-down { color: var(--green); font-size: 12px; animation: pricePulse 2s ease-in-out infinite; }
+        @keyframes pricePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ===== NAV ===== */
+        .nav { 
+            display: flex; background: var(--glass); backdrop-filter: blur(20px); 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            width: 92%; max-width: 500px; border-radius: 30px; padding: 10px; 
+            z-index: 1000; border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .nav-btn { 
+            flex: 1; background: none; border: none; color: var(--secondary); 
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; 
+            font-size: 11px; position: relative;
+            transition: color 0.2s, transform 0.2s cubic-bezier(0.34, 1.8, 0.64, 1);
+            font-family: 'Nunito', sans-serif; font-weight: 700;
+        }
+        .nav-btn:active { transform: scale(0.85); }
         .nav-btn.active { color: var(--accent); }
-        .nav-btn i { font-size: 22px; margin-bottom: 4px; font-style: normal; }
+        .nav-btn.active i { 
+            animation: navBounce 0.4s cubic-bezier(0.34, 2, 0.64, 1);
+        }
+        @keyframes navBounce {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.4) translateY(-4px); }
+            100% { transform: scale(1); }
+        }
+        .nav-btn i { font-size: 22px; margin-bottom: 4px; font-style: normal; display: block; transition: transform 0.2s; }
+        .nav-btn:hover i { transform: scale(1.2) translateY(-2px); }
 
-        .badge { position: absolute; top: -2px; right: 15px; background: var(--err); color: white; font-size: 10px; min-width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--bg); }
-        .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--accent); object-fit: cover; background: #0e1621; margin-bottom: 15px; }
-        
-        #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 20px; font-weight: bold; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; z-index: 3000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        /* ===== BADGE ===== */
+        .badge { 
+            position: absolute; top: -2px; right: 15px; background: var(--err); color: white; 
+            font-size: 10px; min-width: 18px; height: 18px; border-radius: 50%; 
+            display: none; align-items: center; justify-content: center; font-weight: bold; 
+            border: 2px solid var(--bg);
+            animation: badgePop 0.4s cubic-bezier(0.34, 2, 0.64, 1);
+        }
+        @keyframes badgePop {
+            from { transform: scale(0); }
+            to   { transform: scale(1); }
+        }
 
-        .pinned-section { width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; min-height: 80px; align-items: center; }
-        .price-up { color: var(--err); font-size: 12px; }
-        .price-down { color: var(--green); font-size: 12px; }
+        /* ===== AVATAR ===== */
+        .avatar { 
+            width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--accent); 
+            object-fit: cover; background: #0e1621; margin-bottom: 15px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
+            animation: avatarIn 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+        }
+        .avatar:hover { 
+            transform: scale(1.08) rotate(3deg); 
+            box-shadow: 0 0 30px rgba(36,129,204,0.5);
+        }
+        @keyframes avatarIn {
+            from { transform: scale(0) rotate(-180deg); opacity: 0; }
+            to   { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* ===== TOAST ===== */
+        #toast { 
+            position: fixed; bottom: 100px; left: 50%; 
+            transform: translateX(-50%) translateY(100px) scale(0.8); 
+            background: var(--accent); color: white; padding: 12px 25px; 
+            border-radius: 20px; font-weight: 800; 
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            opacity: 0; z-index: 3000; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            font-family: 'Nunito', sans-serif;
+        }
+        #toast.show { 
+            transform: translateX(-50%) translateY(0) scale(1); 
+            opacity: 1; 
+        }
+
+        /* ===== MODAL ===== */
+        #modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0); display: none; 
+            align-items: center; justify-content: center; 
+            z-index: 2000; padding: 20px;
+            backdrop-filter: blur(0px);
+            transition: background 0.3s, backdrop-filter 0.3s;
+        }
+        #modal-overlay.visible {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+        }
+        #modal-content { 
+            width: 100%; max-width: 400px; background: var(--card);
+            transform: scale(0.7) translateY(40px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+        }
+        #modal-content.visible {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        /* ===== PINNED SECTION ===== */
+        .pinned-section { 
+            width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; 
+            padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; 
+            gap: 15px; min-height: 80px; align-items: center;
+            scrollbar-width: none;
+        }
+        .pinned-section::-webkit-scrollbar { display: none; }
+        .pinned-item { 
+            text-align: center; min-width: 60px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.8, 0.64, 1);
+            animation: pinIn 0.4s cubic-bezier(0.34, 1.8, 0.64, 1) both;
+        }
+        .pinned-item:hover { transform: scale(1.2) translateY(-4px); }
+        @keyframes pinIn {
+            from { transform: scale(0) rotate(-30deg); opacity: 0; }
+            to   { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            padding: 15px 20px; background: var(--glass); 
+            position: sticky; top: 0; z-index: 100; 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+        }
+        #u-bal {
+            color: var(--accent);
+            transition: transform 0.3s cubic-bezier(0.34, 2, 0.64, 1), color 0.2s;
+            display: inline-block;
+        }
+        .bal-bump { animation: balBump 0.4s cubic-bezier(0.34, 2, 0.64, 1); }
+        @keyframes balBump {
+            0%   { transform: scale(1); color: var(--accent); }
+            40%  { transform: scale(1.5); color: var(--green); }
+            100% { transform: scale(1); color: var(--accent); }
+        }
+
+        /* ===== TYLESHEET EXTRAS ===== */
         .tg-btn { background: var(--tg); margin-bottom: 8px; }
-        
-        .adm-user-card { background: #1c2833; border-radius: 20px; padding: 15px; margin-bottom: 15px; text-align: left; border-left: 4px solid var(--orange); font-size: 13px; }
+        .adm-user-card { background: #1c2833; border-radius: 20px; padding: 15px; margin-bottom: 15px; text-align: left; border-left: 4px solid var(--orange); font-size: 13px; animation: cardIn 0.4s both; }
         .adm-row { display: flex; gap: 5px; align-items: center; margin-top: 5px; }
         .adm-details { margin: 10px 0; color: var(--secondary); background: #0e1621; padding: 10px; border-radius: 10px; }
+
+        /* ===== NFT CARD SHINE ===== */
+        .nft-card {
+            position: relative; overflow: hidden;
+        }
+        .nft-card::before {
+            content: '';
+            position: absolute; top: -50%; left: -60%;
+            width: 40%; height: 200%;
+            background: linear-gradient(105deg, transparent 40%, rgba(255,215,0,0.18) 50%, transparent 60%);
+            animation: nftShine 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes nftShine {
+            0%   { left: -60%; }
+            100% { left: 130%; }
+        }
+        .nft-emoji-float {
+            animation: nftFloat 3s ease-in-out infinite;
+            display: block;
+        }
+        @keyframes nftFloat {
+            0%, 100% { transform: translateY(0px) rotate(-3deg); }
+            50%       { transform: translateY(-8px) rotate(3deg); }
+        }
+
+        /* ===== CONFETTI BURST ===== */
+        .confetti-piece {
+            position: fixed; pointer-events: none; z-index: 9999;
+            border-radius: 2px;
+            animation: confettiFall linear forwards;
+        }
+        @keyframes confettiFall {
+            0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(300px) rotate(720deg) scale(0); opacity: 0; }
+        }
+
+        /* ===== GIFT SEND ANIMATION ===== */
+        .gift-fly {
+            position: fixed; pointer-events: none; z-index: 9999;
+            font-size: 40px;
+            animation: giftFly 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes giftFly {
+            0%   { transform: scale(1) translate(0,0); opacity: 1; }
+            100% { transform: scale(0.2) translate(200px, -300px); opacity: 0; }
+        }
+
+        /* ===== BALANCE COINS RAIN ===== */
+        .coin-rain {
+            position: fixed; pointer-events: none; z-index: 9999;
+            font-size: 24px;
+            animation: coinDrop linear forwards;
+        }
+        @keyframes coinDrop {
+            0%   { opacity: 1; transform: translateY(-20px) scale(1); }
+            80%  { opacity: 1; }
+            100% { opacity: 0; transform: translateY(80px) scale(0.5); }
+        }
+
+        /* ===== AUTH SCREEN ===== */
+        #auth-screen { position: relative; z-index: 1; }
+        #auth-screen .card {
+            animation: authCardIn 0.7s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+        }
+        @keyframes authCardIn {
+            from { transform: scale(0.7) translateY(50px); opacity: 0; }
+            to   { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        #auth-screen h1 {
+            animation: titleIn 0.8s cubic-bezier(0.34, 1.5, 0.64, 1) 0.2s both;
+        }
+        @keyframes titleIn {
+            from { transform: scale(0.5) rotate(-5deg); opacity: 0; }
+            to   { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* ===== MARKET ITEM ===== */
+        .market-item {
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s;
+        }
+        .market-item:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 15px 45px rgba(0,0,0,0.5);
+        }
+
+        /* ===== SHIMMER LOADING ===== */
+        .shimmer {
+            background: linear-gradient(90deg, var(--card) 25%, #1a2633 50%, var(--card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 20px; height: 200px;
+        }
+        @keyframes shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body>
 
+<!-- Floating background particles -->
+<div class="particle" style="left:5%;  animation-duration:12s; animation-delay:0s;">🎁</div>
+<div class="particle" style="left:15%; animation-duration:15s; animation-delay:3s;">⭐</div>
+<div class="particle" style="left:30%; animation-duration:10s; animation-delay:1s;">💫</div>
+<div class="particle" style="left:50%; animation-duration:14s; animation-delay:5s;">🎀</div>
+<div class="particle" style="left:65%; animation-duration:11s; animation-delay:2s;">✨</div>
+<div class="particle" style="left:80%; animation-duration:13s; animation-delay:7s;">🎊</div>
+<div class="particle" style="left:92%; animation-duration:16s; animation-delay:4s;">💝</div>
+
 <div id="toast"></div>
-<div id="modal-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:none; align-items:center; justify-content:center; z-index:2000; padding:20px;" onclick="if(event.target==this) closeModal()">
-    <div id="modal-content" class="card" style="width:100%; max-width:400px; background:var(--card);"></div>
+
+<div id="modal-overlay" onclick="if(event.target==this) closeModal()">
+    <div id="modal-content" class="card"></div>
 </div>
 
 <div id="auth-screen" style="height:100vh; display:flex; align-items:center; justify-content:center; padding: 20px;">
     <div class="card" style="max-width:340px; width:100%;">
-        <h1 style="color:var(--accent); margin-bottom:20px;">Gifts World</h1>
+        <h1 style="color:var(--accent); margin-bottom:20px;">🎁 Gifts World</h1>
         <input type="text" id="u-in" placeholder="Логин">
         <input type="password" id="p-in" placeholder="Пароль">
         <button class="btn" onclick="auth('login')">Войти</button>
@@ -71,25 +413,25 @@
 </div>
 
 <div id="app" style="display:none">
-    <div style="padding:15px 20px; background:var(--glass); position:sticky; top:0; z-index:100; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05);">
-        <b id="header-name">...</b>
-        <div style="font-weight:bold;"><span id="u-bal" style="color:var(--accent);">0</span> 💰</div>
+    <div class="header">
+        <b id="header-name" style="font-size:16px; font-weight:900;">...</b>
+        <div style="font-weight:900; font-size:16px;"><span id="u-bal">0</span> 💰</div>
     </div>
 
     <div id="shop" class="page active"></div>
     <div id="inv" class="page"></div>
     <div id="market" class="page"></div>
 
-    <div id="friends" class="page">
+    <div id="friends" class="page" style="padding:15px; padding-bottom:120px;">
         <input type="text" id="friend-search" placeholder="Ник друга...">
-        <button class="btn" onclick="searchFriend()">Найти</button>
+        <button class="btn" onclick="searchFriend()">🔍 Найти</button>
         <div id="friend-requests"></div>
         <div id="friends-list"></div>
     </div>
     
-    <div id="profile" class="page"></div>
+    <div id="profile" class="page" style="padding:15px; padding-bottom:120px;"></div>
     
-    <div id="admin" class="page">
+    <div id="admin" class="page" style="padding:15px; padding-bottom:120px;">
         <h2 style="color:var(--orange)">⚙️ Админ</h2>
         <button class="btn" style="background:var(--err); margin-bottom:15px;" onclick="clearAllShowcases()">🧹 Очистить витрины</button>
         <div id="adm-stats"></div>
@@ -134,24 +476,92 @@
         {id:28, n:"Замок", i:"🏰"}, {id:29, n:"Планета", i:"🪐"}, {id:30, n:"Галактика", i:"🌌"}
     ];
 
-    async function getIP() { try { const res = await fetch('https://api.ipify.org?format=json'); const data = await res.json(); return data.ip; } catch(e) { return "1.1.1.1"; } }
-    function getPrice(id, timeShift = 0) { const now = Date.now() + timeShift; const seed = Math.floor(now / 900000); const val = Math.abs(Math.sin(id * 777 + seed * 888)); return Math.floor(val * 1532 + 67); }
+    async function getIP() { try { const res = await fetch('https://api.ipify.org?format=json'); const d = await res.json(); return d.ip; } catch(e) { return "1.1.1.1"; } }
+    function getPrice(id, ts=0) { const now=Date.now()+ts, seed=Math.floor(now/900000), val=Math.abs(Math.sin(id*777+seed*888)); return Math.floor(val*1532+67); }
 
-    window.showToast = (msg, color = 'var(--accent)') => { const t = document.getElementById('toast'); t.innerText = msg; t.style.background = color; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); };
-    window.closeModal = () => document.getElementById('modal-overlay').style.display = 'none';
+    // ===== ANIMATIONS =====
+    function spawnConfetti(x, y) {
+        const colors = ['#FFD700','#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98D8C8'];
+        for(let i = 0; i < 18; i++) {
+            const el = document.createElement('div');
+            el.className = 'confetti-piece';
+            el.style.cssText = `left:${x + (Math.random()-0.5)*80}px; top:${y}px; width:${6+Math.random()*8}px; height:${6+Math.random()*8}px; background:${colors[Math.floor(Math.random()*colors.length)]}; animation-duration:${0.6+Math.random()*0.8}s; animation-delay:${Math.random()*0.2}s;`;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1400);
+        }
+    }
 
-    // --- AUTH ---
+    function spawnCoins(x, y) {
+        for(let i = 0; i < 5; i++) {
+            const el = document.createElement('div');
+            el.className = 'coin-rain';
+            el.textContent = '💰';
+            el.style.cssText = `left:${x + (Math.random()-0.5)*60}px; top:${y}px; animation-duration:${0.6+Math.random()*0.4}s; animation-delay:${i*0.08}s;`;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1200);
+        }
+    }
+
+    function flyGift(emoji, fromEl) {
+        const rect = fromEl ? fromEl.getBoundingClientRect() : {left: window.innerWidth/2, top: window.innerHeight/2};
+        const el = document.createElement('div');
+        el.className = 'gift-fly';
+        el.textContent = emoji;
+        el.style.cssText = `left:${rect.left}px; top:${rect.top}px;`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 900);
+    }
+
+    function bumpBalance() {
+        const el = document.getElementById('u-bal');
+        el.classList.remove('bal-bump');
+        void el.offsetWidth;
+        el.classList.add('bal-bump');
+        setTimeout(() => el.classList.remove('bal-bump'), 500);
+    }
+
+    window.showToast = (msg, color='var(--accent)') => {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.background = color;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2600);
+    };
+
+    window.closeModal = () => {
+        const ov = document.getElementById('modal-overlay');
+        const mc = document.getElementById('modal-content');
+        mc.classList.remove('visible');
+        ov.classList.remove('visible');
+        setTimeout(() => { ov.style.display = 'none'; }, 300);
+    };
+
+    function openModal(html) {
+        const ov = document.getElementById('modal-overlay');
+        const mc = document.getElementById('modal-content');
+        mc.innerHTML = html;
+        ov.style.display = 'flex';
+        mc.classList.remove('visible');
+        ov.classList.remove('visible');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                ov.classList.add('visible');
+                mc.classList.add('visible');
+            });
+        });
+    }
+
+    // ===== AUTH =====
     window.auth = async (type) => {
         const u = document.getElementById('u-in').value.trim().toLowerCase();
         const p = document.getElementById('p-in').value.trim();
         if(!u || !p) return showToast("Заполни поля!", 'var(--err)');
-        const ip = await getIP(), ipKey = ip.replace(/\./g, '_'), r = ref(db, 'users/'+u), s = await get(r);
+        const ip = await getIP(), ipKey = ip.replace(/\./g,'_'), r = ref(db,'users/'+u), s = await get(r);
         if(type === 'reg') {
             if(s.exists()) return showToast("Ник занят!", 'var(--err)');
-            const ipsS = await get(ref(db, 'ips/'+ipKey));
+            const ipsS = await get(ref(db,'ips/'+ipKey));
             if(ipsS.exists() && Object.keys(ipsS.val()).length >= 3) return showToast("Лимит IP!", 'var(--err)');
-            await set(r, { username: u, password: p, balance: 1000, cloudInv: [], pinned: [], pic: "", bio: "", ip: ip });
-            await update(ref(db, `ips/${ipKey}`), { [u]: true });
+            await set(r, { username:u, password:p, balance:1000, cloudInv:[], pinned:[], pic:"", bio:"", ip:ip });
+            await update(ref(db,`ips/${ipKey}`), {[u]:true});
             loginOk(u, u);
         } else {
             if(s.exists() && s.val().password == p) loginOk(s.val().username, u);
@@ -159,17 +569,22 @@
         }
     };
 
-    function loginOk(name, id) { localStorage.setItem('gifts_user', JSON.stringify({name, id})); startApp(name, id); }
+    function loginOk(name, id) { localStorage.setItem('gifts_user', JSON.stringify({name,id})); startApp(name,id); }
 
     function startApp(name, id) {
-        user = { name, id, isAdm: (id === 'ckovoroda' || id === 'kukumbr') };
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        if(user.isAdm) { document.getElementById('adm-nav').style.display = 'flex'; initAdmin(); }
-        onValue(ref(db, 'users/'+id), s => {
+        user = { name, id, isAdm: (id==='ckovoroda'||id==='kukumbr') };
+        const auth = document.getElementById('auth-screen');
+        auth.style.transition = 'opacity 0.4s, transform 0.4s';
+        auth.style.opacity = '0'; auth.style.transform = 'scale(0.95)';
+        setTimeout(() => { auth.style.display='none'; document.getElementById('app').style.display='block'; }, 400);
+        if(user.isAdm) { document.getElementById('adm-nav').style.display='flex'; initAdmin(); }
+        onValue(ref(db,'users/'+id), s => {
             const d = s.val(); if(!d) return;
             document.getElementById('header-name').innerText = d.username;
-            document.getElementById('u-bal').innerText = d.balance;
+            const oldBal = parseInt(document.getElementById('u-bal').innerText) || 0;
+            const newBal = d.balance;
+            document.getElementById('u-bal').innerText = newBal;
+            if(newBal > oldBal) bumpBalance();
             renderFriends(d);
             renderMyProfile(d);
         });
@@ -177,302 +592,327 @@
         listenMarket();
     }
 
-    // --- INV & PIN ---
+    // ===== INV =====
     window.togglePin = async (inst) => {
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
-        let pinned = d.pinned || [];
-        const isP = pinned.some(x => x.inst == inst);
-        if(isP) { pinned = pinned.filter(x => x.inst != inst); showToast("Снято"); }
+        const r = ref(db,'users/'+user.id), s = await get(r), d = s.val(); let pinned = d.pinned||[];
+        const isP = pinned.some(x => x.inst==inst);
+        if(isP) { pinned = pinned.filter(x=>x.inst!=inst); showToast("📌 Снято с витрины"); }
         else {
-            if(pinned.length >= 5) return showToast("Макс. 5!", 'var(--err)');
-            const itm = d.cloudInv.find(x => x.inst == inst);
-            pinned.push(itm);
-            showToast("Закреплено");
+            if(pinned.length>=5) return showToast("Макс. 5!", 'var(--err)');
+            pinned.push(d.cloudInv.find(x=>x.inst==inst));
+            showToast("📌 Закреплено на витрине!");
         }
-        await update(r, { pinned });
-        renderInv();
+        await update(r, {pinned}); renderInv();
     };
 
     window.renderInv = async () => {
-        const s = await get(ref(db, 'users/'+user.id)), d = s.val(), inv = d.cloudInv || [], pin = d.pinned || [];
-        const upd = inv.map(x => ({...x, seen:true}));
-        await update(ref(db, 'users/'+user.id), { cloudInv: upd });
-        document.getElementById('inv').innerHTML = upd.length ? upd.map(x => {
-            const isP = pin.some(p => p.inst == x.inst);
-            return `<div class="card">
-                ${x.from ? `<small style="color:var(--orange)">От: ${x.from}</small>` : ''}
-                <span style="font-size:40px; display:block;">${x.i}</span>
-                <b>${x.n}</b>
-                <button class="btn" style="margin-top:10px; font-size:11px; background:var(--green)" onclick="giftOpen('${x.inst}')">🎁 Подарить</button>
-                <button class="btn" style="margin-top:5px; font-size:11px; background:${isP?'var(--err)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isP?'❌ Снять':'📌 Витрина'}</button>
-                <button class="btn" style="margin-top:5px; font-size:11px; background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button>
-            </div>`;
-        }).join('') : `<div style="grid-column:1/-1; text-align:center; color:var(--secondary); padding:40px;">Склад пуст</div>`;
+        const s = await get(ref(db,'users/'+user.id)), d = s.val(), inv = d.cloudInv||[], pin = d.pinned||[];
+        const upd = inv.map(x=>({...x,seen:true}));
+        await update(ref(db,'users/'+user.id), {cloudInv:upd});
+        document.getElementById('inv').innerHTML = upd.length
+            ? upd.map(x => {
+                const isP = pin.some(p=>p.inst==x.inst);
+                const isNew = !x.seen;
+                return `<div class="card" ${isNew?'style="border-color:var(--orange);"':''}>
+                    ${x.from?`<small style="color:var(--orange);font-weight:800;">🎁 От: ${x.from}</small>`:''}
+                    ${isNew?'<div style="position:absolute;top:10px;left:10px;background:var(--orange);color:#000;font-size:9px;font-weight:900;padding:2px 6px;border-radius:8px;">НОВОЕ</div>':''}
+                    <span class="gift-emoji" style="font-size:40px;">${x.i}</span>
+                    <b style="display:block;margin:6px 0;">${x.n}</b>
+                    <button class="btn" style="margin-top:6px; font-size:11px; background:var(--green)" onclick="giftOpen('${x.inst}', event)">🎁 Подарить</button>
+                    <button class="btn" style="margin-top:5px; font-size:11px; background:${isP?'var(--err)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isP?'❌ Снять':'📌 Витрина'}</button>
+                    <button class="btn" style="margin-top:5px; font-size:11px; background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button>
+                </div>`;
+            }).join('')
+            : `<div style="grid-column:1/-1; text-align:center; color:var(--secondary); padding:60px 20px;">
+                <div style="font-size:60px; margin-bottom:15px; animation: nftFloat 3s ease-in-out infinite;">📦</div>
+                <div style="font-size:18px; font-weight:800;">Склад пуст</div>
+                <div style="font-size:13px; margin-top:5px;">Купи что-нибудь в магазине!</div>
+               </div>`;
     };
 
-    // --- SHOP & MARKET ---
-    const NFT_23FEB = { id: 999, n: "NFT: 23 Февраля", i: "🍺🍺🧦", nft: true, price: 5000 };
-    // 23 Feb 2026 00:00 MSK = 22 Feb 2026 21:00 UTC
+    // ===== SHOP =====
+    const NFT_23FEB = { id:999, n:"NFT: 23 Февраля", i:"🍺🍺🧦", nft:true, price:5000 };
     const NFT_START = new Date('2026-02-22T21:00:00Z').getTime();
-    // 24 Feb 2026 00:00 MSK = 23 Feb 2026 21:00 UTC
     const NFT_END   = new Date('2026-02-23T21:00:00Z').getTime();
 
-    function isNftAvailable() { const now = Date.now(); return now >= NFT_START && now < NFT_END; }
+    function isNftAvailable() { const now=Date.now(); return now>=NFT_START&&now<NFT_END; }
     function getNftTimeLabel() {
         const now = Date.now();
-        if(now < NFT_START) {
-            const d = NFT_START - now;
-            const h = Math.floor(d/3600000), m = Math.floor((d%3600000)/60000);
-            return `🔒 Откроется через ${h}ч ${m}м`;
-        }
-        if(now < NFT_END) {
-            const d = NFT_END - now;
-            const h = Math.floor(d/3600000), m = Math.floor((d%3600000)/60000);
-            return `⏳ Осталось ${h}ч ${m}м`;
-        }
+        if(now<NFT_START){ const d=NFT_START-now,h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000); return `🔒 Откроется через ${h}ч ${m}м`; }
+        if(now<NFT_END)  { const d=NFT_END-now,  h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000); return `⏳ Осталось ${h}ч ${m}м`; }
         return null;
     }
 
     window.renderShop = () => {
         let html = catalog.map(x => {
-            const cP = getPrice(x.id), oP = getPrice(x.id, -900000);
+            const cP=getPrice(x.id), oP=getPrice(x.id,-900000);
             return `<div class="card">
-                <span style="font-size:40px; display:block;">${x.i}</span>
-                <b>${x.n}</b><br>
-                <div style="font-weight:bold;">${cP}💰 ${cP>oP?'<span class="price-up">▲</span>':'<span class="price-down">▼</span>'}</div>
-                <button class="btn" style="margin-top:10px;" onclick="buy(${x.id})">Купить</button>
+                <span class="gift-emoji" style="font-size:40px;">${x.i}</span>
+                <b style="display:block;margin:6px 0;">${x.n}</b>
+                <div style="font-weight:800; font-size:15px;">${cP}💰 ${cP>oP?'<span class="price-up">▲</span>':'<span class="price-down">▼</span>'}</div>
+                <button class="btn" style="margin-top:10px;" onclick="buy(${x.id}, event)">Купить</button>
             </div>`;
         }).join('');
 
         const timeLabel = getNftTimeLabel();
         if(timeLabel !== null) {
-            const available = isNftAvailable();
-            html = `<div class="card" style="grid-column:1/-1; border:2px solid gold; background:linear-gradient(135deg,#1a1200,#111b21); position:relative; overflow:hidden;">
-                <div style="position:absolute;top:8px;right:12px;font-size:11px;background:gold;color:#000;padding:3px 8px;border-radius:20px;font-weight:bold;">NFT</div>
-                <span style="font-size:55px; display:block; margin-bottom:5px;">🍺🍺🧦</span>
-                <b style="font-size:16px;">NFT: 23 Февраля</b>
+            const av = isNftAvailable();
+            html = `<div class="card nft-card" style="grid-column:1/-1; border:2px solid gold; background:linear-gradient(135deg,#1a1200,#111b21);">
+                <div style="position:absolute;top:8px;right:12px;font-size:11px;background:gold;color:#000;padding:3px 8px;border-radius:20px;font-weight:900;">✨ NFT</div>
+                <span class="nft-emoji-float" style="font-size:55px; margin-bottom:5px;">🍺🍺🧦</span>
+                <b style="font-size:16px; font-weight:900;">NFT: 23 Февраля</b>
                 <p style="color:var(--secondary);font-size:12px;margin:6px 0;">Эксклюзивный подарок — только 23 февраля!</p>
-                <div style="font-weight:bold;color:gold;font-size:18px;">5 000 💰</div>
-                <div style="font-size:12px;color:var(--orange);margin:6px 0;">${timeLabel}</div>
-                ${available
-                    ? `<button class="btn" style="margin-top:10px; background:linear-gradient(90deg,#b8860b,#ffd700); color:#000; font-weight:bold;" onclick="buyNft()">🛒 Купить NFT</button>`
+                <div style="font-weight:900;color:gold;font-size:20px; text-shadow:0 0 20px rgba(255,215,0,0.5);">5 000 💰</div>
+                <div style="font-size:12px;color:var(--orange);margin:6px 0;font-weight:800;">${timeLabel}</div>
+                ${av
+                    ? `<button class="btn" style="margin-top:10px; background:linear-gradient(90deg,#b8860b,#ffd700); color:#000; font-weight:900;" onclick="buyNft(event)">🛒 Купить NFT</button>`
                     : `<button class="btn" style="margin-top:10px; background:#333; color:#888;" disabled>Недоступно</button>`}
             </div>` + html;
         }
-
         document.getElementById('shop').innerHTML = html;
     };
 
-    window.buyNft = async () => {
+    window.buyNft = async (e) => {
         if(!isNftAvailable()) return showToast("NFT недоступен!", 'var(--err)');
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
-        if(d.balance < 5000) return showToast("Нет монет! Нужно 5000💰", 'var(--err)');
-        const inv = d.cloudInv || [];
-        inv.push({...NFT_23FEB, inst: Date.now(), seen: true});
-        await update(r, { balance: d.balance - 5000, cloudInv: inv });
+        const r=ref(db,'users/'+user.id), s=await get(r), d=s.val();
+        if(d.balance<5000) return showToast("Нет монет! Нужно 5000💰", 'var(--err)');
+        const inv=d.cloudInv||[];
+        inv.push({...NFT_23FEB, inst:Date.now(), seen:true});
+        await update(r, {balance:d.balance-5000, cloudInv:inv});
+        if(e) spawnConfetti(e.clientX, e.clientY);
         showToast("🍺🍺🧦 NFT куплен! С праздником!", 'gold');
+        bumpBalance();
     };
 
-    window.buy = async (id) => {
-        const p = getPrice(id), itm = catalog.find(x => x.id === id);
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
-        if(d.balance >= p) {
-            const inv = d.cloudInv || [];
-            inv.push({...itm, inst: Date.now(), seen: true});
-            await update(r, { balance: d.balance - p, cloudInv: inv });
-            showToast("Куплено!", 'var(--green)');
+    window.buy = async (id, e) => {
+        const p=getPrice(id), itm=catalog.find(x=>x.id===id);
+        const r=ref(db,'users/'+user.id), s=await get(r), d=s.val();
+        if(d.balance>=p) {
+            const inv=d.cloudInv||[];
+            inv.push({...itm, inst:Date.now(), seen:true});
+            await update(r, {balance:d.balance-p, cloudInv:inv});
+            if(e) spawnConfetti(e.clientX, e.clientY);
+            showToast(`${itm.i} Куплено!`, 'var(--green)');
+            bumpBalance();
         } else {
             showToast("Нет монет!", 'var(--err)');
+            if(e) { const el=e.target; el.style.animation='none'; void el.offsetWidth; el.style.animation=''; }
         }
     };
 
     window.listenMarket = () => {
-        onValue(ref(db, 'market/'), s => {
+        onValue(ref(db,'market/'), s => {
             const d = s.val();
             document.getElementById('market').innerHTML = d
-                ? Object.entries(d).map(([k, x]) => `<div class="card" style="padding:10px;">
-                    <span style="font-size:30px;">${x.i}</span><br>
-                    <b>${x.n}</b>
-                    <div style="color:var(--accent);">${x.mP}💰</div>
-                    <small>@${x.sN}</small>
-                    <button class="btn" style="padding:5px; margin-top:5px; font-size:11px;" onclick="${x.sI===user.id?`remM('${k}')`:`buyM('${k}',${x.mP},'${x.sI}')`}">
-                        ${x.sI===user.id?'Снять':'Купить'}
-                    </button>
-                  </div>`).join('')
-                : `<div style="grid-column:1/-1; text-align:center; color:var(--secondary); padding:40px;">Рынок пуст</div>`;
+                ? Object.entries(d).map(([k,x]) => `
+                    <div class="card market-item" style="padding:14px;">
+                        <span class="gift-emoji" style="font-size:34px;">${x.i}</span>
+                        <b style="display:block;margin:5px 0;">${x.n}</b>
+                        <div style="color:var(--accent);font-weight:900;font-size:16px;">${x.mP}💰</div>
+                        <small style="color:var(--secondary);">@${x.sN}</small>
+                        <button class="btn" style="padding:6px; margin-top:8px; font-size:11px; background:${x.sI===user.id?'var(--err)':'var(--green)'}"
+                            onclick="${x.sI===user.id?`remM('${k}',event)`:`buyM('${k}',${x.mP},'${x.sI}',event)`}">
+                            ${x.sI===user.id?'🗑️ Снять':'🛒 Купить'}
+                        </button>
+                    </div>`)
+                    .join('')
+                : `<div style="grid-column:1/-1; text-align:center; color:var(--secondary); padding:60px 20px;">
+                    <div style="font-size:60px; margin-bottom:15px; animation: nftFloat 3s ease-in-out infinite;">⚖️</div>
+                    <div style="font-size:18px; font-weight:800;">Рынок пуст</div>
+                    <div style="font-size:13px; margin-top:5px;">Выставь предметы со склада!</div>
+                   </div>`;
         });
     };
 
     window.toMarket = async (inst) => {
         const p = prompt("Цена:");
-        if(!p || parseInt(p) <= 0) return;
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
-        const itm = d.cloudInv.find(x => x.inst == inst);
+        if(!p || parseInt(p)<=0) return;
+        const r=ref(db,'users/'+user.id), s=await get(r), d=s.val();
+        const itm=d.cloudInv.find(x=>x.inst==inst);
         if(!itm) return showToast("Предмет не найден!", 'var(--err)');
-        await update(r, { cloudInv: d.cloudInv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) });
-        push(ref(db, 'market/'), {...itm, mP: parseInt(p), sI: user.id, sN: user.name});
-        showToast("Выставлено!");
+        await update(r, {cloudInv:d.cloudInv.filter(x=>x.inst!=inst), pinned:(d.pinned||[]).filter(x=>x.inst!=inst)});
+        push(ref(db,'market/'), {...itm, mP:parseInt(p), sI:user.id, sN:user.name});
+        showToast("⚖️ Выставлено на рынок!");
         renderInv();
     };
 
-    window.buyM = async (k, p, si) => {
-        const bR = ref(db, 'users/'+user.id), bS = await get(bR);
-        if(bS.val().balance < p) return showToast("Нет монет!", 'var(--err)');
-        const mS = await get(ref(db, 'market/'+k));
+    window.buyM = async (k, p, si, e) => {
+        const bR=ref(db,'users/'+user.id), bS=await get(bR);
+        if(bS.val().balance<p) return showToast("Нет монет!", 'var(--err)');
+        const mS=await get(ref(db,'market/'+k));
         if(!mS.exists()) return showToast("Лот уже купили!", 'var(--err)');
-        const itm = mS.val();
-        await remove(ref(db, 'market/'+k));
-        const inv = bS.val().cloudInv || [];
-        inv.push({...itm, inst: Date.now(), seen:true});
-        await update(bR, { balance: bS.val().balance - p, cloudInv: inv });
-        const sS = await get(ref(db, 'users/'+si));
-        if(sS.exists()) await update(ref(db, 'users/'+si), { balance: sS.val().balance + parseInt(p) });
-        showToast("Куплено!");
+        const itm=mS.val();
+        await remove(ref(db,'market/'+k));
+        const inv=bS.val().cloudInv||[];
+        inv.push({...itm, inst:Date.now(), seen:true});
+        await update(bR, {balance:bS.val().balance-p, cloudInv:inv});
+        const sS=await get(ref(db,'users/'+si));
+        if(sS.exists()) await update(ref(db,'users/'+si), {balance:sS.val().balance+parseInt(p)});
+        if(e) spawnConfetti(e.clientX, e.clientY);
+        showToast(`${itm.i} Куплено!`);
+        bumpBalance();
     };
 
-    window.remM = async (k) => {
-        const mS = await get(ref(db, 'market/'+k));
+    window.remM = async (k, e) => {
+        const mS=await get(ref(db,'market/'+k));
         if(!mS.exists()) return showToast("Лот не найден!", 'var(--err)');
-        const itm = mS.val();
-        await remove(ref(db, 'market/'+k));
-        const r = ref(db, 'users/'+user.id), s = await get(r), inv = s.val().cloudInv || [];
-        inv.push({...itm, inst: Date.now(), seen:true});
-        await update(r, { cloudInv: inv });
-        showToast("Снято!");
+        const itm=mS.val();
+        await remove(ref(db,'market/'+k));
+        const r=ref(db,'users/'+user.id), s=await get(r), inv=s.val().cloudInv||[];
+        inv.push({...itm, inst:Date.now(), seen:true});
+        await update(r, {cloudInv:inv});
+        showToast("Снято с рынка!");
     };
 
-    // --- FRIENDS ---
+    // ===== FRIENDS =====
     window.searchFriend = async () => {
-        const t = document.getElementById('friend-search').value.trim().toLowerCase();
+        const t=document.getElementById('friend-search').value.trim().toLowerCase();
         if(!t) return showToast("Введи ник!", 'var(--err)');
-        if(t === user.id) return showToast("Это ты сам!", 'var(--err)');
-        const fs = await get(ref(db, 'users/'+t));
+        if(t===user.id) return showToast("Это ты сам!", 'var(--err)');
+        const fs=await get(ref(db,'users/'+t));
         if(!fs.exists()) return showToast("Пользователь не найден!", 'var(--err)');
-        await update(ref(db, `users/${t}/requests/${user.id}`), { from: user.id, name: user.name });
-        showToast("Запрос отправлен!");
+        await update(ref(db,`users/${t}/requests/${user.id}`), {from:user.id, name:user.name});
+        showToast("✉️ Запрос отправлен!");
     };
 
     function renderFriends(d) {
-        const reqs = d.requests || {}, frs = d.friends || {};
-        const bF = document.getElementById('badge-fr'), c = Object.keys(reqs).length;
-        bF.innerText = c; bF.style.display = c > 0 ? 'flex' : 'none';
-        document.getElementById('friend-requests').innerHTML = Object.entries(reqs).map(([id, data]) =>
-            `<div class="card" style="margin-bottom:10px;">Запрос от <b>${data.name}</b>
-             <button class="btn" style="padding:5px; margin-top:8px;" onclick="acceptFr('${id}','${data.name}')">Принять</button></div>`
-        ).join('');
-        document.getElementById('friends-list').innerHTML = Object.entries(frs).map(([id, data]) =>
-            `<div class="card" style="margin-bottom:5px;">👤 ${data.name}</div>`
-        ).join('') || (Object.keys(reqs).length === 0 ? `<p style="color:var(--secondary); text-align:center;">Нет друзей</p>` : '');
+        const reqs=d.requests||{}, frs=d.friends||{}, bF=document.getElementById('badge-fr'), c=Object.keys(reqs).length;
+        bF.innerText=c; bF.style.display=c>0?'flex':'none';
+        document.getElementById('friend-requests').innerHTML = Object.entries(reqs).map(([id,data]) =>
+            `<div class="card" style="margin-bottom:10px; border-color:var(--orange);">
+                <b>👋 Запрос от ${data.name}</b>
+                <button class="btn" style="padding:8px; margin-top:10px; background:var(--green)" onclick="acceptFr('${id}','${data.name}')">✅ Принять</button>
+            </div>`).join('');
+        document.getElementById('friends-list').innerHTML = Object.entries(frs).map(([id,data]) =>
+            `<div class="card" style="margin-bottom:8px; flex-direction:row; display:flex; align-items:center; gap:10px; text-align:left;">
+                <span style="font-size:30px;">👤</span>
+                <b style="font-size:15px;">${data.name}</b>
+            </div>`).join('')
+            || (c===0 ? `<div style="text-align:center; color:var(--secondary); padding:40px;">
+                <div style="font-size:50px; margin-bottom:10px; animation:nftFloat 3s ease-in-out infinite;">👥</div>
+                <div style="font-weight:800;">Пока нет друзей</div>
+                <div style="font-size:12px; margin-top:5px;">Найди друга по нику!</div>
+               </div>` : '');
     }
 
     window.acceptFr = async (fid, fn) => {
-        await update(ref(db, `users/${user.id}/friends/${fid}`), { name: fn });
-        await update(ref(db, `users/${fid}/friends/${user.id}`), { name: user.name });
-        await remove(ref(db, `users/${user.id}/requests/${fid}`));
-        showToast("Добавлен!");
+        await update(ref(db,`users/${user.id}/friends/${fid}`), {name:fn});
+        await update(ref(db,`users/${fid}/friends/${user.id}`), {name:user.name});
+        await remove(ref(db,`users/${user.id}/requests/${fid}`));
+        showToast(`🎉 ${fn} добавлен в друзья!`, 'var(--green)');
     };
 
-    window.giftOpen = async (inst) => {
-        const s = await get(ref(db, 'users/'+user.id)), frs = s.val().friends || {};
-        if(!Object.keys(frs).length) return showToast("Нет друзей!", 'var(--err)');
-        document.getElementById('modal-content').innerHTML = `
-            <h3>Подарить</h3>
-            <div style="max-height:200px;overflow-y:auto;">
-                ${Object.entries(frs).map(([id, d]) =>
-                    `<button class="btn" style="margin-bottom:10px;" onclick="sendG('${inst}','${id}')">🎁 ${d.name}</button>`
+    window.giftOpen = async (inst, e) => {
+        const s=await get(ref(db,'users/'+user.id)), frs=s.val().friends||{};
+        if(!Object.keys(frs).length) return showToast("Сначала добавь друзей!", 'var(--err)');
+        openModal(`
+            <h3 style="font-weight:900; margin-bottom:15px;">🎁 Кому подарить?</h3>
+            <div style="max-height:250px;overflow-y:auto;scrollbar-width:none;">
+                ${Object.entries(frs).map(([id,d]) =>
+                    `<button class="btn" style="margin-bottom:10px; background:linear-gradient(135deg,var(--accent),#1a6fa8);" onclick="sendG('${inst}','${id}',event)">🎁 ${d.name}</button>`
                 ).join('')}
             </div>
-            <button class="btn" style="background:none; margin-top:5px;" onclick="closeModal()">Отмена</button>`;
-        document.getElementById('modal-overlay').style.display='flex';
+            <button class="btn" style="background:rgba(255,255,255,0.1); margin-top:5px;" onclick="closeModal()">Отмена</button>`);
     };
 
-    window.sendG = async (inst, fid) => {
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
-        const inv = d.cloudInv || [], itm = inv.find(x => x.inst == inst);
+    window.sendG = async (inst, fid, e) => {
+        const r=ref(db,'users/'+user.id), s=await get(r), d=s.val();
+        const inv=d.cloudInv||[], itm=inv.find(x=>x.inst==inst);
         if(!itm) return showToast("Предмет не найден!", 'var(--err)');
-        await update(r, { cloudInv: inv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) });
-        const frS = await get(ref(db, 'users/'+fid)), frInv = frS.val().cloudInv || [];
-        frInv.push({...itm, from: user.name, seen: false, inst: Date.now()});
-        await update(ref(db, 'users/'+fid), { cloudInv: frInv });
+        if(e) flyGift(itm.i, e.target);
+        if(e) spawnConfetti(e.clientX, e.clientY);
+        await update(r, {cloudInv:inv.filter(x=>x.inst!=inst), pinned:(d.pinned||[]).filter(x=>x.inst!=inst)});
+        const frS=await get(ref(db,'users/'+fid)), frInv=frS.val().cloudInv||[];
+        frInv.push({...itm, from:user.name, seen:false, inst:Date.now()});
+        await update(ref(db,'users/'+fid), {cloudInv:frInv});
         closeModal();
-        showToast("Подарок отправлен! 🎁");
+        setTimeout(() => { showToast(`${itm.i} Подарок отправлен! 🎉`, 'var(--green)'); }, 400);
         renderInv();
     };
 
-    // --- PROFILE ---
+    // ===== PROFILE =====
     function renderMyProfile(d) {
         document.getElementById('profile').innerHTML = `
             <div style="text-align:center;">
-                <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar">
-                <h2>${d.username}</h2>
-                <p style="color:var(--secondary);">${d.bio || 'Нет описания'}</p>
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <img src="${d.pic||'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar">
+                <h2 style="font-weight:900; font-size:22px; margin:5px 0;">${d.username}</h2>
+                <p style="color:var(--secondary); margin:5px 0 15px;">${d.bio||'Нет описания'}</p>
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
                     <button class="btn" onclick="openEdit()">⚙️ Настройки</button>
-                    <button class="btn" style="background:var(--err)" onclick="logout()">Выход</button>
+                    <button class="btn" style="background:var(--err)" onclick="logout()">🚪 Выход</button>
                 </div>
-                <h3>⭐ Витрина</h3>
+                <h3 style="font-weight:900; margin-bottom:10px;">⭐ Витрина</h3>
                 <div class="pinned-section">
-                    ${(d.pinned || []).map(x => `<div style="text-align:center; min-width:60px;"><span style="font-size:30px;">${x.i}</span><br><small style="font-size:10px">${x.n}</small></div>`).join('') || '<span style="color:var(--secondary)">Пусто</span>'}
+                    ${(d.pinned||[]).map((x,i) =>
+                        `<div class="pinned-item" style="animation-delay:${i*0.07}s">
+                            <span style="font-size:32px;">${x.i}</span>
+                            <div style="font-size:10px; color:var(--secondary); margin-top:3px;">${x.n}</div>
+                        </div>`
+                    ).join('')||'<span style="color:var(--secondary); font-size:13px;">Пусто — закрепи подарки 📌</span>'}
                 </div>
                 <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
                     <a href="https://t.me/Gifts_World_Pro" target="_blank" class="btn tg-btn">📢 Канал проекта</a>
-                    <a href="https://dalink.to/gifworld" target="_blank" class="btn" style="background:#505050;">💎 Поддержка проекта</a>
+                    <a href="https://dalink.to/gifworld" target="_blank" class="btn" style="background:#505050; margin-top:8px;">💎 Поддержка проекта</a>
                 </div>
             </div>`;
     }
 
-    window.openEdit = async () => { 
-        const s = await get(ref(db, 'users/'+user.id)); 
-        document.getElementById('modal-content').innerHTML = `
-            <h3>Настройки</h3>
-            <textarea id="ebio" placeholder="О себе">${s.val().bio||''}</textarea>
-            <p style="font-size:12px;color:var(--secondary)">Аватар (с устройства):</p>
-            <input type="file" id="efile" accept="image/*" style="padding:5px; font-size:12px;">
+    window.openEdit = async () => {
+        const s=await get(ref(db,'users/'+user.id));
+        openModal(`
+            <h3 style="font-weight:900; margin-bottom:10px;">⚙️ Настройки</h3>
+            <textarea id="ebio" placeholder="О себе..." style="min-height:80px;">${s.val().bio||''}</textarea>
+            <p style="font-size:12px;color:var(--secondary); margin:5px 0;">Аватар (с устройства):</p>
+            <input type="file" id="efile" accept="image/*" style="padding:8px; font-size:12px;">
             <input type="hidden" id="epic" value="${s.val().pic||''}">
-            <button class="btn" onclick="saveP()">Сохранить</button>`;
-        document.getElementById('modal-overlay').style.display='flex'; 
+            <button class="btn" style="margin-top:10px;" onclick="saveP()">💾 Сохранить</button>
+            <button class="btn" style="background:rgba(255,255,255,0.1); margin-top:8px;" onclick="closeModal()">Отмена</button>`);
     };
 
-    window.saveP = async () => { 
-        const file = document.getElementById('efile').files[0];
+    window.saveP = async () => {
+        const file=document.getElementById('efile').files[0];
         if(file) {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                await update(ref(db, 'users/'+user.id), { bio: document.getElementById('ebio').value, pic: e.target.result });
-                closeModal(); showToast("Сохранено!");
+            const reader=new FileReader();
+            reader.onload=async(e) => {
+                await update(ref(db,'users/'+user.id), {bio:document.getElementById('ebio').value, pic:e.target.result});
+                closeModal(); showToast("✅ Сохранено!");
             };
             reader.readAsDataURL(file);
         } else {
-            await update(ref(db, 'users/'+user.id), { bio: document.getElementById('ebio').value });
-            closeModal(); showToast("Сохранено!");
+            await update(ref(db,'users/'+user.id), {bio:document.getElementById('ebio').value});
+            closeModal(); showToast("✅ Сохранено!");
         }
     };
 
-    window.logout = () => { localStorage.removeItem('gifts_user'); location.reload(); };
-
-    // --- ADMIN ---
-    window.clearAllShowcases = async () => {
-        if(!confirm("Очистить все витрины?")) return;
-        const s = await get(ref(db, 'users')), us = s.val();
-        const up = {};
-        for(let id in us) up[`users/${id}/pinned`] = [];
-        await update(ref(db), up);
-        showToast("Очищено!", 'var(--err)');
+    window.logout = () => {
+        document.getElementById('app').style.transition='opacity 0.3s';
+        document.getElementById('app').style.opacity='0';
+        setTimeout(() => { localStorage.removeItem('gifts_user'); location.reload(); }, 300);
     };
 
-    function initAdmin() { 
-        onValue(ref(db, 'users'), s => { 
-            const us = s.val(); if(!us) return; 
-            document.getElementById('adm-stats').innerText = `Игроков: ${Object.keys(us).length}`;
-            let h = "";
-            for(let id in us) { 
-                const u = us[id];
-                const invStr = (u.cloudInv || []).map(x => x.i).join(' ') || 'пусто';
-                h += `<div class="adm-user-card">
-                    <b>@${u.username}</b>
+    // ===== ADMIN =====
+    window.clearAllShowcases = async () => {
+        if(!confirm("Очистить все витрины?")) return;
+        const s=await get(ref(db,'users')), us=s.val(), up={};
+        for(let id in us) up[`users/${id}/pinned`]=[];
+        await update(ref(db), up);
+        showToast("🧹 Очищено!", 'var(--err)');
+    };
+
+    function initAdmin() {
+        onValue(ref(db,'users'), s => {
+            const us=s.val(); if(!us) return;
+            document.getElementById('adm-stats').innerHTML = `<div class="card" style="margin-bottom:15px; background:linear-gradient(135deg,#1a2a1a,#111b21); border-color:var(--green);">
+                <b style="font-size:18px; color:var(--green);">👥 Игроков: ${Object.keys(us).length}</b>
+            </div>`;
+            let h="";
+            for(let id in us) {
+                const u=us[id], invStr=(u.cloudInv||[]).map(x=>x.i).join(' ')||'пусто';
+                h+=`<div class="adm-user-card">
+                    <b style="font-size:14px;">@${u.username}</b>
                     <div class="adm-details">
                         🔑 Пароль: ${u.password}<br>
-                        🌐 IP: ${u.ip || 'неизв.'}<br>
+                        🌐 IP: ${u.ip||'неизв.'}<br>
                         📦 Инв: ${invStr}
                     </div>
                     <div class="adm-row">
@@ -483,35 +923,38 @@
                         <select id="ag-${id}" style="margin:0; padding:5px; height:36px;">${catalog.map(x=>`<option value="${x.id}">${x.i} ${x.n}</option>`).join('')}</select>
                         <button class="btn" style="width:40px; padding:0; height:36px; background:var(--orange)" onclick="giveI('${id}')">🎁</button>
                     </div>
-                    <button class="btn" style="background:var(--err); margin-top:10px; padding:5px; font-size:11px;" onclick="delUser('${id}')">🗑️ Удалить профиль</button>
+                    <button class="btn" style="background:var(--err); margin-top:10px; padding:6px; font-size:11px;" onclick="delUser('${id}')">🗑️ Удалить профиль</button>
                 </div>`;
             }
             document.getElementById('adm-users-list').innerHTML = h;
         });
     }
 
-    window.delUser = async (id) => { if(confirm(`Удалить игрока @${id} навсегда?`)) await remove(ref(db, 'users/'+id)); };
-    window.setB = async (id) => { const v = document.getElementById('ab-'+id).value; if(v) await update(ref(db,'users/'+id), {balance: parseInt(v)}); };
+    window.delUser = async (id) => { if(confirm(`Удалить @${id} навсегда?`)) await remove(ref(db,'users/'+id)); };
+    window.setB = async (id) => {
+        const v=document.getElementById('ab-'+id).value;
+        if(v) { await update(ref(db,'users/'+id), {balance:parseInt(v)}); showToast("💰 Баланс обновлён!"); }
+    };
     window.giveI = async (id) => {
-        const itm = catalog.find(x => x.id == document.getElementById('ag-'+id).value);
-        const s = await get(ref(db, 'users/'+id)), inv = s.val().cloudInv || [];
-        inv.push({...itm, inst: Date.now(), from: "ADMIN", seen: false});
-        await update(ref(db, 'users/'+id), { cloudInv: inv });
-        showToast(`Выдано ${itm.i} игроку @${id}`);
+        const itm=catalog.find(x=>x.id==document.getElementById('ag-'+id).value);
+        const s=await get(ref(db,'users/'+id)), inv=s.val().cloudInv||[];
+        inv.push({...itm, inst:Date.now(), from:"ADMIN", seen:false});
+        await update(ref(db,'users/'+id), {cloudInv:inv});
+        showToast(`${itm.i} Выдано @${id}`);
     };
 
-    // --- TAB & INIT ---
+    // ===== TABS =====
     window.tab = (id, b) => {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         b.classList.add('active');
-        if(id === 'inv') renderInv();
+        if(id==='inv') renderInv();
     };
 
     window.onload = () => {
-        const s = localStorage.getItem('gifts_user');
-        if(s) { const d = JSON.parse(s); startApp(d.name, d.id); }
+        const s=localStorage.getItem('gifts_user');
+        if(s) { const d=JSON.parse(s); startApp(d.name, d.id); }
     };
 </script>
 </body>
