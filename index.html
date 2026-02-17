@@ -10,12 +10,10 @@
             --bg: #070d14; --card: #111b21; --accent: #2481cc; --text: #ffffff; 
             --secondary: #7f91a4; --err: #e74c3c; --green: #2ecc71; --orange: #f39c12;
             --glass: rgba(23, 33, 43, 0.95);
-            --tg: #229ED9;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
 
-        /* Анимации */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
@@ -28,45 +26,28 @@
         .page { display: none; padding: 15px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding-bottom: 120px; animation: fadeInUp 0.4s ease-out; }
         .page.active { display: grid; }
         
-        #friends, #profile, #admin, #game { display: none; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; }
-        #friends.active, #profile.active, #admin.active, #game.active { display: flex; }
+        #friends, #profile, #admin { display: none; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; }
+        #friends.active, #profile.active, #admin.active { display: flex; }
 
         .card { background: var(--card); border-radius: 25px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.3s; position: relative; }
-        .card:active { transform: scale(0.98); }
         
-        /* Навигация */
         .nav { display: flex; background: var(--glass); backdrop-filter: blur(20px); position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; border-radius: 30px; padding: 10px; z-index: 1000; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .nav-btn { flex: 1; background: none; border: none; color: var(--secondary); cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 11px; transition: 0.3s; }
-        .nav-btn i { font-size: 22px; margin-bottom: 4px; font-style: normal; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .nav-btn i { font-size: 22px; margin-bottom: 4px; font-style: normal; }
         .nav-btn.active { color: var(--accent); }
-        .nav-btn.active i { transform: translateY(-5px) scale(1.2); }
 
-        .badge { position: absolute; top: -2px; right: 15px; background: var(--err); color: white; font-size: 10px; min-width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--bg); animation: pop 0.3s; }
+        .badge { position: absolute; top: -2px; right: 15px; background: var(--err); color: white; font-size: 10px; min-width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--bg); }
 
         .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--accent); object-fit: cover; background: #0e1621; margin-bottom: 15px; }
         
-        #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 20px; font-weight: bold; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; z-index: 3000; }
+        #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 20px; font-weight: bold; transition: 0.4s; opacity: 0; z-index: 3000; }
         #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        /* Монетка */
-        .coin-box { perspective: 1000px; width: 100px; height: 100px; margin: 20px auto; }
-        .coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .coin-side { position: absolute; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 40px; background: radial-gradient(circle, #f1c40f, #f39c12); border: 4px solid #d35400; }
-        .side-back { transform: rotateY(180deg); }
-        .spin-eagle { transform: rotateY(1800deg); }
-        .spin-tails { transform: rotateY(1980deg); }
-
-        .pinned-section { width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; scroll-behavior: smooth; }
+        .pinned-section { width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; }
         .filter-bar { grid-column: 1 / -1; display: flex; gap: 10px; margin-bottom: 10px; }
         
-        /* Админ панель спец-стили */
         .adm-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .adm-stat-item { background: #1c2833; padding: 15px; border-radius: 20px; text-align: left; border-left: 4px solid var(--accent); }
-        .adm-stat-item small { color: var(--secondary); display: block; }
-        .adm-stat-item b { font-size: 18px; color: var(--accent); }
-        .adm-user-card { background: #16212b; border-radius: 20px; padding: 15px; margin-bottom: 15px; text-align: left; border-left: 4px solid var(--orange); }
-        .adm-market-row { display: flex; justify-content: space-between; align-items: center; background: #0e1621; padding: 8px 12px; border-radius: 12px; margin-bottom: 5px; font-size: 13px; }
-        
         .verify-badge { color: #3897f0; margin-left: 4px; font-size: 14px; }
     </style>
 </head>
@@ -74,7 +55,7 @@
 
 <div id="toast"></div>
 <div id="modal-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:none; align-items:center; justify-content:center; z-index:2000; padding:20px;" onclick="if(event.target==this) closeModal()">
-    <div id="modal-content" class="card" style="width:100%; max-width:400px; background:var(--card); animation: pop 0.3s;"></div>
+    <div id="modal-content" class="card" style="width:100%; max-width:400px; background:var(--card);"></div>
 </div>
 
 <div id="auth-screen" style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 20px;">
@@ -118,33 +99,6 @@
         </div>
         <div id="market-list" style="display: contents;"></div>
     </div>
-    
-    <div id="game" class="page">
-        <div class="card">
-            <h2>🪙 Монетка</h2>
-            <div id="game-lobby">
-                <p style="color:var(--secondary)">Ставка: 100💰</p>
-                <div id="game-friends-list"></div>
-            </div>
-            <div id="game-invite-box" style="display:none;">
-                <p id="invite-text" style="font-weight:bold;"></p>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn" style="background:var(--green)" onclick="acceptGame()">Принять</button>
-                    <button class="btn" style="background:var(--err)" onclick="declineGame()">Отклон.</button>
-                </div>
-            </div>
-            <div id="game-play" style="display:none;">
-                <div class="coin-box"><div id="game-coin" class="coin"><div class="coin-side">🦅</div><div class="coin-side side-back">💰</div></div></div>
-                <div id="game-controls">
-                    <p id="game-status">Ждем выбор...</p>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn" onclick="makeChoice('eagle')">Орёл 🦅</button>
-                        <button class="btn" onclick="makeChoice('tails')">Решка 💰</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div id="friends" class="page">
         <div style="display:flex; gap:5px;">
@@ -158,46 +112,24 @@
     <div id="profile" class="page"></div>
     
     <div id="admin" class="page">
-        <h2 style="color:var(--orange)">⚙️ Управление проектом</h2>
-        
+        <h2 style="color:var(--orange)">⚙️ Админ-панель</h2>
         <div class="adm-stats">
             <div class="adm-stat-item"><small>Игроков</small><b id="adm-count-u">0</b></div>
-            <div class="adm-stat-item"><small>Монет в игре</small><b id="adm-count-c">0</b></div>
-            <div class="adm-stat-item"><small>Лотов рынка</small><b id="adm-count-m">0</b></div>
-            <div class="adm-stat-item"><small>Промокодов</small><b id="adm-count-p">0</b></div>
+            <div class="adm-stat-item"><small>Монет всего</small><b id="adm-count-c">0</b></div>
         </div>
-
         <div class="card" style="text-align:left; margin-bottom:20px;">
-            <b style="color:var(--orange)">🎟 Создать промокод</b>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <input type="text" id="adm-p-code" placeholder="КОД">
-                <input type="number" id="adm-p-sum" placeholder="Сумма">
-            </div>
-            <input type="number" id="adm-p-lim" placeholder="Лимит активаций">
-            <button class="btn" style="background:var(--orange)" onclick="createPromo()">Выпустить промо</button>
+            <b>🎟 Создать промокод</b>
+            <input type="text" id="adm-p-code" placeholder="КОД">
+            <input type="number" id="adm-p-sum" placeholder="Сумма">
+            <input type="number" id="adm-p-lim" placeholder="Лимит">
+            <button class="btn" style="background:var(--orange)" onclick="createPromo()">Создать</button>
             <div id="adm-promo-list" style="margin-top:10px;"></div>
         </div>
-
-        <div class="card" style="text-align:left; margin-bottom:20px;">
-            <b>📣 Глобальная рассылка</b>
-            <textarea id="adm-global-msg" placeholder="Текст сообщения для всех..." style="height:80px;"></textarea>
-            <button class="btn" onclick="sendGlobalMsg()">Разослать всем</button>
-        </div>
-
-        <div class="card" style="text-align:left; margin-bottom:20px;">
-            <b>⚖️ Модерация рынка</b>
-            <div id="adm-market-items" style="max-height:200px; overflow-y:auto; margin-top:10px;"></div>
-        </div>
-
-        <button class="btn" style="background:var(--err); margin-bottom:20px;" onclick="clearAllShowcases()">🧹 Очистить все витрины</button>
-
-        <h3>Список пользователей</h3>
         <div id="adm-users-list"></div>
     </div>
 
     <div class="nav">
         <button class="nav-btn active" onclick="tab('shop', this)"><i>🛍️</i><span>Магазин</span></button>
-        <button class="nav-btn" onclick="tab('game', this)"><div id="badge-game" class="badge">0</div><i>🪙</i><span>Игра</span></button>
         <button class="nav-btn" onclick="tab('inv', this)"><div id="badge-inv" class="badge">0</div><i>📦</i><span>Склад</span></button>
         <button class="nav-btn" onclick="tab('market', this)"><i>⚖️</i><span>Рынок</span></button>
         <button class="nav-btn" onclick="tab('friends', this)"><div id="badge-fr" class="badge">0</div><i>👥</i><span>Друзья</span></button>
@@ -219,38 +151,27 @@
     };
     const fb = initializeApp(config);
     const db = getDatabase(fb);
-    let user = null, currentGameId = null, gameListener = null;
+    let user = null;
 
     const catalog = [
-        {id:1, n:"Печенька", i:"🍪"}, {id:2, n:"Кофе", i:"☕"}, {id:3, n:"Пицца", i:"🍕"},
-        {id:4, n:"Бургер", i:"🍔"}, {id:5, n:"Торт", i:"🎂"}, {id:6, n:"Арбуз", i:"🍉"},
-        {id:7, n:"Мишка", i:"🧸"}, {id:8, n:"Роза", i:"🌹"}, {id:9, n:"Букет", i:"💐"},
-        {id:10, n:"Гитара", i:"🎸"}, {id:11, n:"Кольцо", i:"💍"}, {id:12, n:"Кристалл", i:"💎"},
-        {id:13, n:"Корона", i:"👑"}, {id:14, n:"Спорткар", i:"🏎️"}, {id:15, n:"Яхта", i:"🛥️"},
-        {id:16, n:"Ракета", i:"🚀"}, {id:17, n:"Остров", i:"🏝️"}, {id:18, n:"Кот", i:"🐱"},
-        {id:19, n:"Панда", i:"🐼"}, {id:20, n:"Единорог", i:"🦄"}, {id:21, n:"Золото", i:"📀"},
-        {id:22, n:"Медаль", i:"🥇"}, {id:23, n:"Кубок", i:"🏆"}, {id:24, n:"Джойстик", i:"🎮"},
-        {id:25, n:"Наушники", i:"🎧"}, {id:26, n:"Ноутбук", i:"💻"}, {id:27, n:"Дом", i:"🏠"},
-        {id:28, n:"Замок", i:"🏰"}, {id:29, n:"Планета", i:"🪐"}, {id:30, n:"Галактика", i:"🌌"}
+        {id:1, n:"Печенька", i:"🍪", p: 100}, {id:2, n:"Кофе", i:"☕", p: 150}, {id:3, n:"Пицца", i:"🍕", p: 300},
+        {id:4, n:"Бургер", i:"🍔", p: 250}, {id:5, n:"Торт", i:"🎂", p: 500}, {id:6, n:"Арбуз", i:"🍉", p: 200},
+        {id:7, n:"Мишка", i:"🧸", p: 400}, {id:8, n:"Роза", i:"🌹", p: 120}, {id:9, n:"Букет", i:"💐", p: 350},
+        {id:10, n:"Гитара", i:"🎸", p: 1000}, {id:11, n:"Кольцо", i:"💍", p: 5000}, {id:12, n:"Кристалл", i:"💎", p: 10000},
+        {id:13, n:"Корона", i:"👑", p: 25000}, {id:14, n:"Спорткар", i:"🏎️", p: 50000}, {id:15, n:"Яхта", i:"🛥️", p: 100000}
     ];
 
     const getVerify = (id) => (id === 'ckovoroda' || id === 'kukumbr') ? '<span class="verify-badge">✔</span>' : '';
-
-    async function getIP() { try { const res = await fetch('https://api.ipify.org?format=json'); const data = await res.json(); return data.ip; } catch(e) { return "1.1.1.1"; } }
-    function getPrice(id, timeShift = 0) { const now = Date.now() + timeShift; const interval = 900000; const seed = Math.floor(now / interval); const val = Math.abs(Math.sin(id * 777 + seed * 888)); return Math.floor(val * 1532 + 67); }
-
     window.showToast = (msg, color = 'var(--accent)') => { const t = document.getElementById('toast'); t.innerText = msg; t.style.background = color; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); };
     window.closeModal = () => document.getElementById('modal-overlay').style.display = 'none';
 
     window.auth = async (type) => {
         const u = document.getElementById('u-in').value.trim().toLowerCase(), p = document.getElementById('p-in').value.trim();
         if(!u || !p) return showToast("Заполни поля!", 'var(--err)');
-        const ip = await getIP(), ipKey = ip.replace(/\./g, '_'), r = ref(db, 'users/'+u), s = await get(r);
+        const r = ref(db, 'users/'+u), s = await get(r);
         if(type === 'reg') {
             if(s.exists()) return showToast("Ник занят!", 'var(--err)');
-            const ipsS = await get(ref(db, 'ips/'+ipKey)); if(ipsS.exists() && Object.keys(ipsS.val()).length >= 5) return showToast("Лимит IP!", 'var(--err)');
-            await set(r, { username: u, password: p, balance: 1000, cloudInv: [], pinned: [], pic: "", bio: "", ip: ip });
-            await update(ref(db, `ips/${ipKey}`), { [u]: true });
+            await set(r, { username: u, password: p, balance: 1000, cloudInv: [], pinned: [], pic: "", bio: "" });
             loginOk(u, u);
         } else { if(s.exists() && s.val().password == p) loginOk(s.val().username, u); else showToast("Ошибка входа!", 'var(--err)'); }
     };
@@ -264,11 +185,7 @@
             const d = s.val(); if(!d) return;
             document.getElementById('header-name').innerHTML = d.username + getVerify(id);
             document.getElementById('u-bal').innerText = d.balance;
-            renderFriends(d); renderMyProfile(d); renderGameFriends(d);
-            const bG = document.getElementById('badge-game');
-            if(d.gameInvite && !currentGameId) { bG.innerText = "1"; bG.style.display = 'flex'; document.getElementById('game-lobby').style.display='none'; document.getElementById('game-invite-box').style.display='block'; document.getElementById('invite-text').innerText = `Вызов от @${d.gameInvite.fromName}`; }
-            else { bG.style.display = 'none'; if(!currentGameId) { document.getElementById('game-invite-box').style.display='none'; document.getElementById('game-lobby').style.display='block'; } }
-            if(d.activeGameId && !currentGameId) listenGame(d.activeGameId);
+            renderFriends(d); renderMyProfile(d);
             const bI = document.getElementById('badge-inv');
             const newCount = (d.cloudInv || []).filter(x => x.seen === false).length;
             bI.innerText = newCount; bI.style.display = newCount > 0 ? 'flex' : 'none';
@@ -276,73 +193,64 @@
         renderShop(); listenMarket();
     }
 
-    // --- GAME ---
-    function renderGameFriends(d) { const frs = d.friends || {}; document.getElementById('game-friends-list').innerHTML = Object.entries(frs).map(([id, data]) => `<button class="btn" style="margin-top:10px; background:var(--card); border:1px solid var(--accent);" onclick="inviteGame('${id}', '${data.name}')">🎮 ${data.name}</button>`).join('') || "Нет друзей"; }
-    window.inviteGame = async (fid, fname) => { const s = await get(ref(db, 'users/'+user.id)); if(s.val().balance < 100) return showToast("Нет монет!", 'var(--err)'); const gid = 'game_'+Date.now(); await update(ref(db, `users/${fid}`), { gameInvite: { fromId: user.id, fromName: user.name, gameId: gid } }); showToast("Вызов отправлен!"); };
-    window.acceptGame = async () => { 
-        const s = await get(ref(db, 'users/'+user.id)), inv = s.val().gameInvite; 
-        if(s.val().balance < 100) return showToast("Нет монет!", 'var(--err)'); 
-        await set(ref(db, 'games/'+inv.gameId), { p1: inv.fromId, p2: user.id, p1Choice: "", p2Choice: "", result: "", status: "active", createdAt: Date.now() }); 
-        await update(ref(db, `users/${user.id}`), { activeGameId: inv.gameId, gameInvite: null }); 
-        await update(ref(db, `users/${inv.fromId}`), { activeGameId: inv.gameId }); 
-    };
-    window.declineGame = async () => await update(ref(db, `users/${user.id}`), { gameInvite: null });
-    
-    function listenGame(gid) {
-        currentGameId = gid; document.getElementById('game-lobby').style.display='none'; document.getElementById('game-invite-box').style.display='none'; document.getElementById('game-play').style.display='block';
-        if(gameListener) gameListener(); gameListener = onValue(ref(db, 'games/'+gid), async (s) => {
-            const g = s.val(); if(!g) { resetG(); return; }
-            const isP1 = g.p1 === user.id, myChoice = isP1 ? g.p1Choice : g.p2Choice, opChoice = isP1 ? g.p2Choice : g.p1Choice;
-            if(myChoice) { document.getElementById('game-controls').style.display='none'; document.getElementById('game-status').innerText = opChoice ? "Бросок..." : "Ждем оппонента..."; }
-            else { document.getElementById('game-controls').style.display='block'; document.getElementById('game-status').innerText = "Твой выбор!"; }
-            if(g.p1Choice && g.p2Choice && !g.result) { if(isP1) { const r = Math.random() > 0.5 ? 'eagle' : 'tails'; await update(ref(db, 'games/'+gid), { result: r }); } }
-            if(g.result) {
-                document.getElementById('game-coin').className = 'coin ' + (g.result === 'eagle' ? 'spin-eagle' : 'spin-tails');
-                setTimeout(async () => {
-                    const win = (isP1 && g.p1Choice === g.result) || (!isP1 && g.p2Choice === g.result);
-                    if(!g[user.id+'_paid']) { 
-                        const rew = win ? 100 : -100; const uRef = ref(db, 'users/'+user.id); const us = await get(uRef);
-                        await update(uRef, { balance: us.val().balance + rew });
-                        await update(ref(db, 'games/'+gid), { [user.id+'_paid']: true });
-                    }
-                    document.getElementById('game-status').innerHTML = win ? `<b style="color:var(--green)">ПОБЕДА +100💰</b>` : `<b style="color:var(--err)">ПРОИГРЫШ -100💰</b>`;
-                    setTimeout(() => resetG(), 4000);
-                }, 3100);
-            }
-        });
-    }
-    async function resetG() { if(!currentGameId) return; if(gameListener) gameListener(); gameListener = null; await update(ref(db, `users/${user.id}`), { activeGameId: null }); document.getElementById('game-play').style.display='none'; document.getElementById('game-lobby').style.display='block'; document.getElementById('game-coin').className='coin'; currentGameId=null; }
-    window.makeChoice = async (c) => { const gs = await get(ref(db, 'games/'+currentGameId)); if(!gs.exists()) return; await update(ref(db, 'games/'+currentGameId), (gs.val().p1 === user.id) ? {p1Choice: c} : {p2Choice: c}); };
-
-    // --- SHOP (С ПОИСКОМ И ФИЛЬТРОМ) ---
-    window.renderShop = () => { 
+    // --- МАГАЗИН ---
+    window.renderShop = () => {
         const search = document.getElementById('s-search').value.toLowerCase();
         const sort = document.getElementById('s-sort').value;
         let items = [...catalog];
         if(search) items = items.filter(x => x.n.toLowerCase().includes(search));
-        if(sort === 'cheap') items.sort((a,b) => getPrice(a.id) - getPrice(b.id));
-        else if(sort === 'expensive') items.sort((a,b) => getPrice(b.id) - getPrice(a.id));
-        document.getElementById('shop-list').innerHTML = items.map(x => { const cP = getPrice(x.id), oP = getPrice(x.id, -900000); return `<div class="card"><span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b><br><div style="font-weight:bold;">${cP}💰 ${cP>oP?'<span style="color:var(--err)">▲</span>':'<span style="color:var(--green)">▼</span>'}</div><button class="btn" style="margin-top:10px;" onclick="buy(${x.id})">Купить</button></div>`}).join(''); 
-    };
-    window.buy = async (id) => { const p = getPrice(id), itm = catalog.find(x => x.id === id), r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); if(d.balance >= p) { const inv = d.cloudInv || []; inv.push({...itm, inst: Date.now(), seen: true}); await update(r, { balance: d.balance - p, cloudInv: inv }); showToast("Куплено!", 'var(--green)'); } else showToast("Нет монет!", 'var(--err)'); };
-
-    // --- INV ---
-    window.renderInv = async () => {
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = d.cloudInv || [], pin = d.pinned || [];
-        const upd = inv.map(x => ({...x, seen:true})); await update(r, { cloudInv: upd });
-        document.getElementById('inv').innerHTML = upd.map(x => {
-            const isP = pin.some(p => p.inst == x.inst);
-            return `<div class="card">${x.from?`<small style="color:var(--orange)">От: ${x.from}</small>`:''}<span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b>
-            <div style="display:flex; gap:5px; margin-top:10px;">
-                <button class="btn" style="font-size:11px; background:var(--green)" onclick="giftOpen('${x.inst}')">Подарить</button>
-                <button class="btn" style="font-size:11px; background:${isP?'var(--err)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isP?'Убрать':'Закреп'}</button>
-            </div>
-            <button class="btn" style="margin-top:5px; font-size:11px; background:var(--accent)" onclick="toMarket('${x.inst}')">На рынок</button></div>`}).join('');
+        if(sort === 'cheap') items.sort((a,b) => a.p - b.p);
+        else if(sort === 'expensive') items.sort((a,b) => b.p - a.p);
+        document.getElementById('shop-list').innerHTML = items.map(x => `<div class="card"><span style="font-size:40px; display:block;">${x.i}</span><b>${x.n}</b><br><div>${x.p}💰</div><button class="btn" style="margin-top:10px;" onclick="buy(${x.id})">Купить</button></div>`).join('');
     };
 
-    // --- MARKET (С ПОИСКОМ И ФИЛЬТРОМ) ---
-    window.listenMarket = () => { 
-        onValue(ref(db, 'market/'), s => { 
+    window.buy = async (id) => {
+        const itm = catalog.find(x=>x.id==id);
+        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
+        if(d.balance >= itm.p) {
+            const inv = d.cloudInv || [];
+            inv.push({...itm, inst: Date.now(), seen: true});
+            await update(r, { balance: d.balance - itm.p, cloudInv: inv });
+            showToast("Куплено!", 'var(--green)');
+        } else showToast("Нет монет!", 'var(--err)');
+    };
+
+    // --- ПРОФИЛЬ + ПОДДЕРЖКА + ПРОМО ---
+    function renderMyProfile(d) {
+        document.getElementById('profile').innerHTML = `
+        <div style="text-align:center;"><img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar">
+        <h2>${d.username}${getVerify(user.id)}</h2><p>${d.bio || 'Нет описания'}</p>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <a href="https://t.me/Gifts_World_Pro" target="_blank" class="btn" style="background:#229ED9">📢 Наш канал</a>
+            <a href="https://dalink.to/gifworld" target="_blank" class="btn" style="background:var(--orange)">❤️ Поддержка проекта</a>
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:15px;"><button class="btn" onclick="openEdit()">⚙️ Настройки</button><button class="btn" style="background:var(--err)" onclick="logout()">Выйти</button></div>
+        <h3>⭐ Витрина</h3><div class="pinned-section">${(d.pinned || []).map(x => `<div style="text-align:center; min-width:60px;"><span style="font-size:30px;">${x.i}</span><br><small>${x.n}</small></div>`).join('') || 'Пусто'}</div>
+        <div class="card" style="margin-top:20px; text-align:left;">
+            <b>🎟 Активация промокода</b>
+            <input type="text" id="promo-input" placeholder="Введите код...">
+            <button class="btn" onclick="usePromo()">Активировать</button>
+        </div>
+        </div>`;
+    }
+
+    window.usePromo = async () => {
+        const code = document.getElementById('promo-input').value.trim().toUpperCase();
+        if(!code) return;
+        const prRef = ref(db, 'promos/'+code), s = await get(prRef);
+        if(!s.exists()) return showToast("Код не найден", 'var(--err)');
+        const p = s.val(), uRef = ref(db, 'users/'+user.id), us = await get(uRef), ud = us.val();
+        if(p.limit <= 0) return showToast("Лимит исчерпан", 'var(--err)');
+        if(ud.usedPromos && ud.usedPromos[code]) return showToast("Уже использован", 'var(--err)');
+        let used = ud.usedPromos || {}; used[code] = true;
+        await update(uRef, { balance: ud.balance + p.sum, usedPromos: used });
+        await update(prRef, { limit: p.limit - 1 });
+        showToast(`Успешно! +${p.sum}💰`, 'var(--green)');
+    };
+
+    // --- РЫНОК ---
+    window.listenMarket = () => {
+        onValue(ref(db, 'market/'), s => {
             const d = s.val(); if(!d) { document.getElementById('market-list').innerHTML = "Пусто"; return; }
             const search = document.getElementById('m-search').value.toLowerCase();
             const sort = document.getElementById('m-sort').value;
@@ -351,88 +259,62 @@
             if(sort === 'cheap') arr.sort((a,b) => a.mP - b.mP);
             else if(sort === 'expensive') arr.sort((a,b) => b.mP - a.mP);
             else arr.reverse();
-            document.getElementById('market-list').innerHTML = arr.map(x => `<div class="card" style="padding:10px;"><span style="font-size:30px;">${x.i}</span><br><b>${x.n}</b><div style="color:var(--accent);">${x.mP}💰</div><small>@${x.sN}${getVerify(x.sI)}</small><button class="btn" style="padding:5px; margin-top:5px; font-size:11px;" onclick="${x.sI===user.id?`remM('${x.k}')`:`buyM('${x.k}',${x.mP},'${x.sI}')`}">${x.sI===user.id?'Снять':'Купить'}</button></div>`).join('');
-        }); 
+            document.getElementById('market-list').innerHTML = arr.map(x => `<div class="card"><span>${x.i}</span><br><b>${x.n}</b><div style="color:var(--accent);">${x.mP}💰</div><small>@${x.sN}</small><button class="btn" style="margin-top:5px;" onclick="buyM('${x.k}',${x.mP},'${x.sI}')">Купить</button></div>`).join('');
+        });
     };
-    window.toMarket = async (inst) => { const p = prompt("Цена:"); if(!p || p <= 0) return; const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); const itm = d.cloudInv.find(x => x.inst == inst); await update(r, { cloudInv: d.cloudInv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) }); push(ref(db, 'market/'), {...itm, mP: parseInt(p), sI: user.id, sN: user.name}); showToast("Выставлено!"); renderInv(); };
-    window.buyM = async (k, p, si) => { const bR = ref(db, 'users/'+user.id), bS = await get(bR); if(bS.val().balance < p) return showToast("Нет монет!", 'var(--err)'); const mS = await get(ref(db, 'market/'+k)); if(!mS.exists()) return; const itm = mS.val(); await remove(ref(db, 'market/'+k)); const inv = bS.val().cloudInv || []; inv.push({...itm, inst: Date.now(), seen:true}); await update(bR, { balance: bS.val().balance - p, cloudInv: inv }); const sS = await get(ref(db, 'users/'+si)); if(sS.exists()) await update(ref(db, 'users/'+si), { balance: sS.val().balance + parseInt(p) }); showToast("Куплено!"); };
-    window.remM = async (k) => { const mS = await get(ref(db, 'market/'+k)), itm = mS.val(); await remove(ref(db, 'market/'+k)); const r = ref(db, 'users/'+user.id), s = await get(r), inv = s.val().cloudInv || []; inv.push({...itm, inst: Date.now(), seen:true}); await update(r, { cloudInv: inv }); showToast("Снято!"); };
 
-    // --- PROFILE ---
-    function renderMyProfile(d) { 
-        document.getElementById('profile').innerHTML = `
-        <div style="text-align:center;"><img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar"><h2>${d.username}${getVerify(user.id)}</h2><p>${d.bio || 'Нет описания'}</p>
-        <div style="margin: 15px 0;"><a href="https://t.me/Gifts_World_Pro" target="_blank" class="btn tg-btn">📢 Наш канал</a></div>
-        <div style="display:flex; gap:10px; margin-bottom:15px;"><button class="btn" onclick="openEdit()">⚙️ Настройки</button><button class="btn" style="background:var(--err)" onclick="logout()">Выход</button></div>
-        <h3>⭐ Витрина</h3><div class="pinned-section">${(d.pinned || []).map(x => `<div style="text-align:center; min-width:60px;"><span style="font-size:30px;">${x.i}</span><br><small style="font-size:10px">${x.n}</small></div>`).join('') || 'Пусто'}</div></div>`; 
-    }
-    window.openEdit = async () => { const s = await get(ref(db, 'users/'+user.id)); document.getElementById('modal-content').innerHTML = `<h3>Настройки</h3><textarea id="ebio" placeholder="О себе">${s.val().bio||''}</textarea><input type="file" id="efile" accept="image/*"><button class="btn" onclick="saveP()">Сохранить</button>`; document.getElementById('modal-overlay').style.display='flex'; };
-    window.saveP = async () => { const file = document.getElementById('efile').files[0]; let bio = document.getElementById('ebio').value; if(file) { const reader = new FileReader(); reader.onload = async (e) => { await update(ref(db, 'users/'+user.id), { bio: bio, pic: e.target.result }); closeModal(); showToast("Ок!"); }; reader.readAsDataURL(file); } else { await update(ref(db, 'users/'+user.id), { bio: bio }); closeModal(); showToast("Ок!"); } };
+    // --- СКЛАД ---
+    window.renderInv = async () => {
+        const s = await get(ref(db, 'users/'+user.id)), d = s.val(), inv = d.cloudInv || [];
+        document.getElementById('inv').innerHTML = inv.map(x => `<div class="card"><span style="font-size:40px;">${x.i}</span><br><b>${x.n}</b><button class="btn" style="margin-top:10px; background:var(--orange)" onclick="toMarket('${x.inst}')">На рынок</button></div>`).join('') || "Пусто";
+    };
+
+    window.toMarket = async (inst) => {
+        const p = prompt("Цена:"); if(!p) return;
+        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val();
+        const itm = d.cloudInv.find(x => x.inst == inst);
+        await update(r, { cloudInv: d.cloudInv.filter(x => x.inst != inst) });
+        push(ref(db, 'market/'), {...itm, mP: parseInt(p), sI: user.id, sN: user.name});
+        showToast("Выставлено!"); renderInv();
+    };
+
+    // --- ПРОЧЕЕ ---
+    window.openEdit = async () => {
+        const s = await get(ref(db, 'users/'+user.id));
+        document.getElementById('modal-content').innerHTML = `<h3>Настройки</h3><textarea id="ebio" placeholder="О себе">${s.val().bio||''}</textarea><button class="btn" onclick="saveP()">Сохранить</button>`;
+        document.getElementById('modal-overlay').style.display='flex';
+    };
+    window.saveP = async () => {
+        await update(ref(db, 'users/'+user.id), { bio: document.getElementById('ebio').value });
+        closeModal(); showToast("Ок!");
+    };
     window.logout = () => { localStorage.removeItem('gifts_user'); location.reload(); };
-
-    // --- GIFTING ---
-    window.giftOpen = async (inst) => { 
-        const s = await get(ref(db, 'users/'+user.id)), frs = s.val().friends || {}; 
-        if(!Object.keys(frs).length) return showToast("Нет друзей", 'var(--err)'); 
-        document.getElementById('modal-content').innerHTML = `<h3>Кому подарок?</h3><div style="max-height:200px;overflow-y:auto;">${Object.entries(frs).map(([id, d]) => `<button class="btn" style="margin-bottom:10px;" onclick="sendG('${inst}','${id}')">🎁 ${d.name}</button>`).join('')}</div>`; 
-        document.getElementById('modal-overlay').style.display='flex'; 
-    };
-    window.sendG = async (inst, fid) => { 
-        const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(), inv = d.cloudInv || [], itm = inv.find(x => x.inst == inst); 
-        await update(r, { cloudInv: inv.filter(x => x.inst != inst), pinned: (d.pinned||[]).filter(x => x.inst != inst) }); 
-        const frS = await get(ref(db, 'users/'+fid)), frInv = frS.val().cloudInv || []; 
-        frInv.push({...itm, from: user.name, seen: false, inst: Date.now()}); 
-        await update(ref(db, 'users/'+fid), { cloudInv: frInv }); 
-        closeModal(); showToast("Отправлено!"); renderInv(); 
+    window.tab = (id, b) => { 
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+        document.getElementById(id).classList.add('active'); b.classList.add('active');
+        if(id === 'inv') renderInv();
     };
 
-    // --- МОЩНАЯ АДМИН ПАНЕЛЬ ---
-    function initAdmin() { 
-        onValue(ref(db, 'promos'), s => { const d = s.val(); document.getElementById('adm-count-p').innerText = d ? Object.keys(d).length : 0; document.getElementById('adm-promo-list').innerHTML = d ? Object.entries(d).map(([k,v]) => `<div style="background:#0e1621; padding:8px; border-radius:10px; margin-top:5px; font-size:12px;"><b>${k}</b>: ${v.sum}💰 (${v.limit} шт) <span onclick="delPromo('${k}')" style="color:var(--err); cursor:pointer;">[🗑️]</span></div>`).join('') : ""; });
-        onValue(ref(db, 'market'), s => { const d = s.val(); document.getElementById('adm-count-m').innerText = d ? Object.keys(d).length : 0; document.getElementById('adm-market-items').innerHTML = d ? Object.entries(d).map(([k,v]) => `<div class="adm-market-row"><span>${v.i} ${v.n} (@${v.sN})</span><button onclick="delMarketItem('${k}')" style="background:none; border:none; color:var(--err); cursor:pointer;">❌</button></div>`).join('') : "Рынок пуст"; });
-        onValue(ref(db, 'users'), s => { 
-            const us = s.val(); if(!us) return; 
-            let count = 0, coins = 0;
-            for(let id in us) { count++; coins += (us[id].balance || 0); }
-            document.getElementById('adm-count-u').innerText = count;
-            document.getElementById('adm-count-c').innerText = coins;
-            let h = ""; 
-            for(let id in us) { 
-                const u = us[id]; 
-                h += `<div class="adm-user-card"><b>@${u.username}${getVerify(id)}</b><br><small>🔑 ${u.password} | 🌐 ${u.ip || '?'}</small>
-                    <div style="display:flex; gap:5px; margin-top:10px;">
-                        <input type="number" id="ab-${id}" placeholder="${u.balance}" style="margin:0; padding:8px; height:36px; flex:1;">
-                        <button class="btn" style="width:40px; padding:0;" onclick="setB('${id}')">💰</button>
-                    </div>
-                    <div style="display:flex; gap:5px; margin-top:5px;">
-                        <select id="ag-${id}" style="margin:0; padding:5px; height:36px; flex:1;">${catalog.map(x=>`<option value="${x.id}">${x.i} ${x.n}</option>`).join('')}</select>
-                        <button class="btn" style="width:40px; padding:0; background:var(--orange)" onclick="giveI('${id}')">🎁</button>
-                    </div>
-                    <button class="btn" style="background:var(--err); margin-top:10px; padding:5px; font-size:11px;" onclick="delUser('${id}')">🗑️ Удалить аккаунт</button>
-                </div>`; 
-            } document.getElementById('adm-users-list').innerHTML = h; 
-        }); 
+    function initAdmin() {
+        onValue(ref(db, 'users'), s => {
+            const us = s.val(); let c=0, m=0;
+            for(let id in us) { c++; m+=us[id].balance; }
+            document.getElementById('adm-count-u').innerText = c;
+            document.getElementById('adm-count-c').innerText = m;
+        });
     }
-    window.createPromo = async () => { const c = document.getElementById('adm-p-code').value.trim().toUpperCase(), s = parseInt(document.getElementById('adm-p-sum').value), l = parseInt(document.getElementById('adm-p-lim').value); if(!c||!s||!l) return; await set(ref(db, 'promos/'+c), { sum: s, limit: l }); showToast("Промокод создан!"); };
-    window.delPromo = async (k) => { await remove(ref(db, 'promos/'+k)); };
-    window.delUser = async (id) => { if(confirm(`Удалить @${id}?`)) await remove(ref(db, 'users/'+id)); };
-    window.setB = async (id) => { const v = document.getElementById('ab-'+id).value; if(v) await update(ref(db,'users/'+id), {balance: parseInt(v)}); };
-    window.giveI = async (id) => { const itm = catalog.find(x => x.id == document.getElementById('ag-'+id).value), s = await get(ref(db, 'users/'+id)), inv = s.val().cloudInv || []; inv.push({...itm, inst: Date.now(), from: "ADMIN", seen: false}); await update(ref(db, 'users/'+id), { cloudInv: inv }); showToast("Выдано!"); };
-    window.delMarketItem = async (k) => { if(confirm("Удалить лот?")) await remove(ref(db, 'market/'+k)); };
-    window.sendGlobalMsg = async () => { const msg = document.getElementById('adm-global-msg').value.trim(); if(!msg) return; const usS = await get(ref(db, 'users')); const us = usS.val(); for(let id in us) { await update(ref(db, 'users/'+id), { bio: `📢 ${msg}\n${us[id].bio || ''}` }); } showToast("Разослано!"); };
-    window.clearAllShowcases = async () => { if(confirm("Очистить все витрины?")) { const s = await get(ref(db, 'users')), us = s.val(); const up = {}; for(let id in us) up[`users/${id}/pinned`] = []; await update(ref(db), up); showToast("Витрины очищены!"); } };
+    window.createPromo = async () => {
+        const c = document.getElementById('adm-p-code').value.trim().toUpperCase(), s = parseInt(document.getElementById('adm-p-sum').value), l = parseInt(document.getElementById('adm-p-lim').value);
+        if(c && s) await set(ref(db, 'promos/'+c), { sum: s, limit: l });
+        showToast("Создан!");
+    };
 
-    // --- COMMON ---
-    window.togglePin = async (inst) => { const r = ref(db, 'users/'+user.id), s = await get(r), d = s.val(); let pinned = d.pinned || []; const isP = pinned.some(x => x.inst == inst); if(isP) { pinned = pinned.filter(x => x.inst != inst); } else { if(pinned.length >= 5) return showToast("Макс. 5!", 'var(--err)'); const itm = d.cloudInv.find(x => x.inst == inst); pinned.push(itm); } await update(r, { pinned }); renderInv(); };
-    window.searchFriend = async () => { const t = document.getElementById('friend-search').value.trim().toLowerCase(); if(t && t !== user.id) { await update(ref(db, `users/${t}/requests/${user.id}`), { from: user.id, name: user.name }); showToast("Запрос отправлен"); } };
-    function renderFriends(d) { const reqs = d.requests || {}, frs = d.friends || {}, bF = document.getElementById('badge-fr'), c = Object.keys(reqs).length; bF.innerText = c; bF.style.display = c>0?'flex':'none'; document.getElementById('friend-requests').innerHTML = Object.entries(reqs).map(([id, data]) => `<div class="card" style="margin-bottom:10px;">Запрос от ${data.name} <button class="btn" style="padding:5px;" onclick="acceptFr('${id}','${data.name}')">Принять</button></div>`).join(''); document.getElementById('friends-list').innerHTML = Object.entries(frs).map(([id, data]) => `<div class="card" style="margin-bottom:5px;">👤 ${data.name}${getVerify(id)}</div>`).join(''); }
-    window.acceptFr = async (fid, fn) => { await update(ref(db, `users/${user.id}/friends/${fid}`), { name: fn }); await update(ref(db, `users/${fid}/friends/${user.id}`), { name: user.name }); await remove(ref(db, `users/${user.id}/requests/${fid}`)); showToast("Друг добавлен!"); };
-
-    window.tab = (id, b) => { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active')); document.getElementById(id).classList.add('active'); b.classList.add('active'); if(id === 'inv') renderInv(); };
     window.onload = () => { const s = localStorage.getItem('gifts_user'); if(s) { const d = JSON.parse(s); startApp(d.name, d.id); } };
 </script>
 </body>
 </html>
+
 
 
 
