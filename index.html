@@ -842,7 +842,8 @@
                 <button class="btn" style="background:none;margin-top:6px;color:var(--secondary);" onclick="closeModal()">Отмена</button>
             </div>`;
         openModal();
-        requestAnimationFrame(()=>document.getElementById('modal-overlay').style.background='rgba(0,0,0,0.88)'); = async (inst) => {
+    };
+    window.confirmMarket = async (inst) => {
         const price=parseInt(document.getElementById('mkt-price').value);
         if(!price||price<=0) return showToast("Введи цену!",'var(--err)');
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
