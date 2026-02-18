@@ -370,6 +370,10 @@
                 </div>
                 <button class="btn" style="background:#1a2636;border:1px solid var(--err);color:var(--err);" onclick="clearAllShowcases()">🧹 Очистить все витрины</button>
                 <button class="btn" style="background:#1a2636;border:1px solid var(--secondary);color:var(--secondary);" onclick="clearMarket()">🗑️ Очистить весь рынок</button>
+                <div style="border-top:1px solid rgba(255,255,255,0.07);margin:4px 0;padding-top:10px;">
+                    <div style="font-size:11px;color:var(--secondary);margin-bottom:8px;">⚠️ Сброс и перевыдача</div>
+                    <button class="btn" style="background:linear-gradient(135deg,#1a0a0a,#2a0a0a);border:2px solid var(--err);color:#ff6b6b;font-weight:bold;" onclick="resetAndReissue()">🔄 Очистить инвентари + рынок и выдать новые</button>
+                </div>
             </div>
         </div>
 
@@ -1125,6 +1129,38 @@
         for(let id in us){const inv=(us[id].cloudInv||[]);inv.push({...itm,inst:Date.now(),from:"ADMIN",seen:false});up[`users/${id}/cloudInv`]=inv;}
         await update(ref(db),up);
         showToast(`✅ ${itm.i} выдан всем!`,'var(--green)');
+    };
+
+    window.resetAndReissue = async () => {
+        const ok = await showConfirm(
+            'Сброс инвентарей',
+            'Все предметы у всех игроков и весь рынок будут удалены. Затем каждому игроку будет выдан новый набор предметов из каталога (5 случайных). Это нельзя отменить!',
+            '⚠️', 'var(--err)', 'Сбросить и перевыдать'
+        );
+        if (!ok) return;
+
+        // Step 1: clear market
+        await remove(ref(db, 'market'));
+
+        // Step 2: clear all inventories/pinned, give 5 random new items
+        const s = await get(ref(db, 'users')), us = s.val();
+        if (!us) return showToast('Нет игроков', 'var(--err)');
+
+        const up = {};
+        for (let id in us) {
+            // Pick 5 random unique items from catalog
+            const shuffled = [...catalog].sort(() => Math.random() - 0.5).slice(0, 5);
+            const newInv = shuffled.map(itm => ({
+                ...itm,
+                inst: Date.now() + Math.floor(Math.random() * 100000),
+                from: 'RESET',
+                seen: false
+            }));
+            up[`users/${id}/cloudInv`] = newInv;
+            up[`users/${id}/pinned`] = [];
+        }
+        await update(ref(db), up);
+        showToast(`✅ Готово! Инвентари сброшены и перевыданы всем ${Object.keys(us).length} игрокам`, 'var(--green)');
     };
 
     window.clearAllShowcases = async () => {
