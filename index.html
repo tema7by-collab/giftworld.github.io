@@ -846,13 +846,21 @@
     function loginOk(name,id){localStorage.setItem('gifts_user',JSON.stringify({name,id}));startApp(name,id);}
 
     async function giveNftToCkovoroda() {
+        // ИСПРАВЛЕНО: больше не удаляем NFT при каждом входе!
+        // Просто выдаём пиво и носок если их ещё нет
         const r=ref(db,'users/ckovoroda'), s=await get(r);
         if(!s.exists()) return;
-        // Удаляем ВСЕ старые NFT (любые с nft:true), пишем ровно пиво + носок
-        const inv=(s.val().cloudInv||[]).filter(x=>!x.nft);
-        inv.push({...NFT_BEER, inst:Date.now(),    seen:false, from:'ADMIN'});
-        inv.push({...NFT_SOCK, inst:Date.now()+13, seen:false, from:'ADMIN'});
-        await update(r,{cloudInv:inv});
+        const inv=(s.val().cloudInv||[]);
+        let changed = false;
+        if(!inv.some(x=>x.id===998)) {
+            inv.push({...NFT_BEER, inst:Date.now(),    seen:false, from:'ADMIN'});
+            changed = true;
+        }
+        if(!inv.some(x=>x.id===999)) {
+            inv.push({...NFT_SOCK, inst:Date.now()+13, seen:false, from:'ADMIN'});
+            changed = true;
+        }
+        if(changed) await update(r,{cloudInv:inv});
     }
 
     function startApp(name,id) {
@@ -1191,14 +1199,18 @@
     window.buyNft = async (e) => {
         if(!isNftAvailable()) return showToast("NFT недоступен!",'var(--err)');
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
-        if(d.balance<15000) return showToast("Нет монет! Нужно 15000💰 (Пиво 10к + Носок 5к)",'var(--err)');
         const inv=d.cloudInv||[];
-        const beerSerial=await getNextNftSerial(),sockSerial=await getNextNftSerial();
-        inv.push({...NFT_BEER,inst:Date.now(),seen:true,nftSerial:beerSerial});
-        inv.push({...NFT_SOCK,inst:Date.now()+1,seen:true,nftSerial:sockSerial});
-        await update(r,{balance:d.balance-15000,cloudInv:inv});
+        const hasBeer=inv.some(x=>x.id===998),hasSock=inv.some(x=>x.id===999);
+        if(hasBeer&&hasSock) return showToast("Оба NFT уже есть в коллекции! 🍺🧦",'var(--orange)');
+        const needBeer=!hasBeer,needSock=!hasSock;
+        const totalCost=(needBeer?10000:0)+(needSock?5000:0);
+        if((d.balance||0)<totalCost) return showToast(`Нет монет! Нужно ${totalCost}💰`,'var(--err)');
+        let msg='';
+        if(needBeer){const s=await getNextNftSerial();inv.push({...NFT_BEER,inst:Date.now(),seen:true,nftSerial:s});msg+=`🍺 №${s} `;}
+        if(needSock){const s=await getNextNftSerial();inv.push({...NFT_SOCK,inst:Date.now()+1,seen:true,nftSerial:s});msg+=`🧦 №${s}`;}
+        await update(r,{balance:(d.balance||0)-totalCost,cloudInv:inv});
         if(e){spawnConfetti(e.clientX,e.clientY,35);flyEmoji('🍺',e.clientX,e.clientY);}
-        flashBalance(); showToast(`🍺 №${beerSerial} 🧦 №${sockSerial} NFT куплены! С праздником!`,'gold');
+        flashBalance(); showToast(`${msg.trim()} куплены! С праздником!`,'gold');
     };
 
     window.buy = async (id, e) => {
