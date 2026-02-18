@@ -741,7 +741,7 @@
     };
 
     window.renderInv = async () => {
-        const s=await get(ref(db,'users/'+user.id)),d=s.val(),inv=d.cloudInv||[],pin=d.pinned||[];
+        const s=await get(ref(db,'users/'+user.id)),d=s.val(),inv=d.cloudInv||[];
         const upd=inv.map(x=>({...x,seen:true}));
         await update(ref(db,'users/'+user.id),{cloudInv:upd});
         
@@ -749,7 +749,6 @@
         const filtered = searchVal ? upd.filter(x=>x.n.toLowerCase().includes(searchVal)) : upd;
         
         const cardsHtml = filtered.length ? filtered.map(x=>{
-            const isP=pin.some(p=>p.inst==x.inst);
             return `<div class="card" style="display:flex;flex-direction:column;align-items:center;">
                 ${x.from?`<small style="color:var(--orange);margin-bottom:4px;">От: ${x.from}</small>`:''}
                 ${giftImg(x)}
@@ -889,7 +888,7 @@
                 ${giftImg(x,"sm")}
                 <b style="display:block;text-align:center;margin-bottom:2px;">${x.n}</b>
                 <div style="color:var(--accent);font-weight:bold;margin-bottom:2px;">${x.mP}💰</div>
-                <small style="color:var(--secondary);margin-bottom:5px;">@${x.sN}${x.sI===user.id?' (вы)':''}</small>
+                <small style="color:var(--accent);margin-bottom:5px;cursor:pointer;text-decoration:underline;" onclick="openUserProfile('${x.sI}')">@${x.sN}${x.sI===user.id?' (вы)':''}</small>
                 <button class="btn" style="padding:6px;font-size:11px;${x.sI===user.id?'background:var(--err);':''}" onclick="${x.sI===user.id?`remM('${k}')`:`buyM('${k}',${x.mP},'${x.sI}',event)`}">
                     ${x.sI===user.id?'❌ Снять':'🛒 Купить'}
                 </button></div>`)
@@ -980,12 +979,23 @@
         const bF=document.getElementById('badge-fr'),c=Object.keys(reqs).length;
         bF.innerText=c;bF.style.display=c>0?'flex':'none';
         document.getElementById('friend-requests').innerHTML=Object.entries(reqs).map(([id,data])=>
-            `<div class="card" style="margin-bottom:10px;">Запрос от <b>${data.name}</b>
-             <button class="btn" style="padding:5px;margin-top:8px;" onclick="acceptFr('${id}','${data.name}')">Принять</button></div>`
+            `<div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>
+                    <div><div style="font-weight:bold;">${data.name}</div><div style="font-size:11px;color:var(--secondary);">Хочет добавить вас</div></div>
+                </div>
+                <button class="btn" style="padding:8px 14px;font-size:12px;width:auto;" onclick="acceptFr('${id}','${data.name}')">✓ Принять</button>
+            </div>`
         ).join('');
         document.getElementById('friends-list').innerHTML=Object.entries(frs).map(([id,data])=>
-            `<div class="card" style="margin-bottom:5px;">👤 ${data.name}</div>`
-        ).join('')||(Object.keys(reqs).length===0?`<p style="color:var(--secondary);text-align:center;">Нет друзей</p>`:'');
+            `<div class="card" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;" onclick="openUserProfile('${id}')">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">👤</div>
+                    <div><div style="font-weight:bold;">@${data.name}</div><div style="font-size:11px;color:var(--secondary);">Нажми чтобы открыть профиль</div></div>
+                </div>
+                <span style="color:var(--accent);font-size:20px;">&#x203A;</span>
+            </div>`
+        ).join('')||(Object.keys(reqs).length===0?`<p style="color:var(--secondary);text-align:center;padding:30px;">Нет друзей</p>`:'');
     }
     window.acceptFr = async (fid,fn) => {
         await update(ref(db,`users/${user.id}/friends/${fid}`),{name:fn});
@@ -1083,30 +1093,83 @@
     window.openGiftDetail = async (inst) => {
         const s = await get(ref(db,'users/'+user.id)), d = s.val();
         const inv = d.cloudInv || [];
+        const pin = d.pinned || [];
         const x = inv.find(i => i.inst == inst);
         if (!x) return;
         const cat = catalog.find(c => c.id == x.id);
         const img = x.img || (cat && cat.img);
         const emoji = x.i || (cat && cat.i) || '🎁';
         const frs = d.friends || {};
+        const isPinned = pin.some(p => p.inst == inst);
+
+        // Rarity based on catalog id
+        const rarityMap = [
+            {max:10, label:'Обычный', color:'#7f91a4', stars:'⭐'},
+            {max:18, label:'Редкий', color:'#2ecc71', stars:'⭐⭐'},
+            {max:24, label:'Эпический', color:'#a29bfe', stars:'⭐⭐⭐'},
+            {max:99, label:'Легендарный', color:'gold', stars:'⭐⭐⭐⭐'}
+        ];
+        const rar = rarityMap.find(r => (x.id||0) <= r.max) || rarityMap[0];
+
+        // Purchase price at the time (approximate)
+        const price = x.nft ? 5000 : getPrice(x.id||0);
+        const origin = x.from ? (x.from === 'PROMO' ? '🎟️ Промокод' : x.from === 'ADMIN' ? '🛠️ Выдан админом' : x.from === 'RESET' ? '🔄 Сброс' : '🎁 Подарено: ' + x.from) : '🛒 Куплено в магазине';
+
         const friendBtns = Object.entries(frs).map(([fid, fd]) =>
-            `<button class="btn" style="margin-bottom:8px;background:#1a2636;border:1px solid rgba(255,255,255,0.1);" onclick="sendG('${inst}','${fid}')">🎁 Подарить <b>${fd.name}</b></button>`
+            `<button class="btn" style="margin-bottom:8px;background:#1a2636;border:1px solid rgba(255,255,255,0.1);font-size:13px;" onclick="sendG('${inst}','${fid}')">🎁 ${fd.name}</button>`
         ).join('');
 
         document.getElementById('modal-content').innerHTML = `
-            <div style="text-align:center;padding:10px 5px;">
-                <div style="width:100px;height:100px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;">
-                    ${img ? `<img src="${img}" style="width:100px;height:100px;object-fit:contain;filter:drop-shadow(0 6px 20px rgba(0,0,0,0.5));">` : `<span style="font-size:72px;">${emoji}</span>`}
+            <div style="padding:5px 0;">
+                <!-- Gift image -->
+                <div style="text-align:center;margin-bottom:16px;">
+                    <div style="width:110px;height:110px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.04);border-radius:28px;border:1px solid rgba(255,255,255,0.08);">
+                        ${img ? `<img src="${img}" style="width:90px;height:90px;object-fit:contain;filter:drop-shadow(0 6px 24px rgba(0,0,0,0.6));">` : `<span style="font-size:72px;">${emoji}</span>`}
+                    </div>
+                    <h3 style="margin:0 0 6px;font-size:20px;">${x.n}</h3>
+                    <span style="display:inline-block;background:rgba(255,255,255,0.06);border:1px solid ${rar.color}33;color:${rar.color};border-radius:20px;padding:3px 12px;font-size:12px;font-weight:bold;">${rar.stars} ${rar.label}</span>
                 </div>
-                <h3 style="margin:0 0 4px;font-size:20px;">${x.n}</h3>
-                ${x.from ? `<div style="color:var(--orange);font-size:13px;margin-bottom:14px;">от ${x.from}</div>` : '<div style="margin-bottom:14px;"></div>'}
-                <div style="display:flex;flex-direction:column;gap:0;">
-                    ${friendBtns || '<p style="color:var(--secondary);font-size:13px;">Нет друзей для отправки</p>'}
+
+                <!-- Info grid -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                    <div style="background:#0a1520;border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:10px;color:var(--secondary);margin-bottom:4px;">ПРОИСХОЖДЕНИЕ</div>
+                        <div style="font-size:12px;font-weight:bold;">${origin}</div>
+                    </div>
+                    <div style="background:#0a1520;border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:10px;color:var(--secondary);margin-bottom:4px;">ЦЕНА ПОКУПКИ</div>
+                        <div style="font-size:12px;font-weight:bold;color:gold;">${x.from && x.from !== 'RESET' ? '— (подарено)' : price.toLocaleString() + ' 💰'}</div>
+                    </div>
+                    <div style="background:#0a1520;border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:10px;color:var(--secondary);margin-bottom:4px;">РЫНОЧНАЯ ЦЕНА</div>
+                        <div style="font-size:12px;font-weight:bold;color:var(--accent);">${price.toLocaleString()} 💰</div>
+                    </div>
+                    <div style="background:#0a1520;border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:10px;color:var(--secondary);margin-bottom:4px;">РЕДКОСТЬ</div>
+                        <div style="font-size:12px;font-weight:bold;color:${rar.color};">${rar.label}</div>
+                    </div>
                 </div>
-                <button class="btn" style="margin-top:8px;background:var(--accent);" onclick="toMarket('${inst}');closeModal()">⚖️ Выставить на рынок</button>
-                <button class="btn" style="margin-top:6px;background:none;color:var(--secondary);" onclick="closeModal()">Закрыть</button>
+
+                <!-- Actions -->
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <button class="btn" style="background:${isPinned?'var(--err)':'var(--orange)'};" onclick="togglePin('${inst}');closeModal();renderMyProfileFresh()">
+                        ${isPinned ? '❌ Снять с витрины' : '📌 Закрепить на витрине'}
+                    </button>
+                    <button class="btn" style="background:var(--accent);" onclick="toMarket('${inst}');closeModal()">⚖️ Выставить на рынок</button>
+                    ${frs && Object.keys(frs).length ? `
+                    <div style="background:#0a1520;border-radius:16px;padding:10px;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:11px;color:var(--secondary);margin-bottom:8px;text-align:center;">🎁 Подарить другу</div>
+                        ${friendBtns}
+                    </div>` : ''}
+                    <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);border:1px solid rgba(255,255,255,0.08);" onclick="closeModal()">Закрыть</button>
+                </div>
             </div>`;
         openModal();
+    };
+
+    window.renderMyProfileFresh = async () => {
+        const s = await get(ref(db,'users/'+user.id));
+        if(s.exists()) renderMyProfile(s.val());
     };
 
     window.openPromoModal = () => {
@@ -1138,6 +1201,80 @@
             closeModal();showToast("Сохранено!");
         }
     };
+    // ===== USER PROFILE VIEWER =====
+    window.openUserProfile = async (uid) => {
+        const s = await get(ref(db,'users/'+uid));
+        if (!s.exists()) return showToast('Пользователь не найден','var(--err)');
+        const d = s.val();
+        const inv = d.cloudInv || [];
+        const pinned = d.pinned || [];
+        const friends = d.friends || {};
+
+        const rarityMap = [
+            {max:10, label:'Обычный', color:'#7f91a4'},
+            {max:18, label:'Редкий', color:'#2ecc71'},
+            {max:24, label:'Эпический', color:'#a29bfe'},
+            {max:99, label:'Легендарный', color:'gold'}
+        ];
+
+        const giftCard = (x) => {
+            const cat = catalog.find(c => c.id == x.id);
+            const img = x.img || (cat && cat.img);
+            const emoji = x.i || (cat && cat.i) || '🎁';
+            const rar = rarityMap.find(r => (x.id||0) <= r.max) || rarityMap[0];
+            return `<div style="text-align:center;background:#0a1520;border-radius:16px;padding:12px 8px;border:1px solid rgba(255,255,255,0.06);">
+                <div style="width:60px;height:60px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;">
+                    ${img ? `<img src="${img}" style="width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(0,0,0,0.5));" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:40px;">${emoji}</span>` : `<span style="font-size:40px;">${emoji}</span>`}
+                </div>
+                <div style="font-size:12px;font-weight:bold;margin-bottom:3px;">${x.n}</div>
+                <div style="font-size:10px;color:${rar.color};">${rar.label}</div>
+                ${x.from ? `<div style="font-size:10px;color:var(--orange);margin-top:2px;">от ${x.from}</div>` : ''}
+            </div>`;
+        };
+
+        const pinnedHtml = pinned.length
+            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:4px;">${pinned.map(giftCard).join('')}</div>`
+            : `<div style="text-align:center;color:var(--secondary);font-size:13px;padding:16px;">Витрина пуста</div>`;
+
+        const allGiftsHtml = inv.length
+            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">${inv.map(giftCard).join('')}</div>`
+            : `<div style="text-align:center;color:var(--secondary);font-size:13px;padding:16px;">Подарков нет</div>`;
+
+        document.getElementById('modal-content').innerHTML = `
+            <div style="padding:5px 0;">
+                <!-- Header -->
+                <div style="text-align:center;margin-bottom:16px;">
+                    <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
+                         style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);margin-bottom:10px;"
+                         onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                    <h3 style="margin:0 0 4px;">@${d.username}</h3>
+                    ${d.bio ? `<p style="color:var(--secondary);font-size:13px;margin:0 0 10px;">${d.bio}</p>` : ''}
+                    <div style="display:flex;justify-content:center;gap:20px;">
+                        <div style="text-align:center;"><div style="font-weight:bold;color:var(--accent);font-size:18px;">${inv.length}</div><div style="font-size:11px;color:var(--secondary);">Подарков</div></div>
+                        <div style="text-align:center;"><div style="font-weight:bold;color:var(--accent);font-size:18px;">${Object.keys(friends).length}</div><div style="font-size:11px;color:var(--secondary);">Друзей</div></div>
+                    </div>
+                </div>
+
+                <!-- Showcase -->
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:13px;font-weight:bold;color:var(--secondary);margin-bottom:8px;display:flex;align-items:center;gap:6px;">⭐ Витрина</div>
+                    ${pinnedHtml}
+                </div>
+
+                <!-- All gifts -->
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:13px;font-weight:bold;color:var(--secondary);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                        <span>🎁 Все подарки</span>
+                        <span style="background:rgba(255,255,255,0.07);border-radius:20px;padding:2px 10px;font-size:11px;">${inv.length}</span>
+                    </div>
+                    ${allGiftsHtml}
+                </div>
+
+                <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);border:1px solid rgba(255,255,255,0.08);" onclick="closeModal()">Закрыть</button>
+            </div>`;
+        openModal();
+    };
+
     window.logout=()=>{localStorage.removeItem('gifts_user');location.reload();};
 
     // ===== ADMIN =====
@@ -1173,9 +1310,9 @@
 
             // Top users
             document.getElementById('adm-top-users').innerHTML=sorted.slice(0,5).map(([id,u],i)=>
-                `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;" onclick="openUserProfile('${id}')">
                     <span style="color:var(--secondary);font-size:13px;">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} ${u.username}</span>
-                    <span style="color:gold;font-weight:bold;font-size:13px;">${(u.balance||0).toLocaleString()}💰</span>
+                    <span style="color:gold;font-weight:bold;font-size:13px;">${(u.balance||0).toLocaleString()}💰 <span style="color:var(--accent);font-size:16px;">›</span></span>
                 </div>`
             ).join('');
 
@@ -1183,12 +1320,13 @@
             document.getElementById('adm-users-list').innerHTML=userList.map(([id,u])=>{
                 const invStr=(u.cloudInv||[]).map(x=>x.i).join('')||'пусто';
                 return `<div>
-                    <div class="adm-user-row" data-name="${u.username.toLowerCase()}" onclick="admToggleUser('${id}')">
-                        <div>
+                    <div class="adm-user-row" data-name="${u.username.toLowerCase()}">
+                        <div style="flex:1;" onclick="admToggleUser('${id}')">
                             <div class="uname">👤 ${u.username}</div>
                             <div class="uinfo">📦 ${(u.cloudInv||[]).length} предм. · 🌐 ${u.ip||'—'}</div>
                         </div>
-                        <div class="ubadge">${(u.balance||0).toLocaleString()}💰</div>
+                        <button onclick="openUserProfile('${id}')" style="background:rgba(36,129,204,0.15);border:1px solid rgba(36,129,204,0.3);color:var(--accent);border-radius:10px;padding:6px 10px;font-size:12px;cursor:pointer;margin-right:8px;white-space:nowrap;">👁 Профиль</button>
+                        <div class="ubadge" onclick="admToggleUser('${id}')">${(u.balance||0).toLocaleString()}💰</div>
                     </div>
                     <div id="admu-${id}" class="adm-user-detail">
                         <div class="adm-detail-grid">
@@ -1342,6 +1480,7 @@
         document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
         document.getElementById(id).classList.add('active');b.classList.add('active');
         if(id==='inv') renderInv();
+        if(id==='profile') { get(ref(db,'users/'+user.id)).then(s=>{ if(s.val()) renderMyProfile(s.val()); }); }
     };
     window.onload=()=>{const s=localStorage.getItem('gifts_user');if(s){const d=JSON.parse(s);startApp(d.name,d.id);}};
 </script>
