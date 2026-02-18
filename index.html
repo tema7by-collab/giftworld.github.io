@@ -24,7 +24,7 @@
         #friends, #admin { display: none; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; }
         #friends.active, #admin.active { display: flex; animation: fadeInUp 0.3s ease both; }
 
-        .card { background: var(--card); border-radius: 25px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative; transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease; animation: fadeInScale 0.35s ease both; }
+        .card { background: var(--card); border-radius: 25px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative; transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;  }
         .card:hover { transform: translateY(-5px) scale(1.025); box-shadow: 0 14px 44px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.09); }
         .card .item-emoji { display: inline-block; transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1); }
         .card:hover .item-emoji { animation: wiggle 0.55s ease; }
@@ -149,7 +149,7 @@
         .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 4px 12px rgba(36,129,204,0.35); }
 
         @keyframes rainbow { 0%{color:#ff6b6b} 16%{color:#ffd93d} 33%{color:#6bcb77} 50%{color:#4d96ff} 66%{color:#c77dff} 83%{color:#ff6bcd} 100%{color:#ff6b6b} }
-        .rarity-nft { animation: rainbow 2s linear infinite; font-weight:bold; }
+        .rarity-nft { animation: rainbow 4s linear infinite; font-weight:bold; }
 
         /* ===== MERGE SYSTEM ===== */
         @keyframes mergeGlow { 0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0)} 50%{box-shadow:0 0 30px 8px rgba(255,215,0,0.5)} }
@@ -163,21 +163,21 @@
         .rarity-epic    { color:#a29bfe; font-size:10px; font-weight:bold; }
         .rarity-legendary { background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; font-size:10px; font-weight:bold; background-size:200% auto; animation:legendaryShimmer 2s linear infinite; }
 
-        .card-rare     { border:1.5px solid rgba(77,180,255,0.5)!important; background:linear-gradient(135deg,#0a0d2e,#0c1a30)!important; animation:rarePulse 3s ease-in-out infinite; }
-        .card-epic     { border:1.5px solid rgba(162,155,254,0.55)!important; background:linear-gradient(135deg,#0d0a2e,#1a0e3a)!important; animation:epicPulse 3s ease-in-out infinite; }
-        .card-legendary{ border:2px solid rgba(255,215,0,0.7)!important; background:linear-gradient(135deg,#1a1200,#0e1824,#1a1200)!important; animation:mergeGlow 2.5s ease-in-out infinite; }
-        .card-legendary::before { content:''; position:absolute; inset:0; border-radius:25px; background:linear-gradient(105deg,transparent 30%,rgba(255,215,0,0.15) 50%,transparent 70%); background-size:200% 100%; animation:shimmer 2s linear infinite; pointer-events:none; z-index:1; }
+        .card-rare     { border:1.5px solid rgba(77,180,255,0.5)!important; background:linear-gradient(135deg,#0a0d2e,#0c1a30)!important; }
+        .card-epic     { border:1.5px solid rgba(162,155,254,0.55)!important; background:linear-gradient(135deg,#0d0a2e,#1a0e3a)!important; }
+        .card-legendary{ border:2px solid rgba(255,215,0,0.7)!important; background:linear-gradient(135deg,#1a1200,#0e1824,#1a1200)!important; }
+        .card-legendary::before { content:''; position:absolute; inset:0; border-radius:25px; background:linear-gradient(105deg,transparent 30%,rgba(255,215,0,0.15) 50%,transparent 70%); background-size:200% 100%; pointer-events:none; z-index:1; }
 
         .nft-id-badge { position:absolute; bottom:6px; left:8px; font-size:9px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px; z-index:3; }
         .nft-id-badge.nft { color:rgba(255,215,0,0.55); }
 
         .merge-btn { background:linear-gradient(90deg,#7c3aed,#a855f7)!important; margin-top:5px!important; font-size:11px!important; position:relative; overflow:hidden; }
-        .merge-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transform:translateX(-100%); animation:mergeSweep 2s ease infinite; }
+        .merge-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transform:translateX(-100%); }
         @keyframes mergeSweep { 0%{transform:translateX(-100%)} 50%,100%{transform:translateX(100%)} }
-        .merge-ready { animation:mergeGlow 1.2s ease-in-out infinite; }
+        .merge-ready { }
 
         .merge-count-badge { position:absolute; top:7px; left:7px; background:rgba(162,155,254,0.9); color:#fff; font-size:9px; font-weight:bold; border-radius:10px; padding:1px 6px; z-index:3; backdrop-filter:blur(4px); }
-        .merge-count-badge.ready { background:linear-gradient(90deg,#7c3aed,#a855f7); animation:epicPulse 1s ease infinite; }
+        .merge-count-badge.ready { background:linear-gradient(90deg,#7c3aed,#a855f7); }
 
         .merge-panel { grid-column:1/-1; background:linear-gradient(135deg,#0d0a20,#120d2e); border:1.5px solid rgba(162,155,254,0.4); border-radius:22px; padding:18px; margin-bottom:5px; }
         .merge-panel h4 { margin:0 0 10px; color:#a29bfe; font-size:15px; display:flex; align-items:center; gap:8px; }
@@ -319,7 +319,7 @@
             background-size:200% 100%; animation:nftGoldShimmer 2.5s linear infinite;
         }
         .tg-gift-nft .tg-gift-inner { z-index:1; }
-        .tg-gift-nft .tg-gift-inner img { animation:nftImgFloat 3s ease-in-out infinite; filter:drop-shadow(0 4px 16px rgba(255,215,0,0.55)); }
+        .tg-gift-nft .tg-gift-inner img { filter:drop-shadow(0 4px 16px rgba(255,215,0,0.55)); }
         .tg-gift-nft .tg-gift-name {
             background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);
             background-size:200% auto;
@@ -354,7 +354,7 @@
             background-size:200% 100%; animation:nftGoldShimmer 2.5s linear infinite;
         }
         .tg-gift-nft-lizard .tg-gift-inner { z-index:1; }
-        .tg-gift-nft-lizard .tg-gift-inner img { animation:nftImgFloat 3s ease-in-out infinite; filter:drop-shadow(0 4px 16px rgba(77,255,145,0.6)); }
+        .tg-gift-nft-lizard .tg-gift-inner img { filter:drop-shadow(0 4px 16px rgba(77,255,145,0.6)); }
         .tg-gift-nft-lizard .tg-gift-name {
             background:linear-gradient(90deg,#00ff88,#4dff91,#00cc66);
             background-size:200% auto; animation:nftGoldShimmer 2s linear infinite;
@@ -404,7 +404,7 @@
 
     .auth-wrap { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:16px; }
     .auth-logo { text-align:center; animation:authSlideIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
-    .auth-logo h1 { font-size:32px; color:var(--accent); margin:8px 0 4px; animation:titlePulse 3s ease-in-out infinite; }
+    .auth-logo h1 { font-size:32px; color:var(--accent); margin:8px 0 4px;  }
     .auth-logo p { color:var(--secondary); font-size:13px; margin:0; }
 
     .auth-card {
@@ -608,6 +608,11 @@
                     </select>
                     <button class="btn" style="background:var(--orange);" onclick="broadcastGift()">Выдать всем</button>
                 </div>
+                <div class="card" style="text-align:left;">
+                    <div style="font-weight:bold;margin-bottom:8px;">📱 Рассылка в Telegram</div>
+                    <textarea id="bcast-tg-msg" placeholder="Текст сообщения для всех в Telegram..." style="min-height:80px;margin-bottom:8px;"></textarea>
+                    <button class="btn" style="background:var(--tg);" onclick="broadcastTg()">📤 Отправить всем в TG</button>
+                </div>
                 <button class="btn" style="background:#1a2636;border:1px solid var(--err);color:var(--err);" onclick="clearAllShowcases()">🧹 Очистить все витрины</button>
                 <button class="btn" style="background:#1a2636;border:1px solid var(--secondary);color:var(--secondary);" onclick="clearMarket()">🗑️ Очистить весь рынок</button>
                 <div style="border-top:1px solid rgba(255,255,255,0.07);margin:4px 0;padding-top:10px;">
@@ -642,6 +647,25 @@
     };
     const fb = initializeApp(config);
     const db = getDatabase(fb);
+
+    const BOT_TOKEN = '7984490459:AAHfAKcGE_placeholder_replace_me';
+
+    async function sendTg(chatId, text) {
+        if(!chatId) return;
+        try {
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({chat_id: chatId, text, parse_mode:'HTML'})
+            });
+        } catch(e) {}
+    }
+
+    async function getTgId(uid) {
+        const s = await get(ref(db,'users/'+uid));
+        return s.exists() ? (s.val().tgChatId || null) : null;
+    }
+
     let user = null, allUsersCache = {};
 
     const catalog = [
@@ -1118,6 +1142,7 @@
         spawnConfetti(window.innerWidth/2,window.innerHeight/2,60);
         flyEmoji(rarObj.icon,window.innerWidth/2,window.innerHeight/2);
         showToast(`${rarObj.icon} Слияние успешно! Получен ${rarObj.label}!`,"#a29bfe");
+        getTgId(user.id).then(cid=>sendTg(cid,`⚗️ <b>Слияние!</b>\n\nТы объединил 3×<b>${baseItem.n}</b> и получил версию <b>${rarObj.icon} ${rarObj.label}</b>!`));
         closeModal(); renderInv(); openMergeModal();
     };
     const NFT_START=new Date('2026-02-22T21:00:00Z').getTime();
@@ -1319,8 +1344,8 @@
                     :'';
                 const priceColor=isLizard?'#4dff91':isNFT||isLegendary?'gold':isEpic?'#a29bfe':isRare?'#4db4ff':'var(--accent)';
                 return `<div class="card" style="padding:12px;display:flex;flex-direction:column;align-items:center;background:${cardBg};border:1.5px solid ${cardBorder};box-shadow:${cardShadow};position:relative;overflow:hidden;">
-                    ${isNFT?`<div style="position:absolute;inset:0;border-radius:25px;background:linear-gradient(105deg,transparent 25%,${isLizard?'rgba(77,255,145,0.07)':'rgba(255,215,0,0.07)'} 50%,transparent 75%);background-size:200% 100%;animation:nftGoldShimmer 2.5s linear infinite;pointer-events:none;"></div>`:''}
-                    ${isLegendary?`<div style="position:absolute;inset:0;border-radius:25px;background:linear-gradient(105deg,transparent 30%,rgba(255,215,0,0.08) 50%,transparent 70%);background-size:200% 100%;animation:shimmer 2.5s linear infinite;pointer-events:none;"></div>`:''}
+                    ${isNFT?`<div style="position:absolute;inset:0;border-radius:25px;background:linear-gradient(105deg,transparent 25%,${isLizard?'rgba(77,255,145,0.07)':'rgba(255,215,0,0.07)'} 50%,transparent 75%);background-size:200% 100%;pointer-events:none;"></div>`:''}
+                    ${isLegendary?`<div style="position:absolute;inset:0;border-radius:25px;background:linear-gradient(105deg,transparent 30%,rgba(255,215,0,0.08) 50%,transparent 70%);background-size:200% 100%;pointer-events:none;"></div>`:''}
                     ${isEpic?`<div style="position:absolute;top:6px;right:6px;font-size:9px;color:#a29bfe;font-weight:bold;opacity:0.8;">🟣 Эпик</div>`:''}
                     ${isRare?`<div style="position:absolute;top:6px;right:6px;font-size:9px;color:#4db4ff;font-weight:bold;opacity:0.8;">🔵 Редкий</div>`:''}
                     ${isLegendary?`<div style="position:absolute;top:6px;right:6px;font-size:9px;font-weight:bold;background:linear-gradient(90deg,#ffd700,#ffb347);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">🟡 Легенд.</div>`:''}
@@ -1399,6 +1424,8 @@
         await update(bR,{balance:bS.val().balance-p,cloudInv:inv});
         const sS=await get(ref(db,'users/'+si));if(sS.exists()) await update(ref(db,'users/'+si),{balance:sS.val().balance+parseInt(p)});
         if(e) flyEmoji(itm.i,e.clientX,e.clientY);
+        const rarLbl = getRarityObj(itm).label;
+        getTgId(si).then(cid=>sendTg(cid,`🛒 <b>Продажа на рынке!</b>\n\n${user.name} купил твой <b>${itm.n}</b> ${itm.i}\nРедкость: ${rarLbl}\n💰 +${parseInt(p).toLocaleString()} монет`));
         flashBalance(); showToast("Куплено! "+itm.i);
     };
     window.remM = async (k) => {
@@ -1414,6 +1441,7 @@
         const fs=await get(ref(db,'users/'+t));
         if(!fs.exists()) return showToast("Не найден!",'var(--err)');
         await update(ref(db,`users/${t}/requests/${user.id}`),{from:user.id,name:user.name});
+        getTgId(t).then(cid=>sendTg(cid,`👥 <b>Запрос в друзья</b>\n\n<b>${user.name}</b> хочет добавить тебя в друзья!\nЗайди на сайт чтобы принять.`));
         showToast("Запрос отправлен!");
     };
     async function renderFriends(d){
@@ -1465,7 +1493,9 @@
     window.acceptFr = async (fid,fn) => {
         await update(ref(db,`users/${user.id}/friends/${fid}`),{name:fn});
         await update(ref(db,`users/${fid}/friends/${user.id}`),{name:user.name});
-        await remove(ref(db,`users/${user.id}/requests/${fid}`));showToast("Добавлен!");
+        await remove(ref(db,`users/${user.id}/requests/${fid}`));
+        getTgId(fid).then(cid=>sendTg(cid,`✅ <b>Запрос принят!</b>\n\n<b>${user.name}</b> принял твой запрос в друзья 🤝`));
+        showToast("Добавлен!");
     };
     window.giftOpen = async (inst) => {
         const s=await get(ref(db,'users/'+user.id)),frs=s.val().friends||{};
@@ -1487,6 +1517,7 @@
         const frS=await get(ref(db,'users/'+fid)),frInv=frS.val().cloudInv||[];
         frInv.push({...itm,from:user.name,seen:false,inst:Date.now()});
         await update(ref(db,'users/'+fid),{cloudInv:frInv});
+        getTgId(fid).then(cid=>sendTg(cid,`🎁 <b>Подарок!</b>\n\n${user.name} подарил тебе <b>${itm.n}</b> ${itm.i}\nЗаходи на сайт чтобы посмотреть!`));
         closeModal();spawnConfetti(window.innerWidth/2,window.innerHeight/2,40);
         flyEmoji('🎁',window.innerWidth/2,window.innerHeight/2);
         showToast("Подарок отправлен! 🎁",'var(--green)');renderInv();
@@ -1509,27 +1540,64 @@
             const isPin = pinnedInsts.has(String(x.inst));
             const isNFT = !!x.nft;
             const isLizard = isNFT && x.id === 997;
-            const nftClass = isNFT ? (isLizard ? ' tg-gift-nft-lizard' : ' tg-gift-nft') : '';
             const nftPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)) : 0;
-            return `<div class="tg-gift-cell${nftClass}${isPin?' tg-gift-pinned':''}" onclick="openGiftDetail('${x.inst}')" style="position:relative;">
-                ${isNFT ? `<div class="tg-gift-nft-badge">NFT</div>` : ''}
-                ${isPin ? `<div style="position:absolute;top:5px;left:5px;font-size:12px;z-index:3;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.8));">📌</div>` : ''}
-                <div class="tg-gift-inner">
-                    ${img ? `<img src="${img}" alt="${x.n}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:34px;">${emoji}</span>` : `<span style="font-size:34px;">${emoji}</span>`}
-                    ${x.from ? `<div class="tg-gift-from">${x.from}</div>` : ''}
+            const rarObj = getRarityObj(x);
+            const isRare = !isNFT && rarObj.id===1;
+            const isEpic = !isNFT && rarObj.id===2;
+            const isLeg  = !isNFT && rarObj.id===3;
+            const bg = isLizard ? 'linear-gradient(145deg,#001a08,#0a1f12,#001208)'
+                      : isNFT   ? 'linear-gradient(145deg,#1c1200,#0f1a1f,#1a1100)'
+                      : isLeg   ? 'linear-gradient(145deg,#1a1200,#0e1010)'
+                      : isEpic  ? 'linear-gradient(145deg,#0d0a2e,#1a0e3a)'
+                      : isRare  ? 'linear-gradient(145deg,#0a0d2e,#0c1a30)'
+                      : 'var(--card)';
+            const border = isLizard ? 'rgba(77,255,145,0.5)'
+                         : isNFT    ? 'rgba(255,215,0,0.5)'
+                         : isLeg    ? 'rgba(255,215,0,0.45)'
+                         : isEpic   ? 'rgba(162,155,254,0.45)'
+                         : isRare   ? 'rgba(77,180,255,0.4)'
+                         : 'rgba(255,255,255,0.06)';
+            const shadow = isLizard ? '0 0 0 1.5px rgba(77,255,145,0.4),0 4px 16px rgba(77,255,145,0.2)'
+                          : isNFT   ? '0 0 0 1.5px rgba(255,215,0,0.4),0 4px 16px rgba(255,215,0,0.2)'
+                          : isLeg   ? '0 0 0 1px rgba(255,215,0,0.25),0 3px 14px rgba(255,215,0,0.1)'
+                          : isEpic  ? '0 0 0 1px rgba(162,155,254,0.25),0 3px 14px rgba(162,155,254,0.1)'
+                          : isRare  ? '0 0 0 1px rgba(77,180,255,0.2),0 3px 10px rgba(77,180,255,0.08)'
+                          : 'none';
+            const imgFilter = isLizard ? 'drop-shadow(0 4px 14px rgba(77,255,145,0.55))'
+                             : isNFT   ? 'drop-shadow(0 4px 14px rgba(255,215,0,0.55))'
+                             : isLeg   ? 'drop-shadow(0 3px 10px rgba(255,215,0,0.4))'
+                             : isEpic  ? 'drop-shadow(0 3px 10px rgba(162,155,254,0.4))'
+                             : isRare  ? 'drop-shadow(0 3px 10px rgba(77,180,255,0.35))'
+                             : 'drop-shadow(0 3px 10px rgba(0,0,0,0.5))';
+            const nameColor = isLizard ? 'background:linear-gradient(90deg,#00ff88,#4dff91);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
+                : isNFT ? 'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
+                : isLeg ? 'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
+                : isEpic ? 'color:#a29bfe;font-weight:bold;'
+                : isRare ? 'color:#4db4ff;font-weight:bold;'
+                : '';
+            return `<div onclick="openGiftDetail('${x.inst}')" style="text-align:center;background:${bg};border-radius:16px;padding:10px 6px 8px;border:1.5px solid ${border};box-shadow:${shadow};position:relative;overflow:hidden;cursor:pointer;">
+                ${isNFT ? `<div style="position:absolute;top:4px;right:4px;background:${isLizard?'linear-gradient(90deg,#007744,#4dff91)':'linear-gradient(90deg,#b8860b,#ffd700)'};color:#000;font-size:7px;font-weight:900;border-radius:5px;padding:2px 5px;z-index:2;">NFT</div>` : ''}
+                ${isLeg  ? `<div style="position:absolute;top:4px;right:4px;font-size:7px;font-weight:900;background:linear-gradient(90deg,#ffd700,#ffb347);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:2;">🟡</div>` : ''}
+                ${isEpic ? `<div style="position:absolute;top:4px;right:4px;font-size:8px;color:#a29bfe;z-index:2;">🟣</div>` : ''}
+                ${isRare ? `<div style="position:absolute;top:4px;right:4px;font-size:8px;color:#4db4ff;z-index:2;">🔵</div>` : ''}
+                ${isPin  ? `<div style="position:absolute;top:4px;left:4px;font-size:11px;z-index:3;">📌</div>` : ''}
+                <div style="width:56px;height:56px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">
+                    ${img ? `<img src="${img}" style="width:52px;height:52px;object-fit:contain;filter:${imgFilter};" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:34px;">${emoji}</span>` : `<span style="font-size:34px;">${emoji}</span>`}
                 </div>
-                ${isNFT && x.nftSerial ? `<div class="tg-gift-nft-serial">#${x.nftSerial}</div>` : ''}
-                <div class="tg-gift-name">${x.n}</div>
-                ${isNFT ? `<div class="tg-gift-nft-price">${nftPrice.toLocaleString()}💰</div>` : ''}
+                ${x.from ? `<div style="position:absolute;top:4px;left:4px;font-size:8px;color:var(--orange);background:rgba(0,0,0,0.4);border-radius:6px;padding:1px 4px;z-index:2;">${x.from}</div>` : ''}
+                <div style="font-size:11px;font-weight:bold;margin-bottom:2px;${nameColor}">${x.n}</div>
+                ${isNFT ? `<div style="font-size:8px;color:${isLizard?'rgba(77,255,145,0.75)':'rgba(255,215,0,0.75)'};">${nftPrice.toLocaleString()}💰</div>` : ''}
+                ${isNFT && x.nftSerial ? `<div style="font-size:7px;color:${isLizard?'rgba(77,255,145,0.4)':'rgba(255,215,0,0.4)'};font-family:monospace;">#${x.nftSerial}</div>` : ''}
             </div>`;
         };
 
-        const giftsGrid = sortedInv.length ? sortedInv.map(makeGiftCell).join('') 
-        : `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--secondary);">
-            <div style="font-size:48px;margin-bottom:12px;">🎁</div>
-            <div style="font-size:14px;">Подарков пока нет</div>
-            <div style="font-size:12px;margin-top:6px;opacity:0.6;">Купи в магазине или попроси друга</div>
-        </div>`;
+        const giftsGrid = sortedInv.length
+            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">${sortedInv.map(makeGiftCell).join('')}</div>`
+            : `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--secondary);">
+                <div style="font-size:48px;margin-bottom:12px;">🎁</div>
+                <div style="font-size:14px;">Подарков пока нет</div>
+                <div style="font-size:12px;margin-top:6px;opacity:0.6;">Купи в магазине или попроси друга</div>
+            </div>`;
 
         document.getElementById('profile').innerHTML = `
         <div class="tg-profile">
@@ -1561,7 +1629,7 @@
                     <span>🎁 Подарки</span>
                     <span class="tg-gifts-count">${inv.length}</span>
                 </div>
-                <div class="tg-gifts-grid">${giftsGrid}</div>
+                <div>${giftsGrid}</div>
             </div>
             <div style="padding:0 15px 15px;">
                 <a href="https://dalink.to/gifworld" target="_blank" class="btn" style="background:#1a2636;border:1px solid rgba(255,255,255,0.08);color:var(--secondary);font-size:13px;">💎 Поддержка проекта</a>
@@ -1695,6 +1763,13 @@
             <textarea id="ebio" placeholder="О себе">${d.bio||''}</textarea>
             <p style="font-size:12px;color:var(--secondary)">Аватар (с устройства):</p>
             <input type="file" id="efile" accept="image/*" style="padding:5px;font-size:12px;">
+            <hr style="border-color:rgba(255,255,255,0.07);margin:10px 0 8px;">
+            <p style="font-size:12px;color:var(--secondary);margin:0 0 6px;">📱 Telegram уведомления:</p>
+            ${d.tgChatId
+                ? `<div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:12px;padding:10px;font-size:12px;color:#2ecc71;margin-bottom:6px;">✅ Telegram привязан (ID: ${d.tgChatId})</div>`
+                : `<div style="background:rgba(36,129,204,0.08);border:1px solid rgba(36,129,204,0.2);border-radius:12px;padding:10px;font-size:12px;color:var(--secondary);margin-bottom:6px;">❌ Telegram не привязан</div>`
+            }
+            <a href="https://t.me/Gift_world_to_market_bot?start=link_${user.id}" target="_blank" class="btn" style="background:var(--tg);font-size:13px;padding:10px;margin-bottom:0;">📱 Привязать Telegram</a>
             <button class="btn" onclick="saveP()" style="margin-bottom:4px;">Сохранить профиль</button>
             <hr style="border-color:rgba(255,255,255,0.07);margin:12px 0;">
             <h3 style="margin-bottom:4px;">🎨 Косметика</h3>
@@ -1731,12 +1806,13 @@
     };
     window.saveP = async () => {
         const file=document.getElementById('efile').files[0];
+        const bioVal=document.getElementById('ebio').value;
         if(file){
             const reader=new FileReader();
-            reader.onload=async(e)=>{await update(ref(db,'users/'+user.id),{bio:document.getElementById('ebio').value,pic:e.target.result});closeModal();showToast("Сохранено!");};
+            reader.onload=async(e)=>{await update(ref(db,'users/'+user.id),{bio:bioVal,pic:e.target.result});closeModal();showToast("Сохранено!");};
             reader.readAsDataURL(file);
         } else {
-            await update(ref(db,'users/'+user.id),{bio:document.getElementById('ebio').value});
+            await update(ref(db,'users/'+user.id),{bio:bioVal});
             closeModal();showToast("Сохранено!");
         }
     };
@@ -1804,10 +1880,10 @@
                 ${isEpic ? `<div style="position:absolute;top:4px;right:4px;font-size:7px;font-weight:900;color:#a29bfe;z-index:2;">🟣 Эпик</div>` : ''}
                 ${isRare ? `<div style="position:absolute;top:4px;right:4px;font-size:7px;font-weight:900;color:#4db4ff;z-index:2;">🔵 Редкий</div>` : ''}
                 ${isPinCard ? `<div style="position:absolute;top:4px;left:4px;font-size:11px;z-index:2;">📌</div>` : ''}
-                ${isNFT ? `<div style="position:absolute;inset:0;border-radius:16px;background:linear-gradient(105deg,transparent 25%,${isLizard?'rgba(77,255,145,0.08)':'rgba(255,215,0,0.08)'} 50%,transparent 75%);background-size:200% 100%;animation:nftGoldShimmer 2.5s linear infinite;pointer-events:none;"></div>` : ''}
-                ${isLeg  ? `<div style="position:absolute;inset:0;border-radius:16px;background:linear-gradient(105deg,transparent 30%,rgba(255,215,0,0.07) 50%,transparent 70%);background-size:200% 100%;animation:shimmer 2.5s linear infinite;pointer-events:none;"></div>` : ''}
+                ${isNFT ? `<div style="position:absolute;inset:0;border-radius:16px;background:linear-gradient(105deg,transparent 25%,${isLizard?'rgba(77,255,145,0.08)':'rgba(255,215,0,0.08)'} 50%,transparent 75%);background-size:200% 100%;pointer-events:none;"></div>` : ''}
+                ${isLeg  ? `<div style="position:absolute;inset:0;border-radius:16px;background:linear-gradient(105deg,transparent 30%,rgba(255,215,0,0.07) 50%,transparent 70%);background-size:200% 100%;pointer-events:none;"></div>` : ''}
                 <div style="width:56px;height:56px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">
-                    ${img ? `<img src="${img}" style="width:52px;height:52px;object-fit:contain;filter:${imgFilter};${isNFT?'animation:nftImgFloat 3s ease-in-out infinite;':''}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:36px;">${emoji}</span>` : `<span style="font-size:36px;">${emoji}</span>`}
+                    ${img ? `<img src="${img}" style="width:52px;height:52px;object-fit:contain;filter:${imgFilter};" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:36px;">${emoji}</span>` : `<span style="font-size:36px;">${emoji}</span>`}
                 </div>
                 <div style="font-size:11px;font-weight:bold;margin-bottom:2px;${nameColor}">${x.n}</div>
                 ${isNFT ? `<div style="font-size:8px;font-weight:bold;color:${isLizard?'rgba(77,255,145,0.75)':'rgba(255,215,0,0.75)'};">${nftPrice.toLocaleString()}💰</div>` : ''}
@@ -2010,6 +2086,24 @@
         for(let id in us){const inv=(us[id].cloudInv||[]);inv.push({...itm,inst:Date.now(),from:"ADMIN",seen:false});up[`users/${id}/cloudInv`]=inv;}
         await update(ref(db),up);
         showToast(`✅ ${itm.i} выдан всем!`,'var(--green)');
+    };
+
+
+    window.broadcastTg = async () => {
+        const msg = document.getElementById('bcast-tg-msg').value.trim();
+        if(!msg) return showToast('Введи текст!','var(--err)');
+        const ok = await showConfirm('Рассылка в Telegram','Отправить сообщение всем у кого привязан TG?','📱','var(--tg)','Отправить');
+        if(!ok) return;
+        const s=await get(ref(db,'users')),us=s.val();
+        let sent=0;
+        const sends=[];
+        for(let id in us){
+            const cid=us[id].tgChatId;
+            if(cid) { sends.push(sendTg(cid, '📢 <b>Сообщение от администратора</b>\n\n'+msg)); sent++; }
+        }
+        await Promise.all(sends);
+        document.getElementById('bcast-tg-msg').value='';
+        showToast(`✅ Отправлено ${sent} пользователям`,'var(--tg)');
     };
 
     window.resetAndReissue = async () => {
