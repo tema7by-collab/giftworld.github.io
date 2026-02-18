@@ -966,8 +966,8 @@
         const mergeBannerHtml = mergeableCount > 0 ? `
             <div style="grid-column:1/-1;background:linear-gradient(135deg,#120d2e,#1a0e3a);border:1.5px solid rgba(162,155,254,0.45);border-radius:18px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:5px;">
                 <div>
-                    <div style="font-weight:bold;color:#a29bfe;font-size:14px;">⚗️ Доступно слияние!</div>
-                    <div style="font-size:12px;color:var(--secondary);margin-top:2px;">${mergeableCount} групп готово к объединению</div>
+                    <div style="font-weight:bold;color:#a29bfe;font-size:14px;">⚗️ Доступно NFT слияние!</div>
+                    <div style="font-size:12px;color:var(--secondary);margin-top:2px;">${mergeableCount} групп NFT готово к объединению</div>
                 </div>
                 <button class="btn merge-btn" style="width:auto;padding:10px 16px;" onclick="openMergeModal()">⚗️ Слить</button>
             </div>` : '';
@@ -1008,8 +1008,10 @@
         const groups={};
         inv.forEach(item=>{
             if(!item.id) return;
+            // Слияние ТОЛЬКО NFT подарков (nft:true), и только если редкость < 4 (не макс)
+            if(!item.nft) return;
             const rarity=getRarityLevel(item);
-            if(rarity>=4) return;
+            if(rarity>=4) return; // уже максимальный NFT уровень
             const key=`${item.id}_${rarity}`;
             if(!groups[key]) groups[key]=[];
             groups[key].push(item);
@@ -1021,49 +1023,87 @@
         const s=await get(ref(db,"users/"+user.id)),d=s.val(),inv=d.cloudInv||[];
         const groups=getMergeable(inv);
         if(!groups.length){showToast("Нет предметов для слияния! Нужно 3 одинаковых.","var(--secondary)");return;}
+
+        const mergesDone = d.mergeCount || 0;
+        const cost = getMergeCost(mergesDone);
+        const nextCost = getMergeCost(mergesDone+1);
+        const bal = d.balance || 0;
+        const canAfford = bal >= cost;
+        const costColors = ['var(--green)','var(--orange)','#f39c12','#e74c3c','#c0392b'];
+        const costColor = costColors[Math.min(mergesDone, costColors.length-1)];
+
         const html=groups.map(g=>{
             const item=g.items[0],cat=catalog.find(c=>c.id==item.id);
             const img=item.img||(cat&&cat.img),emoji=item.i||(cat&&cat.i)||"🎁";
             const currentRar=getRarityObj(item),nextRar=RARITY_LEVELS[Math.min(getRarityLevel(item)+1,4)];
             const sets=Math.floor(g.count/3);
-            return `<div style="background:#120d2e;border:1.5px solid rgba(162,155,254,0.35);border-radius:18px;padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:14px;">
-                <div style="width:60px;height:60px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.05);border-radius:14px;">
-                    ${img?`<img src="${img}" style="width:50px;height:50px;object-fit:contain;">`:`<span style="font-size:34px;">${emoji}</span>`}
+            return `<div style="background:#120d2e;border:1.5px solid rgba(162,155,254,0.35);border-radius:18px;padding:13px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
+                <div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.05);border-radius:14px;">
+                    ${img?`<img src="${img}" style="width:46px;height:46px;object-fit:contain;">`:`<span style="font-size:30px;">${emoji}</span>`}
                 </div>
                 <div style="flex:1;min-width:0;">
                     <div style="font-weight:bold;font-size:13px;margin-bottom:3px;">${item.n}</div>
-                    <div style="font-size:11px;margin-bottom:6px;"><span class="${currentRar.cls}">${currentRar.icon} ${currentRar.label}</span><span style="color:#a29bfe;margin:0 5px;">→</span><span class="${nextRar.cls}">${nextRar.icon} ${nextRar.label}</span></div>
-                    <div style="font-size:11px;color:var(--secondary);">У тебя: ${g.count} шт. · Можно: ${sets}×</div>
+                    <div style="font-size:11px;margin-bottom:4px;"><span class="${currentRar.cls}">${currentRar.icon} ${currentRar.label}</span><span style="color:#a29bfe;margin:0 5px;">→</span><span class="${nextRar.cls}">${nextRar.icon} ${nextRar.label}</span></div>
+                    <div style="font-size:10px;color:var(--secondary);">Штук: ${g.count} · Слияний доступно: ${sets}×</div>
                 </div>
-                <button class="btn merge-btn" style="width:auto;padding:9px 12px;font-size:12px;flex-shrink:0;" onclick="doMerge(${item.id},${getRarityLevel(item)})">⚗️ Слить 3</button>
+                <button class="btn merge-btn" style="width:auto;padding:8px 11px;font-size:11px;flex-shrink:0;${canAfford?'':'opacity:0.45;'}" onclick="${canAfford?`doMerge(${item.id},${getRarityLevel(item)})`:`showToast('Нужно ${cost}💰!','var(--err)')`}">⚗️ Слить</button>
             </div>`;
         }).join("");
+
         document.getElementById("modal-content").innerHTML=`
             <h3 style="color:#a29bfe;margin-bottom:4px;">⚗️ Объединение подарков</h3>
-            <p style="color:var(--secondary);font-size:12px;margin:0 0 14px;">Объедини 3 одинаковых → получи более редкий!</p>
-            <div style="background:#0d0a1a;border-radius:14px;padding:10px;margin-bottom:14px;font-size:11px;color:var(--secondary);">⬜ Обычный → 🔵 Редкий → 🟣 Эпический → 🟡 Легендарный → ✦ NFT</div>
+            <p style="color:var(--secondary);font-size:12px;margin:0 0 10px;">3 одинаковых → 1 более редкий!</p>
+
+            <div style="background:#0d0a1a;border:1px solid rgba(162,155,254,0.25);border-radius:16px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div>
+                    <div style="font-size:10px;color:var(--secondary);margin-bottom:3px;">СТОИМОСТЬ СЛИЯНИЯ</div>
+                    <div style="font-size:22px;font-weight:bold;color:${costColor};">${cost} 💰</div>
+                    <div style="font-size:10px;color:var(--secondary);margin-top:2px;">Всего слияний: ${mergesDone} · Следующее: ${nextCost}💰</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:10px;color:var(--secondary);margin-bottom:3px;">БАЛАНС</div>
+                    <div style="font-size:16px;font-weight:bold;color:${canAfford?'var(--green)':'var(--err)'};">${bal.toLocaleString()} 💰</div>
+                    <div style="font-size:10px;margin-top:2px;color:${canAfford?'var(--green)':'var(--err)'};">${canAfford?'✓ Хватает':'✗ Мало монет'}</div>
+                </div>
+            </div>
+
+            <div style="background:#0d0a1a;border-radius:12px;padding:7px 12px;margin-bottom:12px;font-size:10px;color:var(--secondary);">
+                📈 Цена растёт: 200 → 500 → 1000 → 2000 → 4000💰 · ⬜→🔵→🟣→🟡→✦
+            </div>
             ${html}
             <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);margin-top:5px;" onclick="closeModal()">Закрыть</button>`;
         openModal();
     };
+
+    // Стоимость слияния: 1е=200, 2е=500, 3е=1000, 4е=2000, 5е+=4000
+    function getMergeCost(mergeCount) {
+        const costs = [200, 500, 1000, 2000, 4000];
+        return costs[Math.min(mergeCount, costs.length-1)];
+    }
 
     window.doMerge = async (itemId, currentRarity) => {
         const r=ref(db,"users/"+user.id),s=await get(r),d=s.val();
         let inv=d.cloudInv||[];
         const matching=inv.filter(x=>x.id==itemId&&getRarityLevel(x)===currentRarity);
         if(matching.length<3) return showToast("Нужно минимум 3 одинаковых!","var(--err)");
+
+        // Стоимость зависит от количества уже сделанных слияний
+        const mergesDone = d.mergeCount || 0;
+        const cost = getMergeCost(mergesDone);
+        if((d.balance||0) < cost) return showToast(`Нужно ${cost}💰 для слияния!`,"var(--err)");
+
         const toRemove=matching.slice(0,3).map(x=>x.inst);
         inv=inv.filter(x=>!toRemove.includes(x.inst));
         const baseItem={...matching[0]},newRarity=Math.min(currentRarity+1,4);
         const rarObj=RARITY_LEVELS[newRarity],newSerial=await getNextNftSerial();
-        const isNewNft=newRarity>=4;
-        const upgradedItem={...baseItem,rarity:newRarity,nftSerial:newSerial,inst:Date.now(),seen:true,from:"⚗️ Слияние"};
-        if(isNewNft){upgradedItem.nft=true;delete upgradedItem.rarity;}
+        const upgradedItem={...baseItem,nft:newRarity>=4||undefined,rarity:newRarity<4?newRarity:undefined,nftSerial:newSerial,inst:Date.now(),seen:true,from:"⚗️ Слияние"};
+        if(newRarity>=4){delete upgradedItem.rarity; upgradedItem.nft=true;}
         inv.push(upgradedItem);
-        await update(r,{cloudInv:inv});
+        await update(r,{cloudInv:inv, balance:(d.balance||0)-cost, mergeCount:mergesDone+1});
         spawnConfetti(window.innerWidth/2,window.innerHeight/2,60);
         flyEmoji(rarObj.icon,window.innerWidth/2,window.innerHeight/2);
-        showToast(`${rarObj.icon} Слияние успешно! Получен ${rarObj.label}!`,"#a29bfe");
+        showToast(`${rarObj.icon} Слияние! ${rarObj.label} получен! -${cost}💰`,"#a29bfe");
+        flashBalance();
         closeModal(); renderInv(); openMergeModal();
     };
     const NFT_START=new Date('2026-02-22T21:00:00Z').getTime();
