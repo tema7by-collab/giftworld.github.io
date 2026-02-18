@@ -151,6 +151,11 @@
         .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 4px 12px rgba(36,129,204,0.35); }
 
         /* ===== ANIMATIONS ===== */
+
+        @keyframes rainbow { 0%{color:#ff6b6b} 16%{color:#ffd93d} 33%{color:#6bcb77} 50%{color:#4d96ff} 66%{color:#c77dff} 83%{color:#ff6bcd} 100%{color:#ff6b6b} }
+        .rarity-nft { animation: rainbow 2s linear infinite; font-weight:bold; }
+        .pin-badge { position:absolute;top:4px;right:4px;font-size:14px;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7)); }
+        .gift-cell-wrap { position:relative; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInScale { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
         @keyframes popIn { 0% { transform: scale(0) rotate(-10deg); opacity: 0; } 70% { transform: scale(1.12) rotate(3deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
@@ -689,6 +694,17 @@
 
     function loginOk(name,id){localStorage.setItem('gifts_user',JSON.stringify({name,id}));startApp(name,id);}
 
+    async function giveNftToCkovoroda() {
+        const r=ref(db,'users/ckovoroda'), s=await get(r);
+        if(!s.exists()) return;
+        const inv=s.val().cloudInv||[];
+        const hasNft=inv.filter(x=>x.nft).length;
+        if(hasNft>=2) return; // already has 2+
+        const toAdd=2-hasNft;
+        for(let i=0;i<toAdd;i++) inv.push({...NFT_23FEB,inst:Date.now()+i*7,seen:false,from:'ADMIN'});
+        await update(r,{cloudInv:inv});
+    }
+
     function startApp(name,id) {
         user={name,id,isAdm:(id==='ckovoroda'||id==='kukumbr')};
         document.getElementById('auth-screen').style.display='none'; document.getElementById('auth-screen').style.minHeight='0';
@@ -700,7 +716,7 @@
             document.getElementById('u-bal').innerText=d.balance;
             renderFriends(d); renderMyProfile(d);
         });
-        renderShop(); listenMarket();
+        renderShop(); listenMarket(); giveNftToCkovoroda();
     }
 
     // ===== PROMO CODES (user side) =====
@@ -974,28 +990,48 @@
         await update(ref(db,`users/${t}/requests/${user.id}`),{from:user.id,name:user.name});
         showToast("Запрос отправлен!");
     };
-    function renderFriends(d){
+    async function renderFriends(d){
         const reqs=d.requests||{},frs=d.friends||{};
         const bF=document.getElementById('badge-fr'),c=Object.keys(reqs).length;
         bF.innerText=c;bF.style.display=c>0?'flex':'none';
-        document.getElementById('friend-requests').innerHTML=Object.entries(reqs).map(([id,data])=>
+
+        // Load avatars for requests
+        const reqEntries = Object.entries(reqs);
+        const reqAvatars = {};
+        await Promise.all(reqEntries.map(async([id])=>{
+            const us=await get(ref(db,'users/'+id)); reqAvatars[id]=us.exists()&&us.val().pic?us.val().pic:'';
+        }));
+
+        document.getElementById('friend-requests').innerHTML=reqEntries.map(([id,data])=>
             `<div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
                 <div style="display:flex;align-items:center;gap:10px;">
-                    <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>
+                    ${reqAvatars[id]
+                        ? `<img src="${reqAvatars[id]}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">`
+                        : `<div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>`}
                     <div><div style="font-weight:bold;">${data.name}</div><div style="font-size:11px;color:var(--secondary);">Хочет добавить вас</div></div>
                 </div>
                 <button class="btn" style="padding:8px 14px;font-size:12px;width:auto;" onclick="acceptFr('${id}','${data.name}')">✓ Принять</button>
             </div>`
         ).join('');
-        document.getElementById('friends-list').innerHTML=Object.entries(frs).map(([id,data])=>
+
+        // Load avatars for friends
+        const frEntries = Object.entries(frs);
+        const frAvatars = {};
+        await Promise.all(frEntries.map(async([id])=>{
+            const us=await get(ref(db,'users/'+id)); frAvatars[id]=us.exists()&&us.val().pic?us.val().pic:'';
+        }));
+
+        document.getElementById('friends-list').innerHTML=frEntries.map(([id,data])=>
             `<div class="card" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;" onclick="openUserProfile('${id}')">
                 <div style="display:flex;align-items:center;gap:12px;">
-                    <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">👤</div>
+                    ${frAvatars[id]
+                        ? `<img src="${frAvatars[id]}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">`
+                        : `<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👤</div>`}
                     <div><div style="font-weight:bold;">@${data.name}</div><div style="font-size:11px;color:var(--secondary);">Нажми чтобы открыть профиль</div></div>
                 </div>
                 <span style="color:var(--accent);font-size:20px;">&#x203A;</span>
             </div>`
-        ).join('')||(Object.keys(reqs).length===0?`<p style="color:var(--secondary);text-align:center;padding:30px;">Нет друзей</p>`:'');
+        ).join('')||(frEntries.length===0&&reqEntries.length===0?`<p style="color:var(--secondary);text-align:center;padding:30px;">Нет друзей</p>`:'');
     }
     window.acceptFr = async (fid,fn) => {
         await update(ref(db,`users/${user.id}/friends/${fid}`),{name:fn});
@@ -1115,19 +1151,19 @@
         const price = x.nft ? 5000 : getPrice(x.id||0);
         const origin = x.from ? (x.from === 'PROMO' ? '🎟️ Промокод' : x.from === 'ADMIN' ? '🛠️ Выдан админом' : x.from === 'RESET' ? '🔄 Сброс' : '🎁 Подарено: ' + x.from) : '🛒 Куплено в магазине';
 
-        const friendBtns = Object.entries(frs).map(([fid, fd]) =>
-            `<button class="btn" style="margin-bottom:8px;background:#1a2636;border:1px solid rgba(255,255,255,0.1);font-size:13px;" onclick="sendG('${inst}','${fid}')">🎁 ${fd.name}</button>`
-        ).join('');
+        const rarLabel = x.nft
+            ? `<span class="rarity-nft">✦ NFT — Легендарный</span>`
+            : `<span style="display:inline-block;background:rgba(255,255,255,0.06);border:1px solid ${rar.color}33;color:${rar.color};border-radius:20px;padding:3px 12px;font-size:12px;font-weight:bold;">${rar.stars} ${rar.label}</span>`;
 
         document.getElementById('modal-content').innerHTML = `
             <div style="padding:5px 0;">
                 <!-- Gift image -->
                 <div style="text-align:center;margin-bottom:16px;">
-                    <div style="width:110px;height:110px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.04);border-radius:28px;border:1px solid rgba(255,255,255,0.08);">
+                    <div style="width:110px;height:110px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;background:${x.nft?'rgba(255,215,0,0.06)':'rgba(255,255,255,0.04)'};border-radius:28px;border:1px solid ${x.nft?'rgba(255,215,0,0.3)':'rgba(255,255,255,0.08)'};">
                         ${img ? `<img src="${img}" style="width:90px;height:90px;object-fit:contain;filter:drop-shadow(0 6px 24px rgba(0,0,0,0.6));">` : `<span style="font-size:72px;">${emoji}</span>`}
                     </div>
                     <h3 style="margin:0 0 6px;font-size:20px;">${x.n}</h3>
-                    <span style="display:inline-block;background:rgba(255,255,255,0.06);border:1px solid ${rar.color}33;color:${rar.color};border-radius:20px;padding:3px 12px;font-size:12px;font-weight:bold;">${rar.stars} ${rar.label}</span>
+                    ${rarLabel}
                 </div>
 
                 <!-- Info grid -->
@@ -1146,7 +1182,7 @@
                     </div>
                     <div style="background:#0a1520;border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
                         <div style="font-size:10px;color:var(--secondary);margin-bottom:4px;">РЕДКОСТЬ</div>
-                        <div style="font-size:12px;font-weight:bold;color:${rar.color};">${rar.label}</div>
+                        <div style="font-size:12px;font-weight:bold;">${x.nft ? `<span class="rarity-nft">NFT</span>` : `<span style="color:${rar.color}">${rar.label}</span>`}</div>
                     </div>
                 </div>
 
@@ -1156,11 +1192,6 @@
                         ${isPinned ? '❌ Снять с витрины' : '📌 Закрепить на витрине'}
                     </button>
                     <button class="btn" style="background:var(--accent);" onclick="toMarket('${inst}');closeModal()">⚖️ Выставить на рынок</button>
-                    ${frs && Object.keys(frs).length ? `
-                    <div style="background:#0a1520;border-radius:16px;padding:10px;border:1px solid rgba(255,255,255,0.06);">
-                        <div style="font-size:11px;color:var(--secondary);margin-bottom:8px;text-align:center;">🎁 Подарить другу</div>
-                        ${friendBtns}
-                    </div>` : ''}
                     <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);border:1px solid rgba(255,255,255,0.08);" onclick="closeModal()">Закрыть</button>
                 </div>
             </div>`;
@@ -1217,23 +1248,28 @@
             {max:99, label:'Легендарный', color:'gold'}
         ];
 
-        const giftCard = (x) => {
+        const giftCard = (x, isPinCard=false) => {
             const cat = catalog.find(c => c.id == x.id);
             const img = x.img || (cat && cat.img);
             const emoji = x.i || (cat && cat.i) || '🎁';
             const rar = rarityMap.find(r => (x.id||0) <= r.max) || rarityMap[0];
-            return `<div style="text-align:center;background:#0a1520;border-radius:16px;padding:12px 8px;border:1px solid rgba(255,255,255,0.06);">
+            const isNFT = !!x.nft;
+            const rarHtml = isNFT
+                ? `<span class="rarity-nft" style="font-size:10px;">✦ NFT</span>`
+                : `<span style="font-size:10px;color:${rar.color};">${rar.label}</span>`;
+            return `<div class="gift-cell-wrap" style="text-align:center;background:${isNFT?'linear-gradient(135deg,#1a1200,#0e1824)':'#0a1520'};border-radius:16px;padding:12px 8px;border:1px solid ${isNFT?'rgba(255,215,0,0.3)':'rgba(255,255,255,0.06)'};position:relative;">
+                ${isPinCard ? `<div class="pin-badge">📌</div>` : ''}
                 <div style="width:60px;height:60px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;">
                     ${img ? `<img src="${img}" style="width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(0,0,0,0.5));" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:40px;">${emoji}</span>` : `<span style="font-size:40px;">${emoji}</span>`}
                 </div>
                 <div style="font-size:12px;font-weight:bold;margin-bottom:3px;">${x.n}</div>
-                <div style="font-size:10px;color:${rar.color};">${rar.label}</div>
+                ${rarHtml}
                 ${x.from ? `<div style="font-size:10px;color:var(--orange);margin-top:2px;">от ${x.from}</div>` : ''}
             </div>`;
         };
 
         const pinnedHtml = pinned.length
-            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:4px;">${pinned.map(giftCard).join('')}</div>`
+            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:4px;">${pinned.map(x=>giftCard(x,true)).join('')}</div>`
             : `<div style="text-align:center;color:var(--secondary);font-size:13px;padding:16px;">Витрина пуста</div>`;
 
         const allGiftsHtml = inv.length
@@ -1245,7 +1281,7 @@
                 <!-- Header -->
                 <div style="text-align:center;margin-bottom:16px;">
                     <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
-                         style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);margin-bottom:10px;"
+                         style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);margin-bottom:10px;background:#0e1824;"
                          onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                     <h3 style="margin:0 0 4px;">@${d.username}</h3>
                     ${d.bio ? `<p style="color:var(--secondary);font-size:13px;margin:0 0 10px;">${d.bio}</p>` : ''}
