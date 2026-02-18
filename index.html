@@ -244,16 +244,19 @@
             border-radius:10px; padding:2px 8px; font-size:12px; font-weight:700;
         }
         .tg-gifts-grid {
-            display:grid; grid-template-columns:repeat(3,1fr); gap:2px;
-            padding:0 2px;
+            display:grid; grid-template-columns:repeat(3,1fr); gap:5px;
+            padding:0 6px 6px;
         }
         .tg-gift-cell {
             background:var(--card); cursor:pointer; aspect-ratio:1;
             display:flex; flex-direction:column; align-items:center; justify-content:center;
-            gap:4px; transition:0.18s; border-radius:4px; overflow:hidden;
-            position:relative;
+            gap:4px; transition:0.22s cubic-bezier(0.34,1.56,0.64,1);
+            border-radius:16px; overflow:hidden; position:relative;
+            border:1.5px solid rgba(255,255,255,0.07);
+            box-shadow:0 2px 10px rgba(0,0,0,0.3);
         }
-        .tg-gift-cell:active { transform:scale(0.94); }
+        .tg-gift-cell:hover { border-color:rgba(255,255,255,0.22); box-shadow:0 6px 20px rgba(0,0,0,0.5); transform:scale(1.04) translateY(-2px); }
+        .tg-gift-cell:active { transform:scale(0.93); }
         .tg-gift-inner {
             display:flex; flex-direction:column; align-items:center; justify-content:center;
             width:100%; height:100%; padding:8px 4px 2px; position:relative;
@@ -348,6 +351,48 @@
         .cosm-section-title { font-size:13px; color:var(--secondary); margin:12px 0 4px; font-weight:bold; }
         .cosm-badge { display:inline-block; font-size:11px; padding:1px 6px; border-radius:8px; margin-left:4px; vertical-align:middle; font-weight:bold; }
         .cosm-prefix { margin-right:4px; }
+
+        /* ── Admin rainbow prefix ── */
+        @keyframes adminRainbow {
+            0%   {background-position:0%   50%}
+            50%  {background-position:100% 50%}
+            100% {background-position:0%   50%}
+        }
+        .admin-rainbow-prefix {
+            display:inline-block;
+            background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#c77dff,#ff6bcd,#ff6b6b);
+            background-size:300% 100%;
+            animation:adminRainbow 2s linear infinite;
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            background-clip:text;
+            font-weight:900;
+            font-size:0.95em;
+            letter-spacing:0.5px;
+            margin-right:4px;
+        }
+        /* ── Lizard badge ── */
+        .lizard-badge {
+            display:inline-block;
+            font-size:14px;
+            vertical-align:middle;
+            margin-left:3px;
+            filter:drop-shadow(0 0 5px rgba(80,255,120,0.8));
+            animation:wiggle 3.5s ease-in-out infinite;
+        }
+        /* ── NFT gift cell: lizard ── */
+        .tg-gift-nft-lizard {
+            background:linear-gradient(135deg,#001a08,#0a1f12,#001a08) !important;
+            box-shadow:0 0 0 1.5px rgba(77,255,145,0.45), 0 4px 18px rgba(77,255,145,0.2) !important;
+            border-color:rgba(77,255,145,0.35) !important;
+        }
+        .tg-gift-nft-lizard .tg-gift-name {
+            background:linear-gradient(90deg,#00ff88,#4dff91,#00cc66);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+            font-weight:bold;
+        }
+        /* ── Pinned outline ── */
+        .tg-gift-pinned { border-color:rgba(243,156,18,0.55) !important; box-shadow:0 0 0 1px rgba(243,156,18,0.2), 0 4px 14px rgba(243,156,18,0.2) !important; }
 </style>
 
 <div id="auth-screen" class="auth-wrap">
@@ -567,15 +612,29 @@
         {id:'bdg_vip',     type:'badge',  val:'💜', name:'VIP',         price:8000, unlock:null},
     ];
 
-    function buildUsername(d) {
+    const ADMIN_IDS = new Set(['ckovoroda','kukumbr']);
+
+    function buildUsername(d, uid) {
+        const resolvedId = uid || (typeof d.username === 'string' ? d.username.toLowerCase() : '');
+        const isAdmin = ADMIN_IDS.has(resolvedId);
         const active = d.activeCosmetic || {};
         const pfx = active.prefix ? COSMETICS.find(c=>c.id===active.prefix) : null;
         const col = active.color  ? COSMETICS.find(c=>c.id===active.color)  : null;
         const bdg = active.badge  ? COSMETICS.find(c=>c.id===active.badge)  : null;
-        const prefix = pfx ? `<span class="cosm-prefix">${pfx.val}</span>` : '';
+
+        // Admin gets rainbow "ADMIN" prefix instead of regular prefix
+        const prefix = isAdmin
+            ? `<span class="admin-rainbow-prefix">ADMIN</span>`
+            : (pfx ? `<span class="cosm-prefix">${pfx.val}</span>` : '');
+
         const badge  = bdg ? `<span class="cosm-badge" style="background:rgba(255,255,255,0.08);">${bdg.val} ${bdg.name}</span>` : '';
-        const nameStyle = col ? `style="color:${col.val};"` : '';
-        return `${prefix}<span ${nameStyle}>@${d.username}</span>${badge}`;
+        const nameStyle = col ? `style="color:${col.val};"` : (isAdmin ? `style="color:#4dff91;"` : '');
+
+        // Lizard badge — shown if user owns NFT_LIZARD (id 997)
+        const hasLizard = (d.cloudInv||[]).some(x => x.id === 997);
+        const lizard = hasLizard ? `<span class="lizard-badge">🦎</span>` : '';
+
+        return `${prefix}<span ${nameStyle}>@${d.username}</span>${badge}${lizard}`;
     }
 
     function checkUnlocks(d) {
@@ -873,9 +932,21 @@
 
     const NFT_BEER={id:998,n:"Кружка Пива",i:"🍺",img:"https://em-content.zobj.net/source/apple/391/beer-mug_1f37a.png",nft:true,price:10000};
     const NFT_SOCK={id:999,n:"Носок",i:"🧦",img:"https://em-content.zobj.net/source/apple/391/socks_1f9e6.png",nft:true,price:5000};
+    const NFT_LIZARD={id:997,n:"Ящерица",i:"🦎",img:"https://em-content.zobj.net/source/apple/391/lizard_1f98e.png",nft:true,price:7000};
     // NFT_23FEB deprecated - using NFT_BEER and NFT_SOCK separately
     const NFT_START=new Date('2026-02-22T21:00:00Z').getTime();
     const NFT_END=new Date('2026-02-23T21:00:00Z').getTime();
+    // Ящерица — 24 часа с 18 февраля 2026
+    const LIZ_START=new Date('2026-02-18T17:00:00Z').getTime(); // 20:00 МСК
+    const LIZ_END=new Date('2026-02-19T17:00:00Z').getTime();   // 20:00 МСК +24ч
+    function isLizardAvailable(){const n=Date.now();return n>=LIZ_START&&n<LIZ_END;}
+    function getLizardTimeLabel(){
+        const now=Date.now();
+        const fmtMsk=(ts)=>{const d=new Date(ts+3*3600000);return d.toUTCString().replace('GMT','').replace(/.*?(\d+:\d+:\d+).*/,'$1')+' МСК';};
+        if(now<LIZ_START){const d=LIZ_START-now;return {label:`🔒 Откроется в ${fmtMsk(LIZ_START)}`,av:false};}
+        if(now<LIZ_END){const d=LIZ_END-now;return {label:`⏳ Осталось ${Math.floor(d/3600000)}ч ${Math.floor((d%3600000)/60000)}м (до ${fmtMsk(LIZ_END)})`,av:true};}
+        return {label:null,av:false};
+    }
     function isNftAvailable(){const n=Date.now();return n>=NFT_START&&n<NFT_END;}
     function getNftTimeLabel(){
         const now=Date.now();
@@ -914,6 +985,26 @@
     }
 
     window.renderShop = () => {
+        // Ящерица — NFT доступна 24 часа
+        const ltz = getLizardTimeLabel();
+        let lizardNftHtml = '';
+        if(ltz.label !== null || ltz.av) {
+            lizardNftHtml = `<div class="card nft-card" style="grid-column:1/-1;border:2px solid #4dff91;background:linear-gradient(135deg,#001a08,#0a1f14,#001a08);position:relative;overflow:hidden;text-align:center;padding:22px;">
+            <div style="position:absolute;top:10px;right:12px;font-size:11px;background:linear-gradient(90deg,#00cc66,#4dff91);color:#000;padding:3px 10px;border-radius:20px;font-weight:bold;z-index:2;letter-spacing:1px;">NFT</div>
+            <div style="position:absolute;inset:0;border-radius:25px;pointer-events:none;background:linear-gradient(105deg,transparent 30%,rgba(77,255,145,0.14) 50%,transparent 70%);background-size:200% 100%;animation:shimmer 2.4s linear infinite;z-index:1;"></div>
+            <div style="display:flex;justify-content:center;margin-bottom:10px;position:relative;z-index:2;">
+                <img src="https://em-content.zobj.net/source/apple/391/lizard_1f98e.png" class="nft-emoji" style="width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 6px 22px rgba(77,255,145,0.55));">
+            </div>
+            <b style="font-size:20px;display:block;position:relative;z-index:2;background:linear-gradient(90deg,#00ff88,#4dff91,#00cc66);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">NFT: Ящерица</b>
+            <p style="color:var(--secondary);font-size:12px;margin:6px 0 4px;position:relative;z-index:2;">Эксклюзивный NFT! Только 24 ч (до 19 фев 20:00 МСК) · Даёт значок <span class="lizard-badge">🦎</span> в нике</p>
+            <div style="font-weight:bold;color:#4dff91;font-size:20px;margin-bottom:4px;position:relative;z-index:2;">7 000 💰</div>
+            <div style="font-size:12px;color:var(--orange);margin-bottom:10px;position:relative;z-index:2;">${ltz.label}</div>
+            ${ltz.av
+                ? `<button class="btn" style="background:linear-gradient(90deg,#00aa55,#4dff91);color:#000;font-weight:bold;font-size:15px;position:relative;z-index:2;" onclick="buyLizardNft(event)">🦎 Купить NFT</button>`
+                : `<button class="btn" style="background:#1a2a1a;color:#444;cursor:default;position:relative;z-index:2;" disabled>🔒 Недоступно</button>`}
+        </div>`;
+        }
+
         const tl=getNftTimeLabel();
         let nftHtml = '';
         if(tl!==null){
@@ -945,10 +1036,23 @@
                 <button class="filter-btn" onclick="sortShop('expensive',this)">💎 Дороже</button>
                 <button class="filter-btn" onclick="sortShop('az',this)">А-Я</button>
             </div>
+            ${lizardNftHtml}
             ${nftHtml}
             <div id="shop-cards" style="display:contents;"></div>
         `;
         renderShopCards();
+    };
+
+    window.buyLizardNft = async (e) => {
+        if(!isLizardAvailable()) return showToast("NFT Ящерица недоступна!",'var(--err)');
+        const r=ref(db,'users/'+user.id), s=await get(r), d=s.val();
+        if((d.cloudInv||[]).some(x=>x.id===997)) return showToast("Ящерица уже есть! 🦎",'var(--orange)');
+        if((d.balance||0)<7000) return showToast("Нужно 7 000 💰",'var(--err)');
+        const inv=d.cloudInv||[];
+        inv.push({...NFT_LIZARD, inst:Date.now(), seen:true});
+        await update(r,{balance:d.balance-7000, cloudInv:inv});
+        if(e){spawnConfetti(e.clientX,e.clientY,45);flyEmoji('🦎',e.clientX,e.clientY);}
+        flashBalance(); showToast("🦎 NFT Ящерица в коллекции!",'#4dff91');
     };
 
     window.buyNft = async (e) => {
@@ -1175,7 +1279,8 @@
             const emoji = x.i || (cat && cat.i) || '🎁';
             const isPin = pinnedInsts.has(String(x.inst));
             const isNFT = !!x.nft;
-            return `<div class="tg-gift-cell${isNFT?' tg-gift-nft':''}${isPin?' tg-gift-pinned':''}" onclick="openGiftDetail('${x.inst}')" style="position:relative;">
+            const isLizard = isNFT && x.id === 997;
+            return `<div class="tg-gift-cell${isNFT?(isLizard?' tg-gift-nft-lizard':' tg-gift-nft'):''}${isPin?' tg-gift-pinned':''}" onclick="openGiftDetail('${x.inst}')" style="position:relative;">
                 ${isPin ? `<div style="position:absolute;top:4px;right:6px;font-size:13px;z-index:2;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));">📌</div>` : ''}
                 <div class="tg-gift-inner">
                     ${img
@@ -1546,7 +1651,7 @@
                                 <button class="btn" style="width:44px;padding:0;height:36px;border-radius:10px;" onclick="setB('${id}')">💰</button>
                             </div>
                             <div style="display:flex;gap:5px;width:100%;">
-                                <select id="ag-${id}" style="flex:1;margin:0;padding:6px;height:36px;border-radius:10px;">${catalog.map(x=>`<option value="${x.id}">${x.i} ${x.n}</option>`).join('')}</select>
+                                <select id="ag-${id}" style="flex:1;margin:0;padding:6px;height:36px;border-radius:10px;"><option value="nft_liz">🦎 Ящерица (NFT)</option><option value="nft_beer">🍺 Кружка Пива (NFT)</option><option value="nft_sock">🧦 Носок (NFT)</option><option disabled>──────────</option>${catalog.map(x=>`<option value="${x.id}">${x.i} ${x.n}</option>`).join('')}</select>
                                 <button class="btn" style="width:44px;padding:0;height:36px;border-radius:10px;background:var(--orange);" onclick="giveI('${id}')">🎁</button>
                             </div>
                             <button class="btn" style="background:var(--err);padding:8px;font-size:12px;border-radius:10px;" onclick="delUser('${id}')">🗑️ Удалить</button>
@@ -1582,11 +1687,17 @@
     window.delUser=async(id)=>{const ok=await showConfirm('Удалить игрока','Аккаунт @'+id+' будет удалён безвозвратно.','🗑️','var(--err)','Удалить');if(ok) await remove(ref(db,'users/'+id));};
     window.setB=async(id)=>{const v=document.getElementById('ab-'+id).value;if(v){await update(ref(db,'users/'+id),{balance:parseInt(v)});showToast(`💰 Баланс @${id} обновлён`);}};
     window.giveI=async(id)=>{
-        const itm=catalog.find(x=>x.id==document.getElementById('ag-'+id).value);
+        const sel=document.getElementById('ag-'+id).value;
+        let itm;
+        if(sel==='nft_liz')  itm={...NFT_LIZARD};
+        else if(sel==='nft_beer') itm={...NFT_BEER};
+        else if(sel==='nft_sock') itm={...NFT_SOCK};
+        else itm=catalog.find(x=>x.id==sel);
+        if(!itm) return;
         const s=await get(ref(db,'users/'+id)),inv=s.val().cloudInv||[];
         inv.push({...itm,inst:Date.now(),from:"ADMIN",seen:false});
         await update(ref(db,'users/'+id),{cloudInv:inv});
-        showToast(`Выдано ${itm.i} игроку @${id}`);
+        showToast(`${itm.i} ${itm.n} → @${id}`,'var(--green)');
     };
 
     window.createPromo = async () => {
