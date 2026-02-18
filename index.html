@@ -40,8 +40,34 @@
         .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--accent); object-fit: cover; background: #0e1621; margin-bottom: 15px; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s; }
         .avatar:hover { transform: scale(1.08) rotate(4deg); border-color: gold; }
 
-        #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 20px; font-weight: bold; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; z-index: 3000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        #toast-container .toast-item {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 13px 20px;
+            border-radius: 18px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+            transform: translateY(20px) scale(0.9);
+            opacity: 0;
+            transition: all 0.38s cubic-bezier(0.34,1.56,0.64,1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: all;
+            border-left: 3px solid var(--accent);
+            max-width: 100%;
+            word-break: break-word;
+        }
+        #toast-container .toast-item.show {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+        #toast-container .toast-item.hide {
+            transform: translateY(-10px) scale(0.9);
+            opacity: 0;
+        }
         #modal-content { animation: popIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both; }
 
         .pinned-section { width: 100%; background: rgba(255,255,255,0.03); border-radius: 25px; padding: 15px; margin: 10px 0; display: flex; overflow-x: auto; gap: 15px; min-height: 80px; align-items: center; }
@@ -86,7 +112,43 @@
         .promo-code-text { font-family: monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px; color: gold; }
 
         .search-box { background: #0e1824; border: 1px solid #2b3a4a; border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .search-box input { background: none; border: none; margin: 0; padding: 0; font-size: 14px; flex: 1; }
+        .search-box input { background: none; border: none; margin: 0; padding: 0; font-size: 14px; flex: 1; } 
+        .search-filter-bar { 
+            grid-column: 1/-1;
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 5px; 
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-filter-bar input { 
+            flex: 1; 
+            min-width: 140px; 
+            background: #0e1824; 
+            border: 1px solid #2b3a4a; 
+            border-radius: 14px; 
+            padding: 11px 16px; 
+            margin: 0; 
+            font-size: 14px; 
+            color: white; 
+            outline: none;
+        }
+        .search-filter-bar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(36,129,204,0.15); }
+        .filter-btn { 
+            background: #0e1824; 
+            border: 1px solid #2b3a4a; 
+            border-radius: 12px; 
+            padding: 9px 14px; 
+            color: var(--secondary); 
+            font-size: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            white-space: nowrap;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+        .filter-btn:hover { background: #1a2636; color: white; }
+        .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 4px 12px rgba(36,129,204,0.35); }
 
         /* ===== ANIMATIONS ===== */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
@@ -117,9 +179,25 @@
 </head>
 <body>
 
-<div id="toast"></div>
-<div id="modal-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px;" onclick="if(event.target==this) closeModal()">
+<!-- Toast notifications container -->
+<div id="toast-container" style="position:fixed;bottom:110px;left:50%;transform:translateX(-50%);z-index:5000;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;width:92%;max-width:400px;"></div>
+
+<!-- Beautiful modal overlay -->
+<div id="modal-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px;transition:background 0.3s;" onclick="if(event.target==this) closeModal()">
     <div id="modal-content" class="card" style="width:100%;max-width:400px;background:var(--card);max-height:85vh;overflow-y:auto;"></div>
+</div>
+
+<!-- Confirm dialog -->
+<div id="confirm-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0);display:none;align-items:center;justify-content:center;z-index:6000;padding:20px;transition:background 0.3s;">
+    <div id="confirm-box" style="width:100%;max-width:340px;background:var(--card);border-radius:24px;padding:24px;border:1px solid rgba(255,255,255,0.1);box-shadow:0 30px 80px rgba(0,0,0,0.8);animation:popIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both;">
+        <div id="confirm-icon" style="font-size:44px;text-align:center;margin-bottom:10px;"></div>
+        <h3 id="confirm-title" style="text-align:center;margin:0 0 8px;font-size:17px;"></h3>
+        <p id="confirm-msg" style="text-align:center;color:var(--secondary);font-size:13px;margin:0 0 20px;line-height:1.5;"></p>
+        <div style="display:flex;gap:10px;">
+            <button id="confirm-cancel" class="btn" style="background:#1a2636;color:var(--secondary);border:1px solid rgba(255,255,255,0.08);flex:1;" onclick="resolveConfirm(false)">Отмена</button>
+            <button id="confirm-ok" class="btn" style="flex:1;" onclick="resolveConfirm(true)">Подтвердить</button>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -398,8 +476,65 @@
         setTimeout(()=>el.classList.remove('balance-flash'),700);
     }
 
-    window.showToast=(msg,color='var(--accent)')=>{const t=document.getElementById('toast');t.innerText=msg;t.style.background=color;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);};
-    window.closeModal=()=>document.getElementById('modal-overlay').style.display='none';
+    // ===== BEAUTIFUL NOTIFICATIONS =====
+    window.showToast = (msg, color='var(--accent)', icon='') => {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = 'toast-item';
+        // Determine icon and border color based on color
+        let ico = icon;
+        let borderColor = color;
+        if (!ico) {
+            if (color.includes('green') || color === '#2ecc71') ico = '✅';
+            else if (color.includes('err') || color === '#e74c3c') ico = '❌';
+            else if (color === 'gold') ico = '⭐';
+            else if (color.includes('orange') || color === '#f39c12') ico = '⚠️';
+            else ico = '💬';
+        }
+        el.style.borderLeftColor = borderColor;
+        el.innerHTML = `<span style="font-size:18px;flex-shrink:0;">${ico}</span><span>${msg}</span>`;
+        container.appendChild(el);
+        // Force reflow then animate in
+        requestAnimationFrame(() => { requestAnimationFrame(() => el.classList.add('show')); });
+        setTimeout(() => {
+            el.classList.remove('show');
+            el.classList.add('hide');
+            setTimeout(() => el.remove(), 400);
+        }, 2800);
+    };
+
+    // Beautiful confirm dialog
+    let confirmResolver = null;
+    window.showConfirm = (title, msg, icon='❓', okColor='var(--err)', okText='Подтвердить') => {
+        return new Promise(resolve => {
+            confirmResolver = resolve;
+            document.getElementById('confirm-icon').innerText = icon;
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-msg').innerText = msg;
+            document.getElementById('confirm-ok').style.background = okColor;
+            document.getElementById('confirm-ok').innerText = okText;
+            const ov = document.getElementById('confirm-overlay');
+            ov.style.display = 'flex';
+            requestAnimationFrame(() => ov.style.background = 'rgba(0,0,0,0.88)');
+        });
+    };
+    window.resolveConfirm = (val) => {
+        const ov = document.getElementById('confirm-overlay');
+        ov.style.background = 'rgba(0,0,0,0)';
+        setTimeout(() => { ov.style.display = 'none'; }, 300);
+        if (confirmResolver) { confirmResolver(val); confirmResolver = null; }
+    };
+
+    window.closeModal = () => {
+        const ov = document.getElementById('modal-overlay');
+        ov.style.background = 'rgba(0,0,0,0)';
+        setTimeout(() => { ov.style.display = 'none'; }, 300);
+    };
+    function openModal() {
+        const ov = document.getElementById('modal-overlay');
+        ov.style.display = 'flex';
+        requestAnimationFrame(() => ov.style.background = 'rgba(0,0,0,0.88)');
+    }
 
     // ===== AUTH HELPERS =====
     window.switchAuthTab = (tab) => {
@@ -516,7 +651,11 @@
         const s=await get(ref(db,'users/'+user.id)),d=s.val(),inv=d.cloudInv||[],pin=d.pinned||[];
         const upd=inv.map(x=>({...x,seen:true}));
         await update(ref(db,'users/'+user.id),{cloudInv:upd});
-        document.getElementById('inv').innerHTML = upd.length ? upd.map(x=>{
+        
+        const searchVal = document.getElementById('inv-search')?.value?.toLowerCase() || '';
+        const filtered = searchVal ? upd.filter(x=>x.n.toLowerCase().includes(searchVal)) : upd;
+        
+        const cardsHtml = filtered.length ? filtered.map(x=>{
             const isP=pin.some(p=>p.inst==x.inst);
             return `<div class="card" style="display:flex;flex-direction:column;align-items:center;">
                 ${x.from?`<small style="color:var(--orange);margin-bottom:4px;">От: ${x.from}</small>`:''}
@@ -526,7 +665,15 @@
                 <button class="btn" style="margin-top:5px;font-size:11px;background:${isP?'var(--err)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isP?'❌ Снять':'📌 Витрина'}</button>
                 <button class="btn" style="margin-top:5px;font-size:11px;background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button>
             </div>`;
-        }).join('') : `<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:40px;">Склад пуст</div>`;
+        }).join('') : `<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:30px;">${searchVal?'Ничего не найдено 🔍':'Склад пуст'}</div>`;
+
+        document.getElementById('inv').innerHTML = `
+            <div class="search-filter-bar">
+                <input type="text" id="inv-search" placeholder="🔍 Поиск в инвентаре..." oninput="renderInv()" value="${searchVal}">
+                <span style="color:var(--secondary);font-size:12px;white-space:nowrap;align-self:center;">${upd.length} пред.</span>
+            </div>
+            ${cardsHtml}
+        `;
     };
 
     // ===== SHOP =====
@@ -541,8 +688,25 @@
         return null;
     }
 
-    window.renderShop = () => {
-        let html = catalog.map(x=>{
+    let shopFilter = {q:'', sort:'default'};
+    window.filterShop = (q) => { shopFilter.q = q.toLowerCase(); renderShopCards(); };
+    window.sortShop = (type, btn) => {
+        shopFilter.sort = type;
+        document.querySelectorAll('#shop .filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        renderShopCards();
+    };
+
+    function renderShopCards() {
+        let items = [...catalog];
+        if(shopFilter.q) items = items.filter(x=>x.n.toLowerCase().includes(shopFilter.q));
+        if(shopFilter.sort==='cheap') items.sort((a,b)=>getPrice(a.id)-getPrice(b.id));
+        else if(shopFilter.sort==='expensive') items.sort((a,b)=>getPrice(b.id)-getPrice(a.id));
+        else if(shopFilter.sort==='az') items.sort((a,b)=>a.n.localeCompare(b.n,'ru'));
+
+        const container = document.getElementById('shop-cards');
+        if(!container) return;
+        container.innerHTML = items.map(x=>{
             const cP=getPrice(x.id),oP=getPrice(x.id,-900000);
             return `<div class="card" style="display:flex;flex-direction:column;align-items:center;">
                 ${giftImg(x)}
@@ -550,11 +714,15 @@
                 <div style="font-weight:bold;text-align:center;margin-bottom:4px;">${cP}💰 ${cP>oP?'<span class="price-up">▲</span>':'<span class="price-down">▼</span>'}</div>
                 <button class="btn" style="margin-top:6px;" onclick="buy(${x.id},event)">Купить</button>
             </div>`;
-        }).join('');
+        }).join('') || '<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:30px;">Ничего не найдено 🔍</div>';
+    }
+
+    window.renderShop = () => {
         const tl=getNftTimeLabel();
+        let nftHtml = '';
         if(tl!==null){
             const av=isNftAvailable();
-            html=`<div class="card nft-card" style="grid-column:1/-1;border:2px solid gold;background:linear-gradient(135deg,#1a1200,#111b21);position:relative;overflow:hidden;text-align:center;padding:20px;">
+            nftHtml=`<div class="card nft-card" style="grid-column:1/-1;border:2px solid gold;background:linear-gradient(135deg,#1a1200,#111b21);position:relative;overflow:hidden;text-align:center;padding:20px;">
                 <div style="position:absolute;top:10px;right:12px;font-size:11px;background:gold;color:#000;padding:3px 10px;border-radius:20px;font-weight:bold;z-index:2;letter-spacing:1px;">NFT</div>
                 <div style="display:flex;justify-content:center;gap:6px;margin-bottom:8px;">
                     <img src="https://em-content.zobj.net/source/apple/391/beer-mug_1f37a.png" class="nft-emoji" style="width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(255,215,0,0.6));position:relative;z-index:2;">
@@ -566,9 +734,20 @@
                 <div style="font-weight:bold;color:gold;font-size:20px;margin-bottom:4px;position:relative;z-index:2;">5 000 💰</div>
                 <div style="font-size:12px;color:var(--orange);margin-bottom:8px;position:relative;z-index:2;">${tl}</div>
                 ${av?`<button class="btn" style="background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-weight:bold;position:relative;z-index:2;" onclick="buyNft(event)">🛒 Купить NFT</button>`:`<button class="btn" style="background:#2a2a2a;color:#666;cursor:default;position:relative;z-index:2;" disabled>🔒 Недоступно</button>`}
-            </div>`+html;
+            </div>`;
         }
-        document.getElementById('shop').innerHTML=html;
+        document.getElementById('shop').innerHTML = `
+            <div class="search-filter-bar">
+                <input type="text" placeholder="🔍 Поиск подарка..." oninput="filterShop(this.value)" style="">
+                <button class="filter-btn active" onclick="sortShop('default',this)">По умолч.</button>
+                <button class="filter-btn" onclick="sortShop('cheap',this)">💰 Дешевле</button>
+                <button class="filter-btn" onclick="sortShop('expensive',this)">💎 Дороже</button>
+                <button class="filter-btn" onclick="sortShop('az',this)">А-Я</button>
+            </div>
+            ${nftHtml}
+            <div id="shop-cards" style="display:contents;"></div>
+        `;
+        renderShopCards();
     };
 
     window.buyNft = async (e) => {
@@ -595,19 +774,55 @@
     };
 
     // ===== MARKET =====
+    let marketData = {}, marketFilter = {q:'', sort:'default'};
+    window.filterMarket = (q) => { marketFilter.q = q.toLowerCase(); renderMarketCards(); };
+    window.sortMarket = (type, btn) => {
+        marketFilter.sort = type;
+        document.querySelectorAll('#market .filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        renderMarketCards();
+    };
+
+    function renderMarketCards() {
+        const container = document.getElementById('market-cards');
+        if(!container) return;
+        let entries = Object.entries(marketData);
+        if(marketFilter.q) entries = entries.filter(([,x])=>x.n.toLowerCase().includes(marketFilter.q));
+        if(marketFilter.sort==='cheap') entries.sort((a,b)=>a[1].mP-b[1].mP);
+        else if(marketFilter.sort==='expensive') entries.sort((a,b)=>b[1].mP-a[1].mP);
+        else if(marketFilter.sort==='mine') entries = entries.filter(([,x])=>x.sI===user.id);
+
+        container.innerHTML = entries.length
+            ? entries.map(([k,x])=>`<div class="card" style="padding:12px;display:flex;flex-direction:column;align-items:center;">
+                ${giftImg(x,"sm")}
+                <b style="display:block;text-align:center;margin-bottom:2px;">${x.n}</b>
+                <div style="color:var(--accent);font-weight:bold;margin-bottom:2px;">${x.mP}💰</div>
+                <small style="color:var(--secondary);margin-bottom:5px;">@${x.sN}${x.sI===user.id?' (вы)':''}</small>
+                <button class="btn" style="padding:6px;font-size:11px;${x.sI===user.id?'background:var(--err);':''}" onclick="${x.sI===user.id?`remM('${k}')`:`buyM('${k}',${x.mP},'${x.sI}',event)`}">
+                    ${x.sI===user.id?'❌ Снять':'🛒 Купить'}
+                </button></div>`)
+            .join('')
+            : `<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:40px;">Ничего не найдено 🔍</div>`;
+    }
+
     window.listenMarket = () => {
         onValue(ref(db,'market/'),s=>{
-            const d=s.val();
-            document.getElementById('market').innerHTML=d
-                ?Object.entries(d).map(([k,x])=>`<div class="card" style="padding:12px;display:flex;flex-direction:column;align-items:center;">
-                    ${giftImg(x,"sm")}
-                    <b style="display:block;text-align:center;margin-bottom:2px;">${x.n}</b>
-                    <div style="color:var(--accent);font-weight:bold;margin-bottom:2px;">${x.mP}💰</div>
-                    <small style="color:var(--secondary);margin-bottom:5px;">@${x.sN}</small>
-                    <button class="btn" style="padding:6px;font-size:11px;" onclick="${x.sI===user.id?`remM('${k}')`:`buyM('${k}',${x.mP},'${x.sI}',event)`}">
-                        ${x.sI===user.id?'Снять':'Купить'}
-                    </button></div>`).join('')
-                :`<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:40px;">Рынок пуст</div>`;
+            marketData = s.val() || {};
+            const market = document.getElementById('market');
+            // Only inject search bar once
+            if(!document.getElementById('market-cards')) {
+                market.innerHTML = `
+                    <div class="search-filter-bar">
+                        <input type="text" placeholder="🔍 Поиск на рынке..." oninput="filterMarket(this.value)">
+                        <button class="filter-btn active" onclick="sortMarket('default',this)">Новые</button>
+                        <button class="filter-btn" onclick="sortMarket('cheap',this)">💰 Дешевле</button>
+                        <button class="filter-btn" onclick="sortMarket('expensive',this)">💎 Дороже</button>
+                        <button class="filter-btn" onclick="sortMarket('mine',this)">👤 Мои</button>
+                    </div>
+                    <div id="market-cards" style="display:contents;"></div>
+                `;
+            }
+            renderMarketCards();
         });
     };
     window.toMarket = async (inst) => {
@@ -626,9 +841,8 @@
                 <button class="btn" style="margin-top:8px;background:var(--accent);" onclick="confirmMarket('${inst}')">⚖️ Выставить на рынок</button>
                 <button class="btn" style="background:none;margin-top:6px;color:var(--secondary);" onclick="closeModal()">Отмена</button>
             </div>`;
-        document.getElementById('modal-overlay').style.display='flex';
-    };
-    window.confirmMarket = async (inst) => {
+        openModal();
+        requestAnimationFrame(()=>document.getElementById('modal-overlay').style.background='rgba(0,0,0,0.88)'); = async (inst) => {
         const price=parseInt(document.getElementById('mkt-price').value);
         if(!price||price<=0) return showToast("Введи цену!",'var(--err)');
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
@@ -694,7 +908,7 @@
                 ${Object.entries(frs).map(([id,d])=>`<button class="btn" style="margin-bottom:10px;" onclick="sendG('${inst}','${id}')">🎁 ${d.name}</button>`).join('')}
             </div>
             <button class="btn" style="background:none;margin-top:5px;" onclick="closeModal()">Отмена</button>`;
-        document.getElementById('modal-overlay').style.display='flex';
+        openModal();
     };
     window.sendG = async (inst,fid) => {
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
@@ -737,7 +951,7 @@
             <input type="text" id="promo-input" placeholder="ВВЕДИ КОД" style="text-transform:uppercase;font-size:18px;text-align:center;letter-spacing:3px;">
             <button class="btn" style="margin-top:5px;" onclick="usePromo()">Активировать</button>
             <button class="btn" style="background:none;margin-top:5px;" onclick="closeModal()">Отмена</button>`;
-        document.getElementById('modal-overlay').style.display='flex';
+        openModal();
     };
     window.openEdit = async () => {
         const s=await get(ref(db,'users/'+user.id));
@@ -747,7 +961,7 @@
             <p style="font-size:12px;color:var(--secondary)">Аватар (с устройства):</p>
             <input type="file" id="efile" accept="image/*" style="padding:5px;font-size:12px;">
             <button class="btn" onclick="saveP()">Сохранить</button>`;
-        document.getElementById('modal-overlay').style.display='flex';
+        openModal();
     };
     window.saveP = async () => {
         const file=document.getElementById('efile').files[0];
@@ -862,7 +1076,7 @@
         el.classList.toggle('open');
     };
 
-    window.delUser=async(id)=>{if(confirm(`Удалить @${id}?`)) await remove(ref(db,'users/'+id));};
+    window.delUser=async(id)=>{const ok=await showConfirm('Удалить игрока','Аккаунт @'+id+' будет удалён безвозвратно.','🗑️','var(--err)','Удалить');if(ok) await remove(ref(db,'users/'+id));};
     window.setB=async(id)=>{const v=document.getElementById('ab-'+id).value;if(v){await update(ref(db,'users/'+id),{balance:parseInt(v)});showToast(`💰 Баланс @${id} обновлён`);}};
     window.giveI=async(id)=>{
         const itm=catalog.find(x=>x.id==document.getElementById('ag-'+id).value);
@@ -887,12 +1101,13 @@
         document.getElementById('promo-gift-in').value='';
         showToast("Промокод создан! 🎟️",'var(--green)');
     };
-    window.deletePromo=async(code)=>{if(confirm(`Удалить промокод ${code}?`)) await remove(ref(db,'promos/'+code));};
+    window.deletePromo=async(code)=>{const ok=await showConfirm('Удалить промокод','Промокод '+code+' будет удалён.','🎟️','var(--err)','Удалить');if(ok) await remove(ref(db,'promos/'+code));};
 
     window.broadcastCoins = async () => {
         const amount=parseInt(document.getElementById('bcast-coins').value);
         if(!amount||amount<=0) return showToast("Введи сумму!",'var(--err)');
-        if(!confirm(`Разослать ${amount}💰 всем игрокам?`)) return;
+        const ok=await showConfirm('Рассылка монет','Разослать '+amount+'💰 всем игрокам?','📢','var(--green)','Разослать');
+        if(!ok) return;
         const s=await get(ref(db,'users')),us=s.val();
         const up={};for(let id in us) up[`users/${id}/balance`]=(us[id].balance||0)+amount;
         await update(ref(db),up);
@@ -902,7 +1117,8 @@
 
     window.broadcastGift = async () => {
         const itm=catalog.find(x=>x.id==document.getElementById('bcast-gift').value);
-        if(!confirm(`Выдать ${itm.i} ${itm.n} всем игрокам?`)) return;
+        const ok2=await showConfirm('Выдать подарок всем',itm.i+' '+itm.n+' всем игрокам?','🎁','var(--orange)','Выдать');
+        if(!ok2) return;
         const s=await get(ref(db,'users')),us=s.val();
         const up={};
         for(let id in us){const inv=(us[id].cloudInv||[]);inv.push({...itm,inst:Date.now(),from:"ADMIN",seen:false});up[`users/${id}/cloudInv`]=inv;}
@@ -911,14 +1127,16 @@
     };
 
     window.clearAllShowcases = async () => {
-        if(!confirm("Очистить все витрины?")) return;
+        const ok=await showConfirm('Очистить витрины','Все закреплённые предметы будут сняты с витрин игроков.','🧹','var(--err)','Очистить');
+        if(!ok) return;
         const s=await get(ref(db,'users')),us=s.val();
         const up={};for(let id in us) up[`users/${id}/pinned`]=[];
         await update(ref(db),up);showToast("Витрины очищены!",'var(--err)');
     };
 
     window.clearMarket = async () => {
-        if(!confirm("Очистить весь рынок?")) return;
+        const ok=await showConfirm('Очистить рынок','Все лоты на рынке будут удалены безвозвратно.','🗑️','var(--err)','Очистить');
+        if(!ok) return;
         await remove(ref(db,'market'));showToast("Рынок очищен!",'var(--err)');
     };
 
