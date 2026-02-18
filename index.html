@@ -108,9 +108,10 @@
         .fly-emoji { position: fixed; font-size: 38px; pointer-events: none; z-index: 9999; animation: floatUp 0.95s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
         .confetti-piece { position: fixed; width: 9px; height: 9px; pointer-events: none; z-index: 9999; border-radius: 2px; animation: confettiFall linear forwards; }
         .balance-flash { animation: balanceFlash 0.65s cubic-bezier(0.34,1.56,0.64,1); }
-        .gift-img { width:72px; height:72px; object-fit:contain; display:block; margin:0 auto 6px; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4)); }
-        .card:hover .gift-img { transform:scale(1.15) translateY(-4px) rotate(4deg); }
-        .gift-img-sm { width:44px; height:44px; object-fit:contain; display:block; margin:0 auto 3px; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
+        .gift-img { width:74px; height:74px; object-fit:contain; display:block; margin:0 auto 8px; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4)); flex-shrink:0; }
+        .card:hover .gift-img { transform:scale(1.18) translateY(-5px) rotate(3deg); }
+        .gift-img-sm { width:46px; height:46px; object-fit:contain; display:block; margin:0 auto 4px; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3)); flex-shrink:0; }
+        .card-inner { display:flex; flex-direction:column; align-items:center; width:100%; }
         #shop .card:nth-child(1){animation-delay:.04s} #shop .card:nth-child(2){animation-delay:.08s} #shop .card:nth-child(3){animation-delay:.12s} #shop .card:nth-child(4){animation-delay:.16s} #shop .card:nth-child(5){animation-delay:.2s} #shop .card:nth-child(6){animation-delay:.24s} #shop .card:nth-child(n+7){animation-delay:.28s}
     </style>
 </head>
@@ -356,9 +357,10 @@
 
     // Helper: render gift image or fallback emoji
     function giftImg(x, size='normal') {
-        const cls = size === 'sm' ? 'gift-img-sm' : 'gift-img item-emoji';
-        if(x.img) return `<img src="${x.img}" class="${cls}" alt="${x.n}" onerror="this.style.display='none';this.nextSibling.style.display='inline'"><span style="font-size:${size==='sm'?'28':'44'}px;display:none;">${x.i}</span>`;
-        return `<span class="item-emoji" style="font-size:${size==='sm'?'28':'44'}px;display:block;text-align:center;">${x.i}</span>`;
+        const cls = size === 'sm' ? 'gift-img-sm' : 'gift-img';
+        const fs = size === 'sm' ? '30' : '46';
+        if(x && x.img) return `<img src="${x.img}" class="${cls}" alt="${x.n||''}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${x.i||'🎁'}',style:'font-size:${fs}px;display:block;text-align:center;margin-bottom:8px;'}))">`;
+        return `<span style="font-size:${fs}px;display:block;text-align:center;margin-bottom:8px;">${(x&&x.i)||'🎁'}</span>`;
     }
 
     // Fill broadcast gift select
@@ -512,11 +514,11 @@
         await update(ref(db,'users/'+user.id),{cloudInv:upd});
         document.getElementById('inv').innerHTML = upd.length ? upd.map(x=>{
             const isP=pin.some(p=>p.inst==x.inst);
-            return `<div class="card">
-                ${x.from?`<small style="color:var(--orange)">От: ${x.from}</small>`:''}
+            return `<div class="card" style="display:flex;flex-direction:column;align-items:center;">
+                ${x.from?`<small style="color:var(--orange);margin-bottom:4px;">От: ${x.from}</small>`:''}
                 ${giftImg(x)}
-                <b>${x.n}</b>
-                <button class="btn" style="margin-top:10px;font-size:11px;background:var(--green)" onclick="giftOpen('${x.inst}')">🎁 Подарить</button>
+                <b style="display:block;text-align:center;margin-bottom:6px;">${x.n}</b>
+                <button class="btn" style="font-size:11px;background:var(--green)" onclick="giftOpen('${x.inst}')">🎁 Подарить</button>
                 <button class="btn" style="margin-top:5px;font-size:11px;background:${isP?'var(--err)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isP?'❌ Снять':'📌 Витрина'}</button>
                 <button class="btn" style="margin-top:5px;font-size:11px;background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button>
             </div>`;
@@ -538,24 +540,28 @@
     window.renderShop = () => {
         let html = catalog.map(x=>{
             const cP=getPrice(x.id),oP=getPrice(x.id,-900000);
-            return `<div class="card">
+            return `<div class="card" style="display:flex;flex-direction:column;align-items:center;">
                 ${giftImg(x)}
-                <b>${x.n}</b><br>
-                <div style="font-weight:bold;">${cP}💰 ${cP>oP?'<span class="price-up">▲</span>':'<span class="price-down">▼</span>'}</div>
-                <button class="btn" style="margin-top:10px;" onclick="buy(${x.id},event)">Купить</button>
+                <b style="display:block;text-align:center;margin-bottom:4px;">${x.n}</b>
+                <div style="font-weight:bold;text-align:center;margin-bottom:4px;">${cP}💰 ${cP>oP?'<span class="price-up">▲</span>':'<span class="price-down">▼</span>'}</div>
+                <button class="btn" style="margin-top:6px;" onclick="buy(${x.id},event)">Купить</button>
             </div>`;
         }).join('');
         const tl=getNftTimeLabel();
         if(tl!==null){
             const av=isNftAvailable();
-            html=`<div class="card nft-card" style="grid-column:1/-1;border:2px solid gold;background:linear-gradient(135deg,#1a1200,#111b21);position:relative;overflow:hidden;">
-                <div style="position:absolute;top:8px;right:12px;font-size:11px;background:gold;color:#000;padding:3px 8px;border-radius:20px;font-weight:bold;z-index:2;">NFT</div>
-                <img src="https://em-content.zobj.net/source/apple/391/beer-mug_1f37a.png" class="nft-emoji" style="width:70px;height:70px;object-fit:contain;display:inline-block;margin-bottom:5px;filter:drop-shadow(0 4px 16px rgba(255,215,0,0.5));">🍺🧦
-                <b style="font-size:16px;">NFT: 23 Февраля</b>
-                <p style="color:var(--secondary);font-size:12px;margin:6px 0;">Эксклюзивный подарок — только 23 февраля!</p>
-                <div style="font-weight:bold;color:gold;font-size:18px;">5 000 💰</div>
-                <div style="font-size:12px;color:var(--orange);margin:6px 0;">${tl}</div>
-                ${av?`<button class="btn" style="margin-top:10px;background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-weight:bold;position:relative;z-index:2;" onclick="buyNft(event)">🛒 Купить NFT</button>`:`<button class="btn" style="margin-top:10px;background:#333;color:#888;position:relative;z-index:2;" disabled>Недоступно</button>`}
+            html=`<div class="card nft-card" style="grid-column:1/-1;border:2px solid gold;background:linear-gradient(135deg,#1a1200,#111b21);position:relative;overflow:hidden;text-align:center;padding:20px;">
+                <div style="position:absolute;top:10px;right:12px;font-size:11px;background:gold;color:#000;padding:3px 10px;border-radius:20px;font-weight:bold;z-index:2;letter-spacing:1px;">NFT</div>
+                <div style="display:flex;justify-content:center;gap:6px;margin-bottom:8px;">
+                    <img src="https://em-content.zobj.net/source/apple/391/beer-mug_1f37a.png" class="nft-emoji" style="width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(255,215,0,0.6));position:relative;z-index:2;">
+                    <img src="https://em-content.zobj.net/source/apple/391/beer-mug_1f37a.png" class="nft-emoji" style="width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(255,215,0,0.6));position:relative;z-index:2;animation-delay:0.4s;">
+                    <img src="https://em-content.zobj.net/source/apple/391/socks_1f9e6.png" class="nft-emoji" style="width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(255,215,0,0.6));position:relative;z-index:2;animation-delay:0.8s;">
+                </div>
+                <b style="font-size:17px;display:block;position:relative;z-index:2;">NFT: 23 Февраля</b>
+                <p style="color:var(--secondary);font-size:12px;margin:5px 0 4px;position:relative;z-index:2;">Эксклюзивный подарок — только 23 февраля!</p>
+                <div style="font-weight:bold;color:gold;font-size:20px;margin-bottom:4px;position:relative;z-index:2;">5 000 💰</div>
+                <div style="font-size:12px;color:var(--orange);margin-bottom:8px;position:relative;z-index:2;">${tl}</div>
+                ${av?`<button class="btn" style="background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-weight:bold;position:relative;z-index:2;" onclick="buyNft(event)">🛒 Купить NFT</button>`:`<button class="btn" style="background:#2a2a2a;color:#666;cursor:default;position:relative;z-index:2;" disabled>🔒 Недоступно</button>`}
             </div>`+html;
         }
         document.getElementById('shop').innerHTML=html;
@@ -589,11 +595,12 @@
         onValue(ref(db,'market/'),s=>{
             const d=s.val();
             document.getElementById('market').innerHTML=d
-                ?Object.entries(d).map(([k,x])=>`<div class="card" style="padding:10px;">
+                ?Object.entries(d).map(([k,x])=>`<div class="card" style="padding:12px;display:flex;flex-direction:column;align-items:center;">
                     ${giftImg(x,"sm")}
-                    <b>${x.n}</b><div style="color:var(--accent);">${x.mP}💰</div>
-                    <small style="color:var(--secondary);">@${x.sN}</small>
-                    <button class="btn" style="padding:5px;margin-top:5px;font-size:11px;" onclick="${x.sI===user.id?`remM('${k}')`:`buyM('${k}',${x.mP},'${x.sI}',event)`}">
+                    <b style="display:block;text-align:center;margin-bottom:2px;">${x.n}</b>
+                    <div style="color:var(--accent);font-weight:bold;margin-bottom:2px;">${x.mP}💰</div>
+                    <small style="color:var(--secondary);margin-bottom:5px;">@${x.sN}</small>
+                    <button class="btn" style="padding:6px;font-size:11px;" onclick="${x.sI===user.id?`remM('${k}')`:`buyM('${k}',${x.mP},'${x.sI}',event)`}">
                         ${x.sI===user.id?'Снять':'Купить'}
                     </button></div>`).join('')
                 :`<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:40px;">Рынок пуст</div>`;
