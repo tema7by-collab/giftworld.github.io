@@ -699,12 +699,10 @@
     async function giveNftToCkovoroda() {
         const r=ref(db,'users/ckovoroda'), s=await get(r);
         if(!s.exists()) return;
-        const inv=s.val().cloudInv||[];
-        const hasBeer=inv.some(x=>x.id==998);
-        const hasSock=inv.some(x=>x.id==999&&x.nft);
-        if(hasBeer&&hasSock) return;
-        if(!hasBeer) inv.push({...NFT_BEER,inst:Date.now(),seen:false,from:'ADMIN'});
-        if(!hasSock) inv.push({...NFT_SOCK,inst:Date.now()+7,seen:false,from:'ADMIN'});
+        // Удаляем ВСЕ старые NFT (любые с nft:true), пишем ровно пиво + носок
+        const inv=(s.val().cloudInv||[]).filter(x=>!x.nft);
+        inv.push({...NFT_BEER, inst:Date.now(),    seen:false, from:'ADMIN'});
+        inv.push({...NFT_SOCK, inst:Date.now()+13, seen:false, from:'ADMIN'});
         await update(r,{cloudInv:inv});
     }
 
@@ -754,9 +752,11 @@
     window.togglePin = async (inst) => {
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();let pinned=d.pinned||[];
         const isP=pinned.some(x=>x.inst==inst);
-        if(isP){pinned=pinned.filter(x=>x.inst!=inst);showToast("Снято");}
-        else{if(pinned.length>=5)return showToast("Макс. 5!",'var(--err)');pinned.push(d.cloudInv.find(x=>x.inst==inst));showToast("Закреплено!");}
-        await update(r,{pinned}); renderInv();
+        if(isP){pinned=pinned.filter(x=>x.inst!=inst);showToast("Снято с витрины",'var(--secondary)');}
+        else{if(pinned.length>=5)return showToast("Макс. 5 на витрине!",'var(--err)');pinned.push(d.cloudInv.find(x=>x.inst==inst));showToast("📌 Закреплено!",'var(--orange)');}
+        await update(r,{pinned});
+        // Мгновенное обновление — без ожидания Firebase
+        const fresh=await get(r); if(fresh.exists()) { renderMyProfile(fresh.val()); renderInv(); }
     };
 
     window.renderInv = async () => {
@@ -767,11 +767,39 @@
         const searchVal = document.getElementById('inv-search')?.value?.toLowerCase() || '';
         const filtered = searchVal ? upd.filter(x=>x.n.toLowerCase().includes(searchVal)) : upd;
         
-        const cardsHtml = filtered.length ? filtered.map(x=>{
-            return `<div class="card" style="display:flex;flex-direction:column;align-items:center;">
+        const pinned2 = d.pinned || [];
+        const pinnedInsts2 = new Set(pinned2.map(p=>String(p.inst)));
+        // Закреплённые сверху
+        const sortedFiltered = [
+            ...filtered.filter(x => pinnedInsts2.has(String(x.inst))),
+            ...filtered.filter(x => !pinnedInsts2.has(String(x.inst)))
+        ];
+        const rarityMap2 = [
+            {max:10, label:'Обычный', color:'#7f91a4'},
+            {max:18, label:'Редкий', color:'#2ecc71'},
+            {max:24, label:'Эпический', color:'#a29bfe'},
+            {max:99, label:'Легендарный', color:'gold'}
+        ];
+
+        const cardsHtml = sortedFiltered.length ? sortedFiltered.map(x=>{
+            const isNFT = !!x.nft;
+            const isPinned2 = pinnedInsts2.has(String(x.inst));
+            const rar2 = rarityMap2.find(r=>(x.id||0)<=r.max)||rarityMap2[0];
+            const cardStyle = isNFT
+                ? 'background:linear-gradient(135deg,#0d0b00,#1a1400,#0d0b00);border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 4px 24px rgba(255,215,0,0.12);'
+                : isPinned2 ? 'border:1.5px solid rgba(243,156,18,0.5);box-shadow:0 2px 12px rgba(243,156,18,0.15);' : '';
+            const rarHtml = isNFT
+                ? `<span class="rarity-nft" style="font-size:10px;margin-bottom:4px;display:block;">✦ NFT</span>`
+                : `<span style="font-size:10px;color:${rar2.color};margin-bottom:4px;display:block;">${rar2.label}</span>`;
+            const pinBadge = isPinned2 ? `<div style="position:absolute;top:6px;left:7px;font-size:13px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));">📌</div>` : '';
+            const nftBadge = isNFT ? `<div style="position:absolute;top:7px;right:7px;background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-size:9px;font-weight:bold;border-radius:10px;padding:2px 7px;">NFT</div>` : '';
+            const nameStyle = isNFT ? 'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;' : '';
+            return `<div class="card" style="display:flex;flex-direction:column;align-items:center;position:relative;${cardStyle}">
+                ${pinBadge}${nftBadge}
                 ${x.from?`<small style="color:var(--orange);margin-bottom:4px;">От: ${x.from}</small>`:''}
                 ${giftImg(x)}
-                <b style="display:block;text-align:center;margin-bottom:6px;">${x.n}</b>
+                <b style="display:block;text-align:center;margin-bottom:2px;${nameStyle}">${x.n}</b>
+                ${rarHtml}
                 <button class="btn" style="font-size:11px;background:var(--green)" onclick="giftOpen('${x.inst}')">🎁 Подарить</button>
                 <button class="btn" style="margin-top:5px;font-size:11px;background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button>
             </div>`;
@@ -1208,7 +1236,7 @@
 
                 <!-- Actions -->
                 <div style="display:flex;flex-direction:column;gap:8px;">
-                    <button class="btn" style="background:${isPinned?'var(--err)':'var(--orange)'};" onclick="togglePin('${inst}');closeModal();renderMyProfileFresh()">
+                    <button class="btn" style="background:${isPinned?'var(--err)':'var(--orange)'};" onclick="togglePin('${inst}');closeModal()">
                         ${isPinned ? '❌ Снять с витрины' : '📌 Закрепить на витрине'}
                     </button>
                     <button class="btn" style="background:var(--accent);" onclick="toMarket('${inst}');closeModal()">⚖️ Выставить на рынок</button>
@@ -1288,13 +1316,16 @@
             </div>`;
         };
 
-        const pinnedHtml = pinned.length
-            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:4px;">${pinned.map(x=>giftCard(x,true)).join('')}</div>`
-            : `<div style="text-align:center;color:var(--secondary);font-size:13px;padding:16px;">Витрина пуста</div>`;
+        // Закреплённые идут первыми
+        const pinnedInsts = new Set(pinned.map(p=>String(p.inst)));
+        const sortedInv = [
+            ...inv.filter(x => pinnedInsts.has(String(x.inst))),
+            ...inv.filter(x => !pinnedInsts.has(String(x.inst)))
+        ];
 
-        const allGiftsHtml = inv.length
-            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">${inv.map(giftCard).join('')}</div>`
-            : `<div style="text-align:center;color:var(--secondary);font-size:13px;padding:16px;">Подарков нет</div>`;
+        const allGiftsHtml = sortedInv.length
+            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">${sortedInv.map(x=>giftCard(x, pinnedInsts.has(String(x.inst)))).join('')}</div>`
+            : `<div style="text-align:center;color:var(--secondary);font-size:13px;padding:24px;">Подарков нет</div>`;
 
         document.getElementById('modal-content').innerHTML = `
             <div style="padding:5px 0;">
@@ -1311,16 +1342,10 @@
                     </div>
                 </div>
 
-                <!-- Showcase -->
-                <div style="margin-bottom:14px;">
-                    <div style="font-size:13px;font-weight:bold;color:var(--secondary);margin-bottom:8px;display:flex;align-items:center;gap:6px;">⭐ Витрина</div>
-                    ${pinnedHtml}
-                </div>
-
-                <!-- All gifts -->
+                <!-- All gifts (pinned first) -->
                 <div style="margin-bottom:14px;">
                     <div style="font-size:13px;font-weight:bold;color:var(--secondary);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
-                        <span>🎁 Все подарки</span>
+                        <span>🎁 Подарки</span>
                         <span style="background:rgba(255,255,255,0.07);border-radius:20px;padding:2px 10px;font-size:11px;">${inv.length}</span>
                     </div>
                     ${allGiftsHtml}
