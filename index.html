@@ -355,12 +355,16 @@
         {id:30,n:"Галактика",i:"🌌", img:"https://em-content.zobj.net/source/apple/391/milky-way_1f30c.png"}
     ];
 
-    // Helper: render gift image or fallback emoji
+    // Helper: render gift image - lookup catalog by id if img missing
     function giftImg(x, size='normal') {
         const cls = size === 'sm' ? 'gift-img-sm' : 'gift-img';
         const fs = size === 'sm' ? '30' : '46';
-        if(x && x.img) return `<img src="${x.img}" class="${cls}" alt="${x.n||''}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${x.i||'🎁'}',style:'font-size:${fs}px;display:block;text-align:center;margin-bottom:8px;'}))">`;
-        return `<span style="font-size:${fs}px;display:block;text-align:center;margin-bottom:8px;">${(x&&x.i)||'🎁'}</span>`;
+        // Enrich from catalog if img not stored on item
+        const cat = catalog.find(c => c.id == x.id);
+        const img = (x && x.img) || (cat && cat.img);
+        const emoji = (x && x.i) || (cat && cat.i) || '🎁';
+        if(img) return `<img src="${img}" class="${cls}" alt="${(x&&x.n)||''}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${emoji}',style:'font-size:${fs}px;display:block;text-align:center;margin-bottom:8px;'}))">`;
+        return `<span style="font-size:${fs}px;display:block;text-align:center;margin-bottom:8px;">${emoji}</span>`;
     }
 
     // Fill broadcast gift select
@@ -607,12 +611,34 @@
         });
     };
     window.toMarket = async (inst) => {
-        const p=prompt("Цена:");if(!p||parseInt(p)<=0) return;
+        const s=await get(ref(db,'users/'+user.id)),d=s.val();
+        const itm=d.cloudInv.find(x=>x.inst==inst);
+        if(!itm) return showToast("Не найден!",'var(--err)');
+        const cat=catalog.find(c=>c.id==itm.id);
+        const img=(itm.img)||(cat&&cat.img)||'';
+        const emo=(itm.i)||(cat&&cat.i)||'🎁';
+        document.getElementById('modal-content').innerHTML=`
+            <div style="text-align:center;padding:5px;">
+                ${img?`<img src="${img}" style="width:72px;height:72px;object-fit:contain;margin:0 auto 10px;display:block;filter:drop-shadow(0 4px 14px rgba(0,0,0,0.5));">`:`<span style="font-size:54px;display:block;margin-bottom:8px;">${emo}</span>`}
+                <h3 style="margin:0 0 4px;">${itm.n}</h3>
+                <p style="color:var(--secondary);font-size:13px;margin:0 0 14px;">Укажи цену продажи</p>
+                <input type="number" id="mkt-price" placeholder="Цена в монетах" style="font-size:17px;text-align:center;letter-spacing:1px;">
+                <button class="btn" style="margin-top:8px;background:var(--accent);" onclick="confirmMarket('${inst}')">⚖️ Выставить на рынок</button>
+                <button class="btn" style="background:none;margin-top:6px;color:var(--secondary);" onclick="closeModal()">Отмена</button>
+            </div>`;
+        document.getElementById('modal-overlay').style.display='flex';
+    };
+    window.confirmMarket = async (inst) => {
+        const price=parseInt(document.getElementById('mkt-price').value);
+        if(!price||price<=0) return showToast("Введи цену!",'var(--err)');
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
-        const itm=d.cloudInv.find(x=>x.inst==inst);if(!itm) return showToast("Не найден!",'var(--err)');
+        const itm=d.cloudInv.find(x=>x.inst==inst);
+        if(!itm) return showToast("Не найден!",'var(--err)');
+        const cat=catalog.find(c=>c.id==itm.id);
+        const enriched={...itm, img:(itm.img)||(cat&&cat.img)||null, i:(itm.i)||(cat&&cat.i)||'🎁'};
         await update(r,{cloudInv:d.cloudInv.filter(x=>x.inst!=inst),pinned:(d.pinned||[]).filter(x=>x.inst!=inst)});
-        push(ref(db,'market/'),{...itm,mP:parseInt(p),sI:user.id,sN:user.name});
-        showToast("Выставлено!"); renderInv();
+        push(ref(db,'market/'),{...enriched,mP:price,sI:user.id,sN:user.name});
+        closeModal(); showToast("Выставлено на рынок! ⚖️",'var(--green)'); renderInv();
     };
     window.buyM = async (k,p,si,e) => {
         const bR=ref(db,'users/'+user.id),bS=await get(bR);
