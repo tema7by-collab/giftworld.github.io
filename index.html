@@ -150,6 +150,41 @@
 
         @keyframes rainbow { 0%{color:#ff6b6b} 16%{color:#ffd93d} 33%{color:#6bcb77} 50%{color:#4d96ff} 66%{color:#c77dff} 83%{color:#ff6bcd} 100%{color:#ff6b6b} }
         .rarity-nft { animation: rainbow 2s linear infinite; font-weight:bold; }
+
+        /* ===== MERGE SYSTEM ===== */
+        @keyframes mergeGlow { 0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0)} 50%{box-shadow:0 0 30px 8px rgba(255,215,0,0.5)} }
+        @keyframes mergeUpgrade { 0%{transform:scale(1) rotate(0)} 30%{transform:scale(1.4) rotate(-5deg)} 60%{transform:scale(0.9) rotate(5deg)} 100%{transform:scale(1) rotate(0)} }
+        @keyframes epicPulse { 0%,100%{box-shadow:0 0 0 0 rgba(162,155,254,0)} 50%{box-shadow:0 0 20px 5px rgba(162,155,254,0.4)} }
+        @keyframes legendaryShimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        @keyframes rarePulse { 0%,100%{box-shadow:0 0 0 0 rgba(77,180,255,0)} 50%{box-shadow:0 0 16px 4px rgba(77,180,255,0.35)} }
+
+        .rarity-common  { color:#7f91a4; font-size:10px; font-weight:bold; }
+        .rarity-rare    { color:#4db4ff; font-size:10px; font-weight:bold; }
+        .rarity-epic    { color:#a29bfe; font-size:10px; font-weight:bold; }
+        .rarity-legendary { background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; font-size:10px; font-weight:bold; background-size:200% auto; animation:legendaryShimmer 2s linear infinite; }
+
+        .card-rare     { border:1.5px solid rgba(77,180,255,0.5)!important; background:linear-gradient(135deg,#0a0d2e,#0c1a30)!important; animation:rarePulse 3s ease-in-out infinite; }
+        .card-epic     { border:1.5px solid rgba(162,155,254,0.55)!important; background:linear-gradient(135deg,#0d0a2e,#1a0e3a)!important; animation:epicPulse 3s ease-in-out infinite; }
+        .card-legendary{ border:2px solid rgba(255,215,0,0.7)!important; background:linear-gradient(135deg,#1a1200,#0e1824,#1a1200)!important; animation:mergeGlow 2.5s ease-in-out infinite; }
+        .card-legendary::before { content:''; position:absolute; inset:0; border-radius:25px; background:linear-gradient(105deg,transparent 30%,rgba(255,215,0,0.15) 50%,transparent 70%); background-size:200% 100%; animation:shimmer 2s linear infinite; pointer-events:none; z-index:1; }
+
+        .nft-id-badge { position:absolute; bottom:6px; left:8px; font-size:9px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px; z-index:3; }
+        .nft-id-badge.nft { color:rgba(255,215,0,0.55); }
+
+        .merge-btn { background:linear-gradient(90deg,#7c3aed,#a855f7)!important; margin-top:5px!important; font-size:11px!important; position:relative; overflow:hidden; }
+        .merge-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transform:translateX(-100%); animation:mergeSweep 2s ease infinite; }
+        @keyframes mergeSweep { 0%{transform:translateX(-100%)} 50%,100%{transform:translateX(100%)} }
+        .merge-ready { animation:mergeGlow 1.2s ease-in-out infinite; }
+
+        .merge-count-badge { position:absolute; top:7px; left:7px; background:rgba(162,155,254,0.9); color:#fff; font-size:9px; font-weight:bold; border-radius:10px; padding:1px 6px; z-index:3; backdrop-filter:blur(4px); }
+        .merge-count-badge.ready { background:linear-gradient(90deg,#7c3aed,#a855f7); animation:epicPulse 1s ease infinite; }
+
+        .merge-panel { grid-column:1/-1; background:linear-gradient(135deg,#0d0a20,#120d2e); border:1.5px solid rgba(162,155,254,0.4); border-radius:22px; padding:18px; margin-bottom:5px; }
+        .merge-panel h4 { margin:0 0 10px; color:#a29bfe; font-size:15px; display:flex; align-items:center; gap:8px; }
+        .merge-items-row { display:flex; gap:10px; overflow-x:auto; padding:6px 0; }
+        .merge-slot { width:80px; height:80px; border-radius:16px; border:2px dashed rgba(162,155,254,0.4); display:flex; align-items:center; justify-content:center; font-size:32px; flex-shrink:0; background:rgba(162,155,254,0.05); transition:0.2s; cursor:pointer; }
+        .merge-slot.filled { border-color:rgba(162,155,254,0.8); background:rgba(162,155,254,0.12); }
+        .merge-slot:hover { border-color:#a29bfe; background:rgba(162,155,254,0.2); }
         .pin-badge { position:absolute;top:4px;right:4px;font-size:14px;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7)); }
         .gift-cell-wrap { position:relative; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
@@ -889,42 +924,60 @@
             ...filtered.filter(x => pinnedInsts2.has(String(x.inst))),
             ...filtered.filter(x => !pinnedInsts2.has(String(x.inst)))
         ];
-        const rarityMap2 = [
-            {max:19, label:'Обычный', color:'#7f91a4'},
-            {max:20, label:'Эпический', color:'#a29bfe'},
-            {max:99, label:'Обычный', color:'#7f91a4'}
-        ];
+        // Use new rarity system
+        const mergeableIds = new Set(getMergeable(upd).map(g => `${g.items[0].id}_${getRarityLevel(g.items[0])}`));
 
         const cardsHtml = sortedFiltered.length ? sortedFiltered.map(x=>{
             const isNFT = !!x.nft;
             const isPinned2 = pinnedInsts2.has(String(x.inst));
-            const rar2 = rarityMap2.find(r=>(x.id||0)<=r.max)||rarityMap2[0];
-            const cardStyle = isNFT
-                ? 'background:linear-gradient(135deg,#0d0b00,#1a1400,#0d0b00);border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 4px 24px rgba(255,215,0,0.12);'
-                : isPinned2 ? 'border:1.5px solid rgba(243,156,18,0.5);box-shadow:0 2px 12px rgba(243,156,18,0.15);' : '';
+            const rarObj = getRarityObj(x);
+            const rarLevel = getRarityLevel(x);
+            const isMergeReady = mergeableIds.has(`${x.id}_${rarLevel}`) && !isNFT;
+
+            // Card style based on rarity
+            let cardExtraClass = rarObj.cardCls;
+            let cardStyle = '';
+            if(isPinned2 && !isNFT && rarLevel===0) cardStyle = 'border:1.5px solid rgba(243,156,18,0.5);box-shadow:0 2px 12px rgba(243,156,18,0.15);';
+
             const rarHtml = isNFT
-                ? `<span class="rarity-nft" style="font-size:10px;margin-bottom:4px;display:block;">✦ NFT</span>`
-                : `<span style="font-size:10px;color:${rar2.color};margin-bottom:4px;display:block;">${rar2.label}</span>`;
-            const pinBadge = isPinned2 ? `<div style="position:absolute;top:6px;left:7px;font-size:13px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));">📌</div>` : '';
-            const nftBadge = isNFT ? `<div style="position:absolute;top:7px;right:7px;background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-size:9px;font-weight:bold;border-radius:10px;padding:2px 7px;">NFT</div>` : '';
+                ? `<span class="rarity-nft" style="font-size:10px;margin-bottom:4px;display:block;">✦ NFT — Легендарный</span>`
+                : `<span class="${rarObj.cls}" style="margin-bottom:4px;display:block;">${rarObj.icon} ${rarObj.label}</span>`;
+
+            const pinBadge = isPinned2 ? `<div style="position:absolute;top:6px;left:7px;font-size:13px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));z-index:4;">📌</div>` : '';
+            const nftBadge = isNFT ? `<div style="position:absolute;top:7px;right:7px;background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-size:9px;font-weight:bold;border-radius:10px;padding:2px 7px;z-index:4;">NFT</div>` : '';
             const nameStyle = isNFT ? 'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;' : '';
-            return `<div class="card" style="display:flex;flex-direction:column;align-items:center;position:relative;${cardStyle}">
-                ${pinBadge}${nftBadge}
+            const serialBadge = x.nftSerial ? `<div class="nft-id-badge${isNFT?' nft':''}">№${x.nftSerial}</div>` : '';
+            const mergeBadge = isMergeReady ? `<div class="merge-count-badge ready" title="Можно объединить!">⚗️</div>` : '';
+
+            return `<div class="card ${cardExtraClass}${isMergeReady?' merge-ready':''}" style="display:flex;flex-direction:column;align-items:center;position:relative;${cardStyle}">
+                ${pinBadge}${nftBadge}${mergeBadge}${serialBadge}
                 ${x.from?`<small style="color:var(--orange);margin-bottom:4px;">От: ${x.from}</small>`:''}
                 ${giftImg(x)}
                 <b style="display:block;text-align:center;margin-bottom:2px;${nameStyle}">${x.n}</b>
                 ${rarHtml}
                 <button class="btn" style="font-size:11px;background:var(--green)" onclick="giftOpen('${x.inst}')">🎁 Подарить</button>
                 <button class="btn" style="margin-top:5px;font-size:11px;background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button>
+                ${isMergeReady?`<button class="btn merge-btn" style="margin-top:5px;" onclick="openMergeModal()">⚗️ Слияние!</button>`:''}
                 <button class="btn" style="margin-top:5px;font-size:11px;background:${isPinned2?'var(--secondary)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isPinned2?'📌 Снять':'📌 Закрепить'}</button>
             </div>`;
         }).join('') : `<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:30px;">${searchVal?'Ничего не найдено 🔍':'Склад пуст'}</div>`;
+
+        const mergeableCount = getMergeable(upd).length;
+        const mergeBannerHtml = mergeableCount > 0 ? `
+            <div style="grid-column:1/-1;background:linear-gradient(135deg,#120d2e,#1a0e3a);border:1.5px solid rgba(162,155,254,0.45);border-radius:18px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:5px;">
+                <div>
+                    <div style="font-weight:bold;color:#a29bfe;font-size:14px;">⚗️ Доступно слияние!</div>
+                    <div style="font-size:12px;color:var(--secondary);margin-top:2px;">${mergeableCount} групп готово к объединению</div>
+                </div>
+                <button class="btn merge-btn" style="width:auto;padding:10px 16px;" onclick="openMergeModal()">⚗️ Слить</button>
+            </div>` : '';
 
         document.getElementById('inv').innerHTML = `
             <div class="search-filter-bar">
                 <input type="text" id="inv-search" placeholder="🔍 Поиск в инвентаре..." oninput="renderInv()" value="${searchVal}">
                 <span style="color:var(--secondary);font-size:12px;white-space:nowrap;align-self:center;">${upd.length} пред.</span>
             </div>
+            ${mergeBannerHtml}
             ${cardsHtml}
         `;
     };
@@ -934,6 +987,85 @@
     const NFT_SOCK={id:999,n:"Носок",i:"🧦",img:"https://em-content.zobj.net/source/apple/391/socks_1f9e6.png",nft:true,price:5000};
     const NFT_LIZARD={id:997,n:"Ящерица",i:"🦎",img:"https://em-content.zobj.net/source/apple/391/lizard_1f98e.png",nft:true,price:7000};
     // NFT_23FEB deprecated - using NFT_BEER and NFT_SOCK separately
+
+    // ===== RARITY SYSTEM =====
+    const RARITY_LEVELS = [
+        {id:0, label:"Обычный",     cls:"rarity-common",    cardCls:"",              icon:"⬜"},
+        {id:1, label:"Редкий",      cls:"rarity-rare",      cardCls:"card-rare",     icon:"🔵"},
+        {id:2, label:"Эпический",   cls:"rarity-epic",      cardCls:"card-epic",     icon:"🟣"},
+        {id:3, label:"Легендарный", cls:"rarity-legendary", cardCls:"card-legendary",icon:"🟡"},
+        {id:4, label:"NFT",         cls:"rarity-nft",       cardCls:"nft-card",      icon:"✦"},
+    ];
+    function getRarityLevel(item) { if(item.nft) return 4; return item.rarity||0; }
+    function getRarityObj(item) { return RARITY_LEVELS[getRarityLevel(item)]||RARITY_LEVELS[0]; }
+
+    async function getNextNftSerial() {
+        const r=ref(db,"nft_counter"),snap=await get(r),next=(snap.val()||1000)+1;
+        await set(r,next); return next;
+    }
+
+    function getMergeable(inv) {
+        const groups={};
+        inv.forEach(item=>{
+            if(!item.id) return;
+            const rarity=getRarityLevel(item);
+            if(rarity>=4) return;
+            const key=`${item.id}_${rarity}`;
+            if(!groups[key]) groups[key]=[];
+            groups[key].push(item);
+        });
+        return Object.entries(groups).filter(([,items])=>items.length>=3).map(([key,items])=>({key,items,count:items.length}));
+    }
+
+    window.openMergeModal = async () => {
+        const s=await get(ref(db,"users/"+user.id)),d=s.val(),inv=d.cloudInv||[];
+        const groups=getMergeable(inv);
+        if(!groups.length){showToast("Нет предметов для слияния! Нужно 3 одинаковых.","var(--secondary)");return;}
+        const html=groups.map(g=>{
+            const item=g.items[0],cat=catalog.find(c=>c.id==item.id);
+            const img=item.img||(cat&&cat.img),emoji=item.i||(cat&&cat.i)||"🎁";
+            const currentRar=getRarityObj(item),nextRar=RARITY_LEVELS[Math.min(getRarityLevel(item)+1,4)];
+            const sets=Math.floor(g.count/3);
+            return `<div style="background:#120d2e;border:1.5px solid rgba(162,155,254,0.35);border-radius:18px;padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:14px;">
+                <div style="width:60px;height:60px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.05);border-radius:14px;">
+                    ${img?`<img src="${img}" style="width:50px;height:50px;object-fit:contain;">`:`<span style="font-size:34px;">${emoji}</span>`}
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:bold;font-size:13px;margin-bottom:3px;">${item.n}</div>
+                    <div style="font-size:11px;margin-bottom:6px;"><span class="${currentRar.cls}">${currentRar.icon} ${currentRar.label}</span><span style="color:#a29bfe;margin:0 5px;">→</span><span class="${nextRar.cls}">${nextRar.icon} ${nextRar.label}</span></div>
+                    <div style="font-size:11px;color:var(--secondary);">У тебя: ${g.count} шт. · Можно: ${sets}×</div>
+                </div>
+                <button class="btn merge-btn" style="width:auto;padding:9px 12px;font-size:12px;flex-shrink:0;" onclick="doMerge(${item.id},${getRarityLevel(item)})">⚗️ Слить 3</button>
+            </div>`;
+        }).join("");
+        document.getElementById("modal-content").innerHTML=`
+            <h3 style="color:#a29bfe;margin-bottom:4px;">⚗️ Объединение подарков</h3>
+            <p style="color:var(--secondary);font-size:12px;margin:0 0 14px;">Объедини 3 одинаковых → получи более редкий!</p>
+            <div style="background:#0d0a1a;border-radius:14px;padding:10px;margin-bottom:14px;font-size:11px;color:var(--secondary);">⬜ Обычный → 🔵 Редкий → 🟣 Эпический → 🟡 Легендарный → ✦ NFT</div>
+            ${html}
+            <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);margin-top:5px;" onclick="closeModal()">Закрыть</button>`;
+        openModal();
+    };
+
+    window.doMerge = async (itemId, currentRarity) => {
+        const r=ref(db,"users/"+user.id),s=await get(r),d=s.val();
+        let inv=d.cloudInv||[];
+        const matching=inv.filter(x=>x.id==itemId&&getRarityLevel(x)===currentRarity);
+        if(matching.length<3) return showToast("Нужно минимум 3 одинаковых!","var(--err)");
+        const toRemove=matching.slice(0,3).map(x=>x.inst);
+        inv=inv.filter(x=>!toRemove.includes(x.inst));
+        const baseItem={...matching[0]},newRarity=Math.min(currentRarity+1,4);
+        const rarObj=RARITY_LEVELS[newRarity],newSerial=await getNextNftSerial();
+        const isNewNft=newRarity>=4;
+        const upgradedItem={...baseItem,rarity:newRarity,nftSerial:newSerial,inst:Date.now(),seen:true,from:"⚗️ Слияние"};
+        if(isNewNft){upgradedItem.nft=true;delete upgradedItem.rarity;}
+        inv.push(upgradedItem);
+        await update(r,{cloudInv:inv});
+        spawnConfetti(window.innerWidth/2,window.innerHeight/2,60);
+        flyEmoji(rarObj.icon,window.innerWidth/2,window.innerHeight/2);
+        showToast(`${rarObj.icon} Слияние успешно! Получен ${rarObj.label}!`,"#a29bfe");
+        closeModal(); renderInv(); openMergeModal();
+    };
     const NFT_START=new Date('2026-02-22T21:00:00Z').getTime();
     const NFT_END=new Date('2026-02-23T21:00:00Z').getTime();
     // Ящерица — 24 часа с 18 февраля 2026
@@ -1049,10 +1181,11 @@
         if((d.cloudInv||[]).some(x=>x.id===997)) return showToast("Ящерица уже есть! 🦎",'var(--orange)');
         if((d.balance||0)<7000) return showToast("Нужно 7 000 💰",'var(--err)');
         const inv=d.cloudInv||[];
-        inv.push({...NFT_LIZARD, inst:Date.now(), seen:true});
+        const lizSerial=await getNextNftSerial();
+        inv.push({...NFT_LIZARD, inst:Date.now(), seen:true, nftSerial:lizSerial});
         await update(r,{balance:d.balance-7000, cloudInv:inv});
         if(e){spawnConfetti(e.clientX,e.clientY,45);flyEmoji('🦎',e.clientX,e.clientY);}
-        flashBalance(); showToast("🦎 NFT Ящерица в коллекции!",'#4dff91');
+        flashBalance(); showToast(`🦎 NFT Ящерица №${lizSerial} в коллекции!`,'#4dff91');
     };
 
     window.buyNft = async (e) => {
@@ -1060,11 +1193,12 @@
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
         if(d.balance<15000) return showToast("Нет монет! Нужно 15000💰 (Пиво 10к + Носок 5к)",'var(--err)');
         const inv=d.cloudInv||[];
-        inv.push({...NFT_BEER,inst:Date.now(),seen:true});
-        inv.push({...NFT_SOCK,inst:Date.now()+1,seen:true});
+        const beerSerial=await getNextNftSerial(),sockSerial=await getNextNftSerial();
+        inv.push({...NFT_BEER,inst:Date.now(),seen:true,nftSerial:beerSerial});
+        inv.push({...NFT_SOCK,inst:Date.now()+1,seen:true,nftSerial:sockSerial});
         await update(r,{balance:d.balance-15000,cloudInv:inv});
         if(e){spawnConfetti(e.clientX,e.clientY,35);flyEmoji('🍺',e.clientX,e.clientY);}
-        flashBalance(); showToast("🍺🧦 NFT куплены! С праздником!",'gold');
+        flashBalance(); showToast(`🍺 №${beerSerial} 🧦 №${sockSerial} NFT куплены! С праздником!`,'gold');
     };
 
     window.buy = async (id, e) => {
@@ -1072,10 +1206,11 @@
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
         if(d.balance>=p){
             const inv=d.cloudInv||[];
-            inv.push({...itm,inst:Date.now(),seen:true});
+            const serial=await getNextNftSerial();
+            inv.push({...itm,inst:Date.now(),seen:true,nftSerial:serial});
             await update(r,{balance:d.balance-p,cloudInv:inv});
             if(e) flyEmoji(itm.i,e.clientX,e.clientY);
-            flashBalance(); showToast("Куплено! "+itm.i,'var(--green)');
+            flashBalance(); showToast("Куплено! "+itm.i+" №"+serial,'var(--green)');
         } else showToast("Нет монет!",'var(--err)');
     };
     let marketData = {}, marketFilter = {q:'', sort:'default'};
@@ -1353,19 +1488,15 @@
         const frs = d.friends || {};
         const isPinned = (d.pinnedInsts||[]).some(id => String(id) == String(inst));
 
-        const rarityMap = [
-            {max:19, label:'Обычный', color:'#7f91a4', stars:'⭐'},
-            {max:20, label:'Эпический', color:'#a29bfe', stars:'⭐⭐⭐'},
-            {max:99, label:'Обычный', color:'#7f91a4', stars:'⭐'}
-        ];
-        const rar = rarityMap.find(r => (x.id||0) <= r.max) || rarityMap[0];
+        const rarObj2 = getRarityObj(x);
+        const rarLevel2 = getRarityLevel(x);
 
         const price = x.nft ? 5000 : getPrice(x.id||0);
-        const origin = x.from ? (x.from === 'PROMO' ? '🎟️ Промокод' : x.from === 'ADMIN' ? '🛠️ Выдан админом' : x.from === 'RESET' ? '🔄 Сброс' : '🎁 Подарено: ' + x.from) : '🛒 Куплено в магазине';
+        const origin = x.from ? (x.from === 'PROMO' ? '🎟️ Промокод' : x.from === 'ADMIN' ? '🛠️ Выдан админом' : x.from === 'RESET' ? '🔄 Сброс' : x.from === '⚗️ Слияние' ? '⚗️ Получен слиянием' : '🎁 Подарено: ' + x.from) : '🛒 Куплено в магазине';
 
         const rarLabel = x.nft
             ? `<span class="rarity-nft">✦ NFT — Легендарный</span>`
-            : `<span style="display:inline-block;background:rgba(255,255,255,0.06);border:1px solid ${rar.color}33;color:${rar.color};border-radius:20px;padding:3px 12px;font-size:12px;font-weight:bold;">${rar.stars} ${rar.label}</span>`;
+            : `<span style="display:inline-block;background:rgba(255,255,255,0.06);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:bold;" class="${rarObj2.cls}">${rarObj2.icon} ${rarObj2.label}</span>`;
 
         document.getElementById('modal-content').innerHTML = `
             <div style="padding:5px 0;">
@@ -1394,7 +1525,11 @@
                     </div>
                     <div style="background:#0a1520;border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
                         <div style="font-size:10px;color:var(--secondary);margin-bottom:4px;">РЕДКОСТЬ</div>
-                        <div style="font-size:12px;font-weight:bold;">${x.nft ? `<span class="rarity-nft">NFT</span>` : `<span style="color:${rar.color}">${rar.label}</span>`}</div>
+                        <div style="font-size:12px;font-weight:bold;"><span class="${rarObj2.cls}">${rarObj2.icon} ${rarObj2.label}</span></div>
+                    </div>
+                    <div style="background:#0a1520;border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,0.06);grid-column:1/-1;">
+                        <div style="font-size:10px;color:var(--secondary);margin-bottom:4px;">СЕРИЙНЫЙ НОМЕР</div>
+                        <div style="font-size:13px;font-weight:bold;font-family:monospace;color:${x.nft?'gold':'var(--accent)'};">${x.nftSerial ? '#' + x.nftSerial : '—'}</div>
                     </div>
                 </div>
 
