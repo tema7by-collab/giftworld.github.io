@@ -176,6 +176,7 @@
         .confetti-piece { position: fixed; width: 9px; height: 9px; pointer-events: none; z-index: 9999; border-radius: 2px; animation: confettiFall linear forwards; }
         .balance-flash { animation: balanceFlash 0.65s cubic-bezier(0.34,1.56,0.64,1); }
         .gift-img { width:74px; height:74px; object-fit:contain; display:block; margin:0 auto 8px; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4)); flex-shrink:0; }
+        .gift-img-pony { width:110px !important; height:110px !important; margin-top:-10px !important; }
         .card:hover .gift-img { transform:scale(1.18) translateY(-5px) rotate(3deg); }
         .gift-img-sm { width:46px; height:46px; object-fit:contain; display:block; margin:0 auto 4px; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3)); flex-shrink:0; }
         .card-inner { display:flex; flex-direction:column; align-items:center; width:100%; }
@@ -535,7 +536,8 @@
 
     // Helper: render gift image - lookup catalog by id if img missing
     function giftImg(x, size='normal') {
-        const cls = size === 'sm' ? 'gift-img-sm' : 'gift-img';
+        const isPony = (x && x.id == 20);
+        const cls = size === 'sm' ? 'gift-img-sm' : (isPony ? 'gift-img gift-img-pony' : 'gift-img');
         const fs = size === 'sm' ? '30' : '46';
         // Enrich from catalog if img not stored on item
         const cat = catalog.find(c => c.id == x.id);
@@ -801,7 +803,7 @@
                 ${rarHtml}
                 <button class="btn" style="font-size:11px;background:var(--green)" onclick="giftOpen('${x.inst}')">🎁 Подарить</button>
                 <button class="btn" style="margin-top:5px;font-size:11px;background:var(--accent)" onclick="toMarket('${x.inst}')">⚖️ Рынок</button>
-                <button class="btn" style="margin-top:5px;font-size:11px;background:${isPinned2?'var(--secondary)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isPinned2?'📌 Снять с витрины':'📌 На витрину'}</button>
+                <button class="btn" style="margin-top:5px;font-size:11px;background:${isPinned2?'var(--secondary)':'var(--orange)'}" onclick="togglePin('${x.inst}')">${isPinned2?'📌 Снять':'📌 Закрепить'}</button>
             </div>`;
         }).join('') : `<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:30px;">${searchVal?'Ничего не найдено 🔍':'Склад пуст'}</div>`;
 
@@ -1242,7 +1244,7 @@
                 <!-- Actions -->
                 <div style="display:flex;flex-direction:column;gap:8px;">
                     <button class="btn" style="background:${isPinned?'var(--secondary)':'var(--orange)'};" onclick="togglePin('${inst}');closeModal()">
-                        ${isPinned ? '📌 Снять с витрины' : '📌 Закрепить на витрине'}
+                        ${isPinned ? '📌 Снять' : '📌 Закрепить'}
                     </button>
                     <button class="btn" style="background:var(--accent);" onclick="toMarket('${inst}');closeModal()">⚖️ Выставить на рынок</button>
                     <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);border:1px solid rgba(255,255,255,0.08);" onclick="closeModal()">Закрыть</button>
