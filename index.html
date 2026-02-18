@@ -76,8 +76,6 @@
         .price-up { color: var(--err); font-size: 12px; }
         .price-down { color: var(--green); font-size: 12px; }
         .tg-btn { background: var(--tg); margin-bottom: 8px; }
-
-        /* ===== ADMIN PANEL ===== */
         .adm-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
         .adm-tab { flex-shrink: 0; background: #1a2636; border: 1px solid rgba(255,255,255,0.07); color: var(--secondary); border-radius: 14px; padding: 8px 16px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .adm-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
@@ -150,8 +148,6 @@
         .filter-btn:hover { background: #1a2636; color: white; }
         .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 4px 12px rgba(36,129,204,0.35); }
 
-        /* ===== ANIMATIONS ===== */
-
         @keyframes rainbow { 0%{color:#ff6b6b} 16%{color:#ffd93d} 33%{color:#6bcb77} 50%{color:#4d96ff} 66%{color:#c77dff} 83%{color:#ff6bcd} 100%{color:#ff6b6b} }
         .rarity-nft { animation: rainbow 2s linear infinite; font-weight:bold; }
         .pin-badge { position:absolute;top:4px;right:4px;font-size:14px;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7)); }
@@ -176,13 +172,13 @@
         .confetti-piece { position: fixed; width: 9px; height: 9px; pointer-events: none; z-index: 9999; border-radius: 2px; animation: confettiFall linear forwards; }
         .balance-flash { animation: balanceFlash 0.65s cubic-bezier(0.34,1.56,0.64,1); }
         .gift-img { width:74px; height:74px; object-fit:contain; display:block; margin:0 auto 8px; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4)); flex-shrink:0; }
-        .gift-img-pony { width:100px !important; height:100px !important; margin-top:-22px !important; margin-bottom:-14px !important; }
+        .gift-img-wrap { width:100%; height:96px; display:flex; align-items:center; justify-content:center; margin-bottom:6px; flex-shrink:0; overflow:hidden; }
+        .gift-img-wrap .gift-img { margin:0; width:74px; height:74px; }
+        .gift-img-wrap .gift-img-pony { width:90px; height:90px; }
         .card:hover .gift-img { transform:scale(1.18) translateY(-5px) rotate(3deg); }
         .gift-img-sm { width:46px; height:46px; object-fit:contain; display:block; margin:0 auto 4px; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3)); flex-shrink:0; }
         .card-inner { display:flex; flex-direction:column; align-items:center; width:100%; }
         #shop .card:nth-child(1){animation-delay:.04s} #shop .card:nth-child(2){animation-delay:.08s} #shop .card:nth-child(3){animation-delay:.12s} #shop .card:nth-child(4){animation-delay:.16s} #shop .card:nth-child(5){animation-delay:.2s} #shop .card:nth-child(6){animation-delay:.24s} #shop .card:nth-child(n+7){animation-delay:.28s}
-
-        /* ===== TG PROFILE ===== */
         #profile { display:none; flex-direction:column; padding:0; padding-bottom:120px; }
         #profile.active { display:flex; }
         .tg-profile { display:flex; flex-direction:column; width:100%; }
@@ -275,6 +271,7 @@
     </style>
 </head>
 <body>
+
 
 <!-- Toast notifications container -->
 <div id="toast-container" style="position:fixed;bottom:110px;left:50%;transform:translateX(-50%);z-index:5000;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;width:92%;max-width:400px;"></div>
@@ -534,15 +531,19 @@
         {id:30,n:"Галактика",i:"🌌", img:"https://em-content.zobj.net/source/apple/391/milky-way_1f30c.png"}
     ];
 
-    // Helper: render gift image - lookup catalog by id if img missing
-    function giftImg(x, size='normal') {
+        function giftImg(x, size='normal') {
         const isPony = (x && x.id == 20);
-        const cls = size === 'sm' ? 'gift-img-sm' : (isPony ? 'gift-img gift-img-pony' : 'gift-img');
+        const cls = size === 'sm' ? 'gift-img-sm' : 'gift-img';
         const fs = size === 'sm' ? '30' : '46';
-        // Enrich from catalog if img not stored on item
         const cat = catalog.find(c => c.id == x.id);
         const img = (x && x.img) || (cat && cat.img);
         const emoji = (x && x.i) || (cat && cat.i) || '🎁';
+        if(size !== 'sm') {
+                const inner = img
+                ? `<img src="${img}" class="${cls}${isPony?' gift-img-pony':''}" alt="${(x&&x.n)||''}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${emoji}',style:'font-size:${fs}px;display:block;text-align:center;'}))">`
+                : `<span style="font-size:${fs}px;display:block;text-align:center;">${emoji}</span>`;
+            return `<div class="gift-img-wrap">${inner}</div>`;
+        }
         if(img) return `<img src="${img}" class="${cls}" alt="${(x&&x.n)||''}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${emoji}',style:'font-size:${fs}px;display:block;text-align:center;margin-bottom:8px;'}))">`;
         return `<span style="font-size:${fs}px;display:block;text-align:center;margin-bottom:8px;">${emoji}</span>`;
     }
@@ -552,8 +553,6 @@
 
     async function getIP() { try { const r = await fetch('https://api.ipify.org?format=json'); return (await r.json()).ip; } catch(e) { return "1.1.1.1"; } }
     function getPrice(id, ts=0) { const now = Date.now()+ts; const val = Math.abs(Math.sin(id*777 + Math.floor(now/900000)*888)); return Math.floor(val*1532+67); }
-
-    // ===== ANIMATION HELPERS =====
     function flyEmoji(emoji, x, y) {
         const el = document.createElement('div'); el.className='fly-emoji'; el.innerText=emoji;
         el.style.left=(x-18)+'px'; el.style.top=(y-18)+'px';
@@ -577,8 +576,6 @@
         el.classList.remove('balance-flash'); void el.offsetWidth; el.classList.add('balance-flash');
         setTimeout(()=>el.classList.remove('balance-flash'),700);
     }
-
-    // ===== BEAUTIFUL NOTIFICATIONS =====
     window.showToast = (msg, color='var(--accent)', icon='') => {
         const container = document.getElementById('toast-container');
         const el = document.createElement('div');
@@ -637,8 +634,6 @@
         ov.style.display = 'flex';
         requestAnimationFrame(() => ov.style.background = 'rgba(0,0,0,0.88)');
     }
-
-    // ===== AUTH HELPERS =====
     window.switchAuthTab = (tab) => {
         const isLogin = tab === 'login';
         document.getElementById('form-login').classList.toggle('active', isLogin);
@@ -667,8 +662,6 @@
             st.innerText = s.exists() ? '❌' : '✅';
         }, 500);
     };
-
-    // ===== AUTH =====
     window.auth = async (type) => {
         if(type==='login') {
             const u=document.getElementById('l-user').value.trim().toLowerCase();
@@ -689,7 +682,7 @@
             if(s.exists()){ errEl.innerText='❌ Этот ник уже занят'; return; }
             const ipsS=await get(ref(db,'ips/'+ipKey));
             if(ipsS.exists()&&Object.keys(ipsS.val()).length>=3){ errEl.innerText='❌ С этого IP уже 3 аккаунта'; return; }
-            await set(r,{username:u,password:p,balance:1000,cloudInv:[],pinned:[],pic:"",bio:"",ip});
+            await set(r,{username:u,password:p,balance:1000,cloudInv:[],pinnedInsts:[],pic:"",bio:"",ip});
             await update(ref(db,`ips/${ipKey}`),{[u]:true});
             spawnConfetti(window.innerWidth/2, window.innerHeight/2, 30);
             loginOk(u,u);
@@ -722,7 +715,7 @@
         renderShop(); listenMarket(); giveNftToCkovoroda();
     }
 
-    // ===== PROMO CODES (user side) =====
+
     window.usePromo = async () => {
         const code = document.getElementById('promo-input')?.value?.trim().toUpperCase();
         if(!code) return showToast("Введи промокод!",'var(--err)');
@@ -749,22 +742,18 @@
         showToast(`🎉 Промокод активирован! +${promo.reward||0}💰`,'var(--green)');
         closeModal();
     };
-
-    // ===== INV & PIN =====
     window.togglePin = async (inst) => {
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
         const cloudInv=d.cloudInv||[];
-        // Clean pinned: remove entries that no longer exist in cloudInv
-        let pinned=(d.pinned||[]).filter(p=>cloudInv.some(x=>String(x.inst)==String(p.inst)));
-        const isP=pinned.some(x=>String(x.inst)==String(inst));
-        if(isP){pinned=pinned.filter(x=>String(x.inst)!=String(inst));showToast("Снято","var(--secondary)");}
+        let pinnedInsts=(d.pinnedInsts||[]).filter(id=>cloudInv.some(x=>String(x.inst)==String(id)));
+        const isP=pinnedInsts.some(id=>String(id)==String(inst));
+        if(isP){pinnedInsts=pinnedInsts.filter(id=>String(id)!=String(inst));showToast("Снято","var(--secondary)");}
         else{
-            if(pinned.length>=5)return showToast("Макс. 5 закреплено!",'var(--err)');
-            const item=cloudInv.find(x=>String(x.inst)==String(inst));
-            if(!item)return showToast("Предмет не найден",'var(--err)');
-            pinned.push(item);showToast("📌 Закреплено!",'var(--orange)');
+            if(pinnedInsts.length>=5)return showToast("Макс. 5 закреплено!",'var(--err)');
+            if(!cloudInv.find(x=>String(x.inst)==String(inst)))return showToast("Предмет не найден",'var(--err)');
+            pinnedInsts.push(String(inst));showToast("📌 Закреплено!",'var(--orange)');
         }
-        await update(r,{pinned});
+        await update(r,{pinnedInsts});
         const fresh=await get(r); if(fresh.exists()) { renderMyProfile(fresh.val()); renderInv(); }
     };
 
@@ -776,9 +765,7 @@
         const searchVal = document.getElementById('inv-search')?.value?.toLowerCase() || '';
         const filtered = searchVal ? upd.filter(x=>x.n.toLowerCase().includes(searchVal)) : upd;
         
-        const pinned2 = d.pinned || [];
-        const pinnedInsts2 = new Set(pinned2.map(p=>String(p.inst)));
-        // Закреплённые сверху
+        const pinnedInsts2 = new Set((d.pinnedInsts||[]).map(String));
         const sortedFiltered = [
             ...filtered.filter(x => pinnedInsts2.has(String(x.inst))),
             ...filtered.filter(x => !pinnedInsts2.has(String(x.inst)))
@@ -823,7 +810,7 @@
         `;
     };
 
-    // ===== SHOP =====
+
     const NFT_BEER={id:998,n:"Кружка Пива",i:"🍺",img:"https://em-content.zobj.net/source/apple/391/beer-mug_1f37a.png",nft:true,price:10000};
     const NFT_SOCK={id:999,n:"Носок",i:"🧦",img:"https://em-content.zobj.net/source/apple/391/socks_1f9e6.png",nft:true,price:5000};
     // NFT_23FEB deprecated - using NFT_BEER and NFT_SOCK separately
@@ -927,8 +914,6 @@
             flashBalance(); showToast("Куплено! "+itm.i,'var(--green)');
         } else showToast("Нет монет!",'var(--err)');
     };
-
-    // ===== MARKET =====
     let marketData = {}, marketFilter = {q:'', sort:'default'};
     window.filterMarket = (q) => { marketFilter.q = q.toLowerCase(); renderMarketCards(); };
     window.sortMarket = (type, btn) => {
@@ -1006,7 +991,7 @@
         if(!itm) return showToast("Не найден!",'var(--err)');
         const cat=catalog.find(c=>c.id==itm.id);
         const enriched={...itm, img:(itm.img)||(cat&&cat.img)||null, i:(itm.i)||(cat&&cat.i)||'🎁'};
-        await update(r,{cloudInv:d.cloudInv.filter(x=>x.inst!=inst),pinned:(d.pinned||[]).filter(x=>x.inst!=inst)});
+        await update(r,{cloudInv:d.cloudInv.filter(x=>x.inst!=inst),pinnedInsts:(d.pinnedInsts||[]).filter(id=>String(id)!=String(inst))});
         push(ref(db,'market/'),{...enriched,mP:price,sI:user.id,sN:user.name});
         closeModal(); showToast("Выставлено на рынок! ⚖️",'var(--green)'); renderInv();
     };
@@ -1027,8 +1012,6 @@
         const r=ref(db,'users/'+user.id),s=await get(r),inv=s.val().cloudInv||[];
         inv.push({...itm,inst:Date.now(),seen:true});await update(r,{cloudInv:inv});showToast("Снято!");
     };
-
-    // ===== FRIENDS =====
     window.searchFriend = async () => {
         const t=document.getElementById('friend-search').value.trim().toLowerCase();
         if(!t) return showToast("Введи ник!",'var(--err)');
@@ -1101,7 +1084,7 @@
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
         const inv=d.cloudInv||[],itm=inv.find(x=>x.inst==inst);
         if(!itm) return showToast("Не найден!",'var(--err)');
-        await update(r,{cloudInv:inv.filter(x=>x.inst!=inst),pinned:(d.pinned||[]).filter(x=>x.inst!=inst)});
+        await update(r,{cloudInv:inv.filter(x=>x.inst!=inst),pinnedInsts:(d.pinnedInsts||[]).filter(id=>String(id)!=String(inst))});
         const frS=await get(ref(db,'users/'+fid)),frInv=frS.val().cloudInv||[];
         frInv.push({...itm,from:user.name,seen:false,inst:Date.now()});
         await update(ref(db,'users/'+fid),{cloudInv:frInv});
@@ -1109,26 +1092,22 @@
         flyEmoji('🎁',window.innerWidth/2,window.innerHeight/2);
         showToast("Подарок отправлен! 🎁",'var(--green)');renderInv();
     };
-
-    // ===== PROFILE =====
     function renderMyProfile(d) {
         const inv = d.cloudInv || [];
         const friends = d.friends || {};
         const friendCount = Object.keys(friends).length;
 
-        const pinned = d.pinned || [];
-        const pinnedInsts = new Set(pinned.map(p=>p.inst));
-        // Pinned first, then the rest
+        const pinnedInsts = new Set((d.pinnedInsts||[]).map(String));
         const sortedInv = [
-            ...inv.filter(x => pinnedInsts.has(x.inst)),
-            ...inv.filter(x => !pinnedInsts.has(x.inst))
+            ...inv.filter(x => pinnedInsts.has(String(x.inst))),
+            ...inv.filter(x => !pinnedInsts.has(String(x.inst)))
         ];
 
         const makeGiftCell = (x) => {
             const cat = catalog.find(c => c.id == x.id);
             const img = x.img || (cat && cat.img);
             const emoji = x.i || (cat && cat.i) || '🎁';
-            const isPin = pinnedInsts.has(x.inst);
+            const isPin = pinnedInsts.has(String(x.inst));
             const isNFT = !!x.nft;
             return `<div class="tg-gift-cell${isNFT?' tg-gift-nft':''}${isPin?' tg-gift-pinned':''}" onclick="openGiftDetail('${x.inst}')" style="position:relative;">
                 ${isPin ? `<div style="position:absolute;top:4px;right:6px;font-size:13px;z-index:2;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));">📌</div>` : ''}
@@ -1186,22 +1165,23 @@
             <div style="padding:0 15px 15px;">
                 <a href="https://dalink.to/gifworld" target="_blank" class="btn" style="background:#1a2636;border:1px solid rgba(255,255,255,0.08);color:var(--secondary);font-size:13px;">💎 Поддержка проекта</a>
             </div>
-        </div>`;
+            <div style="padding:4px 0 20px;text-align:center;">
+                <span style="font-size:9px;color:#131f2c;letter-spacing:0.3px;cursor:default;">спасите пожалуйста они сказали если я не буду писать код то они не будут меня кормить</span>
+            </div>
+        </div>\`;
     }
 
     window.openGiftDetail = async (inst) => {
         const s = await get(ref(db,'users/'+user.id)), d = s.val();
         const inv = d.cloudInv || [];
-        const pin = d.pinned || [];
-        const x = inv.find(i => i.inst == inst);
+        const x = inv.find(i => String(i.inst) == String(inst));
         if (!x) return;
         const cat = catalog.find(c => c.id == x.id);
         const img = x.img || (cat && cat.img);
         const emoji = x.i || (cat && cat.i) || '🎁';
         const frs = d.friends || {};
-        const isPinned = pin.some(p => p.inst == inst);
+        const isPinned = (d.pinnedInsts||[]).some(id => String(id) == String(inst));
 
-        // Rarity based on catalog id
         const rarityMap = [
             {max:19, label:'Обычный', color:'#7f91a4', stars:'⭐'},
             {max:20, label:'Эпический', color:'#a29bfe', stars:'⭐⭐⭐'},
@@ -1209,7 +1189,6 @@
         ];
         const rar = rarityMap.find(r => (x.id||0) <= r.max) || rarityMap[0];
 
-        // Purchase price at the time (approximate)
         const price = x.nft ? 5000 : getPrice(x.id||0);
         const origin = x.from ? (x.from === 'PROMO' ? '🎟️ Промокод' : x.from === 'ADMIN' ? '🛠️ Выдан админом' : x.from === 'RESET' ? '🔄 Сброс' : '🎁 Подарено: ' + x.from) : '🛒 Куплено в магазине';
 
@@ -1294,13 +1273,12 @@
             closeModal();showToast("Сохранено!");
         }
     };
-    // ===== USER PROFILE VIEWER =====
     window.openUserProfile = async (uid) => {
         const s = await get(ref(db,'users/'+uid));
         if (!s.exists()) return showToast('Пользователь не найден','var(--err)');
         const d = s.val();
         const inv = d.cloudInv || [];
-        const pinned = d.pinned || [];
+        const pinned = (d.pinnedInsts||[]);
         const friends = d.friends || {};
 
         const rarityMap = [
@@ -1329,15 +1307,14 @@
             </div>`;
         };
 
-        // Закреплённые идут первыми
-        const pinnedInsts = new Set(pinned.map(p=>String(p.inst)));
+        const pinnedSet = new Set(pinned.map(String));
         const sortedInv = [
-            ...inv.filter(x => pinnedInsts.has(String(x.inst))),
-            ...inv.filter(x => !pinnedInsts.has(String(x.inst)))
+            ...inv.filter(x => pinnedSet.has(String(x.inst))),
+            ...inv.filter(x => !pinnedSet.has(String(x.inst)))
         ];
 
         const allGiftsHtml = sortedInv.length
-            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">${sortedInv.map(x=>giftCard(x, pinnedInsts.has(String(x.inst)))).join('')}</div>`
+            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">${sortedInv.map(x=>giftCard(x, pinnedSet.has(String(x.inst)))).join('')}</div>`
             : `<div style="text-align:center;color:var(--secondary);font-size:13px;padding:24px;">Подарков нет</div>`;
 
         document.getElementById('modal-content').innerHTML = `
@@ -1370,8 +1347,6 @@
     };
 
     window.logout=()=>{localStorage.removeItem('gifts_user');location.reload();};
-
-    // ===== ADMIN =====
     window.admTab = (id, btn) => {
         document.querySelectorAll('.adm-section').forEach(s=>s.classList.remove('active'));
         document.querySelectorAll('.adm-tab').forEach(b=>b.classList.remove('active'));
@@ -1548,7 +1523,7 @@
                 seen: false
             }));
             up[`users/${id}/cloudInv`] = newInv;
-            up[`users/${id}/pinned`] = [];
+            up[`users/${id}/pinnedInsts`] = [];
         }
         await update(ref(db), up);
         showToast(`✅ Готово! Инвентари сброшены и перевыданы всем ${Object.keys(us).length} игрокам`, 'var(--green)');
@@ -1558,7 +1533,7 @@
         const ok=await showConfirm('Очистить витрины','Все закреплённые предметы будут сняты с витрин игроков.','🧹','var(--err)','Очистить');
         if(!ok) return;
         const s=await get(ref(db,'users')),us=s.val();
-        const up={};for(let id in us) up[`users/${id}/pinned`]=[];
+        const up={};for(let id in us) up[`users/${id}/pinnedInsts`]=[];
         await update(ref(db),up);showToast("Витрины очищены!",'var(--err)');
     };
 
@@ -1567,8 +1542,6 @@
         if(!ok) return;
         await remove(ref(db,'market'));showToast("Рынок очищен!",'var(--err)');
     };
-
-    // ===== TABS & INIT =====
     window.tab=(id,b)=>{
         document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
