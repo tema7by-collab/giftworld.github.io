@@ -1289,13 +1289,41 @@
                 const isNFT=!!x.nft;
                 const isLizard=isNFT&&x.id===997;
                 const nftBasePrice=isNFT?(x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)):0;
-                const cardBg=isLizard?'linear-gradient(145deg,#001a08,#0a1f12)':isNFT?'linear-gradient(145deg,#1c1200,#0f1a1f)':'var(--card)';
-                const cardBorder=isLizard?'rgba(77,255,145,0.55)':isNFT?'rgba(255,215,0,0.55)':'rgba(255,255,255,0.06)';
-                const cardShadow=isLizard?'0 0 0 1.5px rgba(77,255,145,0.35),0 6px 24px rgba(77,255,145,0.2)':isNFT?'0 0 0 1.5px rgba(255,215,0,0.35),0 6px 24px rgba(255,215,0,0.2)':'none';
-                const nameStyle=isLizard?'background:linear-gradient(90deg,#00ff88,#4dff91);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;':isNFT?'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;':'';
-                const priceColor=isLizard?'#4dff91':isNFT?'gold':'var(--accent)';
+                const rar=getRarityObj(x);
+                const isRare=!isNFT&&rar.id===1;
+                const isEpic=!isNFT&&rar.id===2;
+                const isLegendary=!isNFT&&rar.id===3;
+                const cardBg=isLizard?'linear-gradient(145deg,#001a08,#0a1f12)'
+                    :isNFT?'linear-gradient(145deg,#1c1200,#0f1a1f)'
+                    :isLegendary?'linear-gradient(145deg,#1a1200,#0e1010)'
+                    :isEpic?'linear-gradient(145deg,#0d0a2e,#1a0e3a)'
+                    :isRare?'linear-gradient(145deg,#0a0d2e,#0c1a30)'
+                    :'var(--card)';
+                const cardBorder=isLizard?'rgba(77,255,145,0.55)'
+                    :isNFT?'rgba(255,215,0,0.55)'
+                    :isLegendary?'rgba(255,215,0,0.5)'
+                    :isEpic?'rgba(162,155,254,0.5)'
+                    :isRare?'rgba(77,180,255,0.45)'
+                    :'rgba(255,255,255,0.06)';
+                const cardShadow=isLizard?'0 0 0 1.5px rgba(77,255,145,0.35),0 6px 24px rgba(77,255,145,0.2)'
+                    :isNFT?'0 0 0 1.5px rgba(255,215,0,0.35),0 6px 24px rgba(255,215,0,0.2)'
+                    :isLegendary?'0 0 0 1px rgba(255,215,0,0.3),0 4px 20px rgba(255,215,0,0.12)'
+                    :isEpic?'0 0 0 1px rgba(162,155,254,0.3),0 4px 20px rgba(162,155,254,0.12)'
+                    :isRare?'0 0 0 1px rgba(77,180,255,0.25),0 4px 16px rgba(77,180,255,0.1)'
+                    :'none';
+                const nameStyle=isLizard?'background:linear-gradient(90deg,#00ff88,#4dff91);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
+                    :isNFT?'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
+                    :isLegendary?'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;background-size:200% auto;animation:legendaryShimmer 2s linear infinite;'
+                    :isEpic?'color:#a29bfe;font-weight:bold;'
+                    :isRare?'color:#4db4ff;font-weight:bold;'
+                    :'';
+                const priceColor=isLizard?'#4dff91':isNFT||isLegendary?'gold':isEpic?'#a29bfe':isRare?'#4db4ff':'var(--accent)';
                 return `<div class="card" style="padding:12px;display:flex;flex-direction:column;align-items:center;background:${cardBg};border:1.5px solid ${cardBorder};box-shadow:${cardShadow};position:relative;overflow:hidden;">
                     ${isNFT?`<div style="position:absolute;inset:0;border-radius:25px;background:linear-gradient(105deg,transparent 25%,${isLizard?'rgba(77,255,145,0.07)':'rgba(255,215,0,0.07)'} 50%,transparent 75%);background-size:200% 100%;animation:nftGoldShimmer 2.5s linear infinite;pointer-events:none;"></div>`:''}
+                    ${isLegendary?`<div style="position:absolute;inset:0;border-radius:25px;background:linear-gradient(105deg,transparent 30%,rgba(255,215,0,0.08) 50%,transparent 70%);background-size:200% 100%;animation:shimmer 2.5s linear infinite;pointer-events:none;"></div>`:''}
+                    ${isEpic?`<div style="position:absolute;top:6px;right:6px;font-size:9px;color:#a29bfe;font-weight:bold;opacity:0.8;">🟣 Эпик</div>`:''}
+                    ${isRare?`<div style="position:absolute;top:6px;right:6px;font-size:9px;color:#4db4ff;font-weight:bold;opacity:0.8;">🔵 Редкий</div>`:''}
+                    ${isLegendary?`<div style="position:absolute;top:6px;right:6px;font-size:9px;font-weight:bold;background:linear-gradient(90deg,#ffd700,#ffb347);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">🟡 Легенд.</div>`:''}
                     ${isNFT?`<div style="position:absolute;top:8px;right:8px;background:${isLizard?'linear-gradient(90deg,#007744,#4dff91)':'linear-gradient(90deg,#b8860b,#ffd700)'};color:#000;font-size:8px;font-weight:900;border-radius:7px;padding:2px 7px;letter-spacing:0.5px;z-index:2;">✦ NFT</div>`:''}
                     <div style="position:relative;z-index:1;">${giftImg(x,"sm")}</div>
                     <b style="display:block;text-align:center;margin-bottom:3px;font-size:12px;${nameStyle}">${x.n}</b>
@@ -1605,7 +1633,7 @@
                     <button class="btn" style="background:${isPinned?'var(--secondary)':'var(--orange)'};" onclick="togglePin('${inst}');closeModal()">
                         ${isPinned ? '📌 Снять' : '📌 Закрепить'}
                     </button>
-                    <button class="btn" style="background:var(--accent);" onclick="toMarket('${inst}');closeModal()">⚖️ Выставить на рынок</button>
+
                     <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);border:1px solid rgba(255,255,255,0.08);" onclick="closeModal()">Закрыть</button>
                 </div>
             </div>`;
@@ -1733,25 +1761,51 @@
             const isNFT = !!x.nft;
             const isLizard = isNFT && x.id === 997;
             const nftPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)) : 0;
+            const rarObj = getRarityObj(x);
+            const isRare = !isNFT && rarObj.id===1;
+            const isEpic = !isNFT && rarObj.id===2;
+            const isLeg  = !isNFT && rarObj.id===3;
             const bg = isLizard ? 'linear-gradient(145deg,#001a08,#0a1f12,#001208)'
                       : isNFT   ? 'linear-gradient(145deg,#1c1200,#0f1a1f,#1a1100)'
+                      : isLeg   ? 'linear-gradient(145deg,#1a1200,#0e1010)'
+                      : isEpic  ? 'linear-gradient(145deg,#0d0a2e,#1a0e3a)'
+                      : isRare  ? 'linear-gradient(145deg,#0a0d2e,#0c1a30)'
                       : '#0a1520';
-            const border = isLizard ? 'rgba(77,255,145,0.5)' : isNFT ? 'rgba(255,215,0,0.5)' : 'rgba(255,255,255,0.06)';
+            const border = isLizard ? 'rgba(77,255,145,0.5)'
+                         : isNFT    ? 'rgba(255,215,0,0.5)'
+                         : isLeg    ? 'rgba(255,215,0,0.45)'
+                         : isEpic   ? 'rgba(162,155,254,0.45)'
+                         : isRare   ? 'rgba(77,180,255,0.4)'
+                         : 'rgba(255,255,255,0.06)';
             const shadow = isLizard ? '0 0 0 1.5px rgba(77,255,145,0.4),0 4px 16px rgba(77,255,145,0.2)'
                           : isNFT   ? '0 0 0 1.5px rgba(255,215,0,0.4),0 4px 16px rgba(255,215,0,0.2)'
+                          : isLeg   ? '0 0 0 1px rgba(255,215,0,0.25),0 3px 14px rgba(255,215,0,0.1)'
+                          : isEpic  ? '0 0 0 1px rgba(162,155,254,0.25),0 3px 14px rgba(162,155,254,0.1)'
+                          : isRare  ? '0 0 0 1px rgba(77,180,255,0.2),0 3px 10px rgba(77,180,255,0.08)'
                           : 'none';
             const imgFilter = isLizard ? 'drop-shadow(0 4px 14px rgba(77,255,145,0.55))'
                              : isNFT   ? 'drop-shadow(0 4px 14px rgba(255,215,0,0.55))'
+                             : isLeg   ? 'drop-shadow(0 3px 10px rgba(255,215,0,0.4))'
+                             : isEpic  ? 'drop-shadow(0 3px 10px rgba(162,155,254,0.4))'
+                             : isRare  ? 'drop-shadow(0 3px 10px rgba(77,180,255,0.35))'
                              : 'drop-shadow(0 3px 10px rgba(0,0,0,0.5))';
             const nameColor = isLizard
                 ? 'background:linear-gradient(90deg,#00ff88,#4dff91,#00cc66);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
                 : isNFT
                 ? 'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
+                : isLeg
+                ? 'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;background-size:200% auto;animation:legendaryShimmer 2s linear infinite;'
+                : isEpic  ? 'color:#a29bfe;font-weight:bold;'
+                : isRare  ? 'color:#4db4ff;font-weight:bold;'
                 : '';
             return `<div style="text-align:center;background:${bg};border-radius:16px;padding:10px 6px 8px;border:1.5px solid ${border};box-shadow:${shadow};position:relative;overflow:hidden;transition:transform 0.2s;">
                 ${isNFT ? `<div style="position:absolute;top:4px;right:4px;background:${isLizard?'linear-gradient(90deg,#007744,#4dff91)':'linear-gradient(90deg,#b8860b,#ffd700)'};color:#000;font-size:7px;font-weight:900;border-radius:5px;padding:2px 5px;letter-spacing:0.5px;z-index:2;">NFT</div>` : ''}
+                ${isLeg  ? `<div style="position:absolute;top:4px;right:4px;font-size:7px;font-weight:900;background:linear-gradient(90deg,#ffd700,#ffb347);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:2;">🟡 Легенд.</div>` : ''}
+                ${isEpic ? `<div style="position:absolute;top:4px;right:4px;font-size:7px;font-weight:900;color:#a29bfe;z-index:2;">🟣 Эпик</div>` : ''}
+                ${isRare ? `<div style="position:absolute;top:4px;right:4px;font-size:7px;font-weight:900;color:#4db4ff;z-index:2;">🔵 Редкий</div>` : ''}
                 ${isPinCard ? `<div style="position:absolute;top:4px;left:4px;font-size:11px;z-index:2;">📌</div>` : ''}
                 ${isNFT ? `<div style="position:absolute;inset:0;border-radius:16px;background:linear-gradient(105deg,transparent 25%,${isLizard?'rgba(77,255,145,0.08)':'rgba(255,215,0,0.08)'} 50%,transparent 75%);background-size:200% 100%;animation:nftGoldShimmer 2.5s linear infinite;pointer-events:none;"></div>` : ''}
+                ${isLeg  ? `<div style="position:absolute;inset:0;border-radius:16px;background:linear-gradient(105deg,transparent 30%,rgba(255,215,0,0.07) 50%,transparent 70%);background-size:200% 100%;animation:shimmer 2.5s linear infinite;pointer-events:none;"></div>` : ''}
                 <div style="width:56px;height:56px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">
                     ${img ? `<img src="${img}" style="width:52px;height:52px;object-fit:contain;filter:${imgFilter};${isNFT?'animation:nftImgFloat 3s ease-in-out infinite;':''}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:36px;">${emoji}</span>` : `<span style="font-size:36px;">${emoji}</span>`}
                 </div>
