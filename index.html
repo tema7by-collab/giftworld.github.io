@@ -306,6 +306,9 @@
         .tg-gift-inner img { width:58px; height:58px; object-fit:contain; filter:drop-shadow(0 3px 12px rgba(0,0,0,0.45)); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
         .tg-gift-cell:hover .tg-gift-inner img { transform:scale(1.15) translateY(-3px); }
         .tg-gift-name { font-size:10px; color:var(--secondary); text-align:center; padding:0 4px 3px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
+        .tg-gift-name-rare { color:#4db4ff; font-weight:bold; }
+        .tg-gift-name-epic { color:#a29bfe; font-weight:bold; }
+        .tg-gift-name-leg  { background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold; }
 
         /* NFT GOLD */
         .tg-gift-nft {
@@ -1540,59 +1543,33 @@
             const isPin = pinnedInsts.has(String(x.inst));
             const isNFT = !!x.nft;
             const isLizard = isNFT && x.id === 997;
+            const nftClass = isNFT ? (isLizard ? ' tg-gift-nft-lizard' : ' tg-gift-nft') : '';
             const nftPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)) : 0;
             const rarObj = getRarityObj(x);
             const isRare = !isNFT && rarObj.id===1;
             const isEpic = !isNFT && rarObj.id===2;
             const isLeg  = !isNFT && rarObj.id===3;
-            const bg = isLizard ? 'linear-gradient(145deg,#001a08,#0a1f12,#001208)'
-                      : isNFT   ? 'linear-gradient(145deg,#1c1200,#0f1a1f,#1a1100)'
-                      : isLeg   ? 'linear-gradient(145deg,#1a1200,#0e1010)'
-                      : isEpic  ? 'linear-gradient(145deg,#0d0a2e,#1a0e3a)'
-                      : isRare  ? 'linear-gradient(145deg,#0a0d2e,#0c1a30)'
-                      : 'var(--card)';
-            const border = isLizard ? 'rgba(77,255,145,0.5)'
-                         : isNFT    ? 'rgba(255,215,0,0.5)'
-                         : isLeg    ? 'rgba(255,215,0,0.45)'
-                         : isEpic   ? 'rgba(162,155,254,0.45)'
-                         : isRare   ? 'rgba(77,180,255,0.4)'
-                         : 'rgba(255,255,255,0.06)';
-            const shadow = isLizard ? '0 0 0 1.5px rgba(77,255,145,0.4),0 4px 16px rgba(77,255,145,0.2)'
-                          : isNFT   ? '0 0 0 1.5px rgba(255,215,0,0.4),0 4px 16px rgba(255,215,0,0.2)'
-                          : isLeg   ? '0 0 0 1px rgba(255,215,0,0.25),0 3px 14px rgba(255,215,0,0.1)'
-                          : isEpic  ? '0 0 0 1px rgba(162,155,254,0.25),0 3px 14px rgba(162,155,254,0.1)'
-                          : isRare  ? '0 0 0 1px rgba(77,180,255,0.2),0 3px 10px rgba(77,180,255,0.08)'
-                          : 'none';
-            const imgFilter = isLizard ? 'drop-shadow(0 4px 14px rgba(77,255,145,0.55))'
-                             : isNFT   ? 'drop-shadow(0 4px 14px rgba(255,215,0,0.55))'
-                             : isLeg   ? 'drop-shadow(0 3px 10px rgba(255,215,0,0.4))'
-                             : isEpic  ? 'drop-shadow(0 3px 10px rgba(162,155,254,0.4))'
-                             : isRare  ? 'drop-shadow(0 3px 10px rgba(77,180,255,0.35))'
-                             : 'drop-shadow(0 3px 10px rgba(0,0,0,0.5))';
-            const nameColor = isLizard ? 'background:linear-gradient(90deg,#00ff88,#4dff91);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
-                : isNFT ? 'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
-                : isLeg ? 'background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold;'
-                : isEpic ? 'color:#a29bfe;font-weight:bold;'
-                : isRare ? 'color:#4db4ff;font-weight:bold;'
-                : '';
-            return `<div onclick="openGiftDetail('${x.inst}')" style="text-align:center;background:${bg};border-radius:16px;padding:10px 6px 8px;border:1.5px solid ${border};box-shadow:${shadow};position:relative;overflow:hidden;cursor:pointer;">
-                ${isNFT ? `<div style="position:absolute;top:4px;right:4px;background:${isLizard?'linear-gradient(90deg,#007744,#4dff91)':'linear-gradient(90deg,#b8860b,#ffd700)'};color:#000;font-size:7px;font-weight:900;border-radius:5px;padding:2px 5px;z-index:2;">NFT</div>` : ''}
-                ${isLeg  ? `<div style="position:absolute;top:4px;right:4px;font-size:7px;font-weight:900;background:linear-gradient(90deg,#ffd700,#ffb347);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:2;">🟡</div>` : ''}
-                ${isEpic ? `<div style="position:absolute;top:4px;right:4px;font-size:8px;color:#a29bfe;z-index:2;">🟣</div>` : ''}
-                ${isRare ? `<div style="position:absolute;top:4px;right:4px;font-size:8px;color:#4db4ff;z-index:2;">🔵</div>` : ''}
-                ${isPin  ? `<div style="position:absolute;top:4px;left:4px;font-size:11px;z-index:3;">📌</div>` : ''}
-                <div style="width:56px;height:56px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">
-                    ${img ? `<img src="${img}" style="width:52px;height:52px;object-fit:contain;filter:${imgFilter};" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:34px;">${emoji}</span>` : `<span style="font-size:34px;">${emoji}</span>`}
+            const rarBorder = isLeg  ? 'border-color:rgba(255,215,0,0.55);background:linear-gradient(145deg,#1a1200,#0e1010);'
+                            : isEpic ? 'border-color:rgba(162,155,254,0.55);background:linear-gradient(145deg,#0d0a2e,#1a0e3a);'
+                            : isRare ? 'border-color:rgba(77,180,255,0.5);background:linear-gradient(145deg,#0a0d2e,#0c1a30);'
+                            : '';
+            return `<div class="tg-gift-cell${nftClass}${isPin?' tg-gift-pinned':''}" onclick="openGiftDetail('${x.inst}')" style="position:relative;${rarBorder}">
+                ${isNFT ? `<div class="tg-gift-nft-badge">NFT</div>` : ''}
+                ${isLeg  ? `<div style="position:absolute;top:5px;right:5px;font-size:8px;font-weight:900;background:linear-gradient(90deg,#ffd700,#ffb347);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:3;">🟡</div>` : ''}
+                ${isEpic ? `<div style="position:absolute;top:5px;right:5px;font-size:9px;color:#a29bfe;font-weight:bold;z-index:3;">🟣</div>` : ''}
+                ${isRare ? `<div style="position:absolute;top:5px;right:5px;font-size:9px;color:#4db4ff;font-weight:bold;z-index:3;">🔵</div>` : ''}
+                ${isPin  ? `<div style="position:absolute;top:5px;left:5px;font-size:12px;z-index:3;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.8));">📌</div>` : ''}
+                <div class="tg-gift-inner">
+                    ${img ? `<img src="${img}" alt="${x.n}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:34px;">${emoji}</span>` : `<span style="font-size:34px;">${emoji}</span>`}
+                    ${x.from ? `<div class="tg-gift-from">${x.from}</div>` : ''}
                 </div>
-                ${x.from ? `<div style="position:absolute;top:4px;left:4px;font-size:8px;color:var(--orange);background:rgba(0,0,0,0.4);border-radius:6px;padding:1px 4px;z-index:2;">${x.from}</div>` : ''}
-                <div style="font-size:11px;font-weight:bold;margin-bottom:2px;${nameColor}">${x.n}</div>
-                ${isNFT ? `<div style="font-size:8px;color:${isLizard?'rgba(77,255,145,0.75)':'rgba(255,215,0,0.75)'};">${nftPrice.toLocaleString()}💰</div>` : ''}
-                ${isNFT && x.nftSerial ? `<div style="font-size:7px;color:${isLizard?'rgba(77,255,145,0.4)':'rgba(255,215,0,0.4)'};font-family:monospace;">#${x.nftSerial}</div>` : ''}
+                ${isNFT && x.nftSerial ? `<div class="tg-gift-nft-serial">#${x.nftSerial}</div>` : ''}
+                <div class="tg-gift-name${isLeg?' tg-gift-name-leg':isEpic?' tg-gift-name-epic':isRare?' tg-gift-name-rare':''}">${x.n}</div>
+                ${isNFT ? `<div class="tg-gift-nft-price">${nftPrice.toLocaleString()}💰</div>` : ''}
             </div>`;
         };
 
-        const giftsGrid = sortedInv.length
-            ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">${sortedInv.map(makeGiftCell).join('')}</div>`
+        const giftsGrid = sortedInv.length ? sortedInv.map(makeGiftCell).join('')
             : `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--secondary);">
                 <div style="font-size:48px;margin-bottom:12px;">🎁</div>
                 <div style="font-size:14px;">Подарков пока нет</div>
@@ -1629,7 +1606,7 @@
                     <span>🎁 Подарки</span>
                     <span class="tg-gifts-count">${inv.length}</span>
                 </div>
-                <div>${giftsGrid}</div>
+                <div class="tg-gifts-grid">${giftsGrid}</div>
             </div>
             <div style="padding:0 15px 15px;">
                 <a href="https://dalink.to/gifworld" target="_blank" class="btn" style="background:#1a2636;border:1px solid rgba(255,255,255,0.08);color:var(--secondary);font-size:13px;">💎 Поддержка проекта</a>
