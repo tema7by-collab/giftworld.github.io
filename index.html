@@ -335,6 +335,19 @@
 
     .auth-links { width:100%; max-width:360px; display:flex; gap:10px; animation:authSlideIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.18s both; }
     .auth-links a { flex:1; padding:10px; font-size:13px; border-radius:14px; }
+
+        .cosm-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:8px 0; }
+        .cosm-item { background:#0a1520; border:1.5px solid rgba(255,255,255,0.07); border-radius:14px; padding:10px 12px; cursor:pointer; transition:0.18s; display:flex; flex-direction:column; gap:4px; }
+        .cosm-item:hover { border-color:rgba(36,129,204,0.4); }
+        .cosm-item.active-cosm { border-color:var(--accent); background:rgba(36,129,204,0.12); box-shadow:0 0 0 1px rgba(36,129,204,0.3); }
+        .cosm-item.locked { opacity:0.5; cursor:default; }
+        .cosm-preview { font-size:18px; font-weight:bold; }
+        .cosm-name { font-size:12px; color:var(--secondary); }
+        .cosm-price { font-size:11px; color:var(--accent); margin-top:2px; }
+        .cosm-unlock { font-size:10px; color:#a29bfe; margin-top:2px; }
+        .cosm-section-title { font-size:13px; color:var(--secondary); margin:12px 0 4px; font-weight:bold; }
+        .cosm-badge { display:inline-block; font-size:11px; padding:1px 6px; border-radius:8px; margin-left:4px; vertical-align:middle; font-weight:bold; }
+        .cosm-prefix { margin-right:4px; }
 </style>
 
 <div id="auth-screen" class="auth-wrap">
@@ -531,6 +544,53 @@
         {id:30,n:"Галактика",i:"🌌", img:"https://em-content.zobj.net/source/apple/391/milky-way_1f30c.png"}
     ];
 
+    const COSMETICS = [
+        {id:'pfx_star',    type:'prefix', val:'🌟', name:'Звезда',     price:500,  unlock:null},
+        {id:'pfx_fire',    type:'prefix', val:'🔥', name:'Огонь',      price:800,  unlock:null},
+        {id:'pfx_bolt',    type:'prefix', val:'⚡', name:'Молния',     price:800,  unlock:null},
+        {id:'pfx_crown',   type:'prefix', val:'👑', name:'Корона',     price:2000, unlock:null},
+        {id:'pfx_gem',     type:'prefix', val:'💎', name:'Бриллиант',  price:3000, unlock:null},
+        {id:'pfx_rainbow', type:'prefix', val:'🌈', name:'Радуга',     price:1500, unlock:null},
+        {id:'pfx_skull',   type:'prefix', val:'💀', name:'Череп',      price:1200, unlock:null},
+        {id:'pfx_alien',   type:'prefix', val:'👽', name:'Пришелец',   price:1000, unlock:null},
+        {id:'col_blue',    type:'color',  val:'#5dade2', name:'Синий',      price:300,  unlock:null},
+        {id:'col_green',   type:'color',  val:'#2ecc71', name:'Зелёный',    price:300,  unlock:null},
+        {id:'col_purple',  type:'color',  val:'#a29bfe', name:'Фиолетовый', price:500,  unlock:null},
+        {id:'col_orange',  type:'color',  val:'#f39c12', name:'Оранжевый',  price:500,  unlock:null},
+        {id:'col_pink',    type:'color',  val:'#fd79a8', name:'Розовый',    price:700,  unlock:null},
+        {id:'col_gold',    type:'color',  val:'#ffd700', name:'Золотой',    price:2500, unlock:null},
+        {id:'col_red',     type:'color',  val:'#e74c3c', name:'Красный',    price:700,  unlock:null},
+        {id:'bdg_rich',    type:'badge',  val:'💸', name:'Богач',       price:0, unlock:'spent10k',  unlockDesc:'Потрать 10 000 монет'},
+        {id:'bdg_social',  type:'badge',  val:'🤝', name:'Популярный',  price:0, unlock:'friends10', unlockDesc:'Добавь 10 друзей'},
+        {id:'bdg_gifter',  type:'badge',  val:'🎁', name:'Даритель',    price:0, unlock:'gifts10',   unlockDesc:'Подари 10 подарков'},
+        {id:'bdg_og',      type:'badge',  val:'⭐', name:'OG',          price:5000, unlock:null},
+        {id:'bdg_vip',     type:'badge',  val:'💜', name:'VIP',         price:8000, unlock:null},
+    ];
+
+    function buildUsername(d) {
+        const active = d.activeCosmetic || {};
+        const pfx = active.prefix ? COSMETICS.find(c=>c.id===active.prefix) : null;
+        const col = active.color  ? COSMETICS.find(c=>c.id===active.color)  : null;
+        const bdg = active.badge  ? COSMETICS.find(c=>c.id===active.badge)  : null;
+        const prefix = pfx ? `<span class="cosm-prefix">${pfx.val}</span>` : '';
+        const badge  = bdg ? `<span class="cosm-badge" style="background:rgba(255,255,255,0.08);">${bdg.val} ${bdg.name}</span>` : '';
+        const nameStyle = col ? `style="color:${col.val};"` : '';
+        return `${prefix}<span ${nameStyle}>@${d.username}</span>${badge}`;
+    }
+
+    function checkUnlocks(d) {
+        const owned = new Set(d.cosmetics || []);
+        const unlocked = [];
+        const spent = d.totalSpent || 0;
+        const friendCount = Object.keys(d.friends || {}).length;
+        const giftsGiven = d.giftsGiven || 0;
+        if(spent >= 10000 && !owned.has('bdg_rich')) unlocked.push('bdg_rich');
+        if(friendCount >= 10 && !owned.has('bdg_social')) unlocked.push('bdg_social');
+        if(giftsGiven >= 10 && !owned.has('bdg_gifter')) unlocked.push('bdg_gifter');
+        return unlocked;
+    }
+
+
         function giftImg(x, size='normal') {
         const isPony = (x && x.id == 20);
         const cls = size === 'sm' ? 'gift-img-sm' : 'gift-img';
@@ -708,7 +768,7 @@
         if(user.isAdm){document.getElementById('adm-nav').style.display='flex';initAdmin();}
         onValue(ref(db,'users/'+id),s=>{
             const d=s.val(); if(!d) return;
-            document.getElementById('header-name').innerText=d.username;
+            document.getElementById('header-name').innerHTML=buildUsername(d);
             document.getElementById('u-bal').innerText=d.balance;
             renderFriends(d); renderMyProfile(d);
         });
@@ -937,7 +997,7 @@
                 ${giftImg(x,"sm")}
                 <b style="display:block;text-align:center;margin-bottom:2px;">${x.n}</b>
                 <div style="color:var(--accent);font-weight:bold;margin-bottom:2px;">${x.mP}💰</div>
-                <small style="color:var(--accent);margin-bottom:5px;cursor:pointer;text-decoration:underline;" onclick="openUserProfile('${x.sI}')">@${x.sN}${x.sI===user.id?' (вы)':''}</small>
+                <small style="color:var(--accent);margin-bottom:5px;cursor:pointer;text-decoration:underline;" onclick="openUserProfile('${x.sI}')">${buildUsername({username:x.sN,activeCosmetic:x.sCosm||{}})}${x.sI===user.id?' <span style="font-size:10px;color:var(--secondary);">(вы)</span>':''}</small>
                 <button class="btn" style="padding:6px;font-size:11px;${x.sI===user.id?'background:var(--err);':''}" onclick="${x.sI===user.id?`remM('${k}')`:`buyM('${k}',${x.mP},'${x.sI}',event)`}">
                     ${x.sI===user.id?'❌ Снять':'🛒 Купить'}
                 </button></div>`)
@@ -992,7 +1052,9 @@
         const cat=catalog.find(c=>c.id==itm.id);
         const enriched={...itm, img:(itm.img)||(cat&&cat.img)||null, i:(itm.i)||(cat&&cat.i)||'🎁'};
         await update(r,{cloudInv:d.cloudInv.filter(x=>x.inst!=inst),pinnedInsts:(d.pinnedInsts||[]).filter(id=>String(id)!=String(inst))});
-        push(ref(db,'market/'),{...enriched,mP:price,sI:user.id,sN:user.name});
+        const uc=await get(ref(db,'users/'+user.id));
+        const sCosm=(uc.exists()&&uc.val().activeCosmetic)||{};
+        push(ref(db,'market/'),{...enriched,mP:price,sI:user.id,sN:user.name,sCosm});
         closeModal(); showToast("Выставлено на рынок! ⚖️",'var(--green)'); renderInv();
     };
     window.buyM = async (k,p,si,e) => {
@@ -1048,8 +1110,11 @@
         // Load avatars for friends
         const frEntries = Object.entries(frs);
         const frAvatars = {};
+        const frCosmetics = {};
         await Promise.all(frEntries.map(async([id])=>{
-            const us=await get(ref(db,'users/'+id)); frAvatars[id]=us.exists()&&us.val().pic?us.val().pic:'';
+            const us=await get(ref(db,'users/'+id));
+            frAvatars[id]=us.exists()&&us.val().pic?us.val().pic:'';
+            frCosmetics[id]=us.exists()?(us.val().activeCosmetic||{}):{};
         }));
 
         document.getElementById('friends-list').innerHTML=frEntries.map(([id,data])=>
@@ -1058,7 +1123,7 @@
                     ${frAvatars[id]
                         ? `<img src="${frAvatars[id]}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">`
                         : `<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👤</div>`}
-                    <div><div style="font-weight:bold;">@${data.name}</div><div style="font-size:11px;color:var(--secondary);">Нажми чтобы открыть профиль</div></div>
+                    <div><div style="font-weight:bold;">${buildUsername({username:data.name, activeCosmetic:frCosmetics[id]||{}})}</div><div style="font-size:11px;color:var(--secondary);">Нажми чтобы открыть профиль</div></div>
                 </div>
                 <span style="color:var(--accent);font-size:20px;">&#x203A;</span>
             </div>`
@@ -1084,7 +1149,8 @@
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
         const inv=d.cloudInv||[],itm=inv.find(x=>x.inst==inst);
         if(!itm) return showToast("Не найден!",'var(--err)');
-        await update(r,{cloudInv:inv.filter(x=>x.inst!=inst),pinnedInsts:(d.pinnedInsts||[]).filter(id=>String(id)!=String(inst))});
+        const newGiven=(d.giftsGiven||0)+1;
+        await update(r,{cloudInv:inv.filter(x=>x.inst!=inst),pinnedInsts:(d.pinnedInsts||[]).filter(id=>String(id)!=String(inst)),giftsGiven:newGiven});
         const frS=await get(ref(db,'users/'+fid)),frInv=frS.val().cloudInv||[];
         frInv.push({...itm,from:user.name,seen:false,inst:Date.now()});
         await update(ref(db,'users/'+fid),{cloudInv:frInv});
@@ -1139,7 +1205,7 @@
                          onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                     <div class="tg-avatar-edit" onclick="openEdit()">✏️</div>
                 </div>
-                <h2 class="tg-username">@${d.username}</h2>
+                <h2 class="tg-username">${buildUsername(d)}</h2>
                 <p class="tg-bio">${d.bio || 'Нет описания'}</p>
                 <div class="tg-stats">
                     <div class="tg-stat"><div class="tg-stat-val">${inv.length}</div><div class="tg-stat-lbl">Подарков</div></div>
@@ -1254,13 +1320,79 @@
     };
     window.openEdit = async () => {
         const s=await get(ref(db,'users/'+user.id));
+        const d=s.val();
+        const owned=new Set(d.cosmetics||[]);
+        const active=d.activeCosmetic||{};
+        const isAdm=user.isAdm;
+        const unlocked=checkUnlocks(d);
+        if(unlocked.length){
+            const newOwned=[...owned,...unlocked];
+            await update(ref(db,'users/'+user.id),{cosmetics:newOwned});
+            unlocked.forEach(id=>{owned.add(id);showToast('🎉 Открыта косметика: '+COSMETICS.find(c=>c.id===id).name,'var(--accent)');});
+        }
+
+        const renderCosm = (type, label) => {
+            const items = COSMETICS.filter(c=>c.type===type);
+            return `<div class="cosm-section-title">${label}</div>
+            <div class="cosm-grid">${items.map(c=>{
+                const isOwned = isAdm || owned.has(c.id);
+                const isActive = active[type]===c.id;
+                const canBuy = !isOwned && !c.unlock;
+                const preview = type==='color'
+                    ? `<span style="color:${c.val};font-weight:bold;font-size:15px;">@ник</span>`
+                    : `<span class="cosm-preview">${c.val}</span>`;
+                const priceHtml = isOwned
+                    ? `<span style="color:var(--green);font-size:11px;">✓ Есть</span>`
+                    : c.unlock
+                        ? `<span class="cosm-unlock">🔒 ${c.unlockDesc}</span>`
+                        : `<span class="cosm-price">${c.price}💰</span>`;
+                return `<div class="cosm-item${isActive?' active-cosm':''}${!isOwned?' locked':''}" onclick="cosmClick('${c.id}','${type}',${isOwned},${canBuy},${c.price})">
+                    ${preview}
+                    <span class="cosm-name">${c.name}</span>
+                    ${priceHtml}
+                    ${isActive?'<span style="font-size:10px;color:var(--accent);">▶ Активно</span>':''}
+                </div>`;
+            }).join('')}</div>`;
+        };
+
         document.getElementById('modal-content').innerHTML=`
-            <h3>Настройки</h3>
-            <textarea id="ebio" placeholder="О себе">${s.val().bio||''}</textarea>
+            <h3>⚙️ Настройки</h3>
+            <textarea id="ebio" placeholder="О себе">${d.bio||''}</textarea>
             <p style="font-size:12px;color:var(--secondary)">Аватар (с устройства):</p>
             <input type="file" id="efile" accept="image/*" style="padding:5px;font-size:12px;">
-            <button class="btn" onclick="saveP()">Сохранить</button>`;
+            <button class="btn" onclick="saveP()" style="margin-bottom:4px;">Сохранить профиль</button>
+            <hr style="border-color:rgba(255,255,255,0.07);margin:12px 0;">
+            <h3 style="margin-bottom:4px;">🎨 Косметика</h3>
+            <p style="font-size:11px;color:var(--secondary);margin:0 0 8px;">Нажми на активную чтобы снять</p>
+            ${renderCosm('prefix','✨ Префикс')}
+            ${renderCosm('color','🎨 Цвет ника')}
+            ${renderCosm('badge','🏆 Значок')}
+        `;
         openModal();
+    };
+
+    window.cosmClick = async (id, type, isOwned, canBuy, price) => {
+        const r=ref(db,'users/'+user.id);
+        const s=await get(r); const d=s.val();
+        const owned=d.cosmetics||[];
+        const active=d.activeCosmetic||{};
+        if(!isOwned && !user.isAdm){
+            if(!canBuy) return showToast('Разблокируй это достижение!','var(--err)');
+            if((d.balance||0)<price) return showToast('Недостаточно монет!','var(--err)');
+            const newOwned=[...owned,id];
+            const newSpent=(d.totalSpent||0)+price;
+            await update(r,{balance:d.balance-price,cosmetics:newOwned,totalSpent:newSpent});
+            showToast('🎉 Куплено!','var(--green)');
+            isOwned=true;
+        }
+        if(isOwned || user.isAdm){
+            const newActive={...active};
+            if(newActive[type]===id) delete newActive[type];
+            else newActive[type]=id;
+            await update(r,{activeCosmetic:newActive});
+            showToast(newActive[type]?'✅ Применено!':'↩️ Снято','var(--accent)');
+        }
+        openEdit();
     };
     window.saveP = async () => {
         const file=document.getElementById('efile').files[0];
@@ -1324,7 +1456,7 @@
                     <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
                          style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);margin-bottom:10px;background:#0e1824;"
                          onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-                    <h3 style="margin:0 0 4px;">@${d.username}</h3>
+                    <h3 style="margin:0 0 4px;">${buildUsername(d)}</h3>
                     ${d.bio ? `<p style="color:var(--secondary);font-size:13px;margin:0 0 10px;">${d.bio}</p>` : ''}
                     <div style="display:flex;justify-content:center;gap:20px;">
                         <div style="text-align:center;"><div style="font-weight:bold;color:var(--accent);font-size:18px;">${inv.length}</div><div style="font-size:11px;color:var(--secondary);">Подарков</div></div>
