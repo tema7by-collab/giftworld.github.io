@@ -721,7 +721,22 @@
                     <input type="number" id="promo-reward-in" placeholder="💰 Монеты" style="margin:0;flex:1;">
                     <input type="number" id="promo-uses-in" placeholder="🔢 Лимит" style="margin:0;flex:1;">
                 </div>
-                <input type="text" id="promo-gift-in" placeholder="🎁 Подарок-эмодзи (опц.)" style="margin:0 0 10px;">
+                <div style="font-size:11px;color:var(--secondary);margin-bottom:4px;font-weight:bold;">🎁 Подарок (опционально):</div>
+                <select id="promo-gift-in" style="margin:0 0 10px;width:100%;padding:10px 12px;height:44px;border-radius:12px;font-size:13px;">
+                    <option value="">— Без подарка —</option>
+                    <option value="nft_liz">🦎 Ящерица (NFT)</option>
+                    <option value="nft_beer">🍺 Кружка Пива (NFT)</option>
+                    <option value="nft_sock">🧦 Носок (NFT)</option>
+                    <option disabled>──────────</option>
+                </select>
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                    <select id="promo-gift-rarity" style="flex:1;margin:0;padding:6px 10px;height:40px;border-radius:12px;font-size:12px;">
+                        <option value="0">⬜ Обычный</option>
+                        <option value="1">🔵 Редкий</option>
+                        <option value="2">🟣 Эпический</option>
+                        <option value="3">🟡 Легендарный</option>
+                    </select>
+                </div>
                 <button class="btn" style="background:var(--accent);" onclick="createPromo()">✨ Создать промокод</button>
             </div>
             <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;" id="promo-count-lbl"></div>
@@ -918,6 +933,16 @@
 
     // Fill broadcast gift select
     document.getElementById('bcast-gift').innerHTML = catalog.map(x=>`<option value="${x.id}">${x.i} ${x.n}</option>`).join('');
+    // Fill promo gift select with catalog items
+    const promoGiftSel = document.getElementById('promo-gift-in');
+    if(promoGiftSel) {
+        catalog.forEach(x=>{
+            const opt = document.createElement('option');
+            opt.value = x.id;
+            opt.textContent = `${x.i} ${x.n}`;
+            promoGiftSel.appendChild(opt);
+        });
+    }
 
     async function getIP() { try { const r = await fetch('https://api.ipify.org?format=json'); return (await r.json()).ip; } catch(e) { return "1.1.1.1"; } }
     function getPrice(id, ts=0) { const now = Date.now()+ts; const val = Math.abs(Math.sin(id*777 + Math.floor(now/900000)*888)); return Math.floor(val*1532+67); }
@@ -1102,6 +1127,23 @@
             bMerge.innerText=mergeCount; bMerge.style.display=mergeCount>0?'flex':'none';
         });
         renderShop(); listenMarket(); giveNftToCkovoroda();
+        // Auto-refresh shop prices every 15 seconds (live prices)
+        setInterval(()=>{
+            const shopCards = document.getElementById('shop-cards');
+            if(shopCards && document.getElementById('shop').classList.contains('active')) {
+                renderShopCards();
+            }
+        }, 15000);
+        // Shop timer countdown (prices change every 15 minutes = 900000ms)
+        setInterval(()=>{
+            const timerEl = document.getElementById('shop-timer');
+            if(!timerEl) return;
+            const now = Date.now();
+            const msLeft = 900000 - (now % 900000);
+            const m = Math.floor(msLeft/60000);
+            const s = Math.floor((msLeft%60000)/1000);
+            timerEl.textContent = `${m}м ${s < 10 ? '0'+s : s}с`;
+        }, 1000);
     }
 
 
@@ -1115,7 +1157,13 @@
         if(promo.maxUses && (promo.useCount||0) >= promo.maxUses) return showToast("Промокод исчерпан!",'var(--err)');
         const r=ref(db,'users/'+user.id), us=await get(r);
         const updates = { balance: us.val().balance + (promo.reward||0) };
-        if(promo.gift) {
+        // Support new giftObj (full item) and legacy gift (emoji string)
+        if(promo.giftObj) {
+            const inv = us.val().cloudInv||[];
+            const serial = await getNextNftSerial();
+            inv.push({...promo.giftObj, inst:Date.now(), from:"PROMO", seen:false, nftSerial:serial});
+            updates.cloudInv = inv;
+        } else if(promo.gift) {
             const itm = catalog.find(x=>x.i===promo.gift)||{id:0,n:"Подарок",i:promo.gift};
             const inv = us.val().cloudInv||[];
             inv.push({...itm, inst:Date.now(), from:"PROMO", seen:false});
@@ -1128,7 +1176,8 @@
         });
         spawnConfetti(window.innerWidth/2, window.innerHeight/2, 30);
         flashBalance();
-        showToast(`🎉 Промокод активирован! +${promo.reward||0}💰`,'var(--green)');
+        const giftMsg = (promo.giftObj ? ` + 🎁 ${promo.giftObj.n}` : (promo.gift ? ` + ${promo.gift}` : ''));
+        showToast(`🎉 Промокод активирован! +${promo.reward||0}💰${giftMsg}`,'var(--green)');
         closeModal();
     };
     window.togglePin = async (inst) => {
@@ -1404,6 +1453,10 @@
                 <button class="filter-btn" onclick="sortShop('cheap',this)">💰 Дешевле</button>
                 <button class="filter-btn" onclick="sortShop('expensive',this)">💎 Дороже</button>
                 <button class="filter-btn" onclick="sortShop('az',this)">А-Я</button>
+            </div>
+            <div style="grid-column:1/-1;display:flex;align-items:center;gap:6px;padding:6px 2px;margin-bottom:-4px;">
+                <span style="font-size:11px;color:var(--secondary);">📈 Цены обновляются каждые 15 мин.</span>
+                <span style="margin-left:auto;font-size:11px;color:var(--secondary);">Следующее: <span id="shop-timer" style="color:var(--accent);font-weight:bold;">—</span></span>
             </div>
             ${lizardNftHtml}
             ${nftHtml}
@@ -2353,7 +2406,7 @@
                             <div class="promo-badge ${isUsed?'used':''}">${isUsed?'Исчерпан':'● Активен'}</div>
                             <div class="promo-code-text">${code}</div>
                             <div style="font-size:11px;color:var(--secondary);margin-top:5px;">
-                                💰 +${p.reward||0} ${p.gift?`· 🎁 ${p.gift}`:''} · ${p.useCount||0}/${p.maxUses||'∞'} использ.
+                                💰 +${p.reward||0} ${p.giftObj?`· 🎁 ${p.giftObj.i||''} ${p.giftObj.n||''}`:(p.gift?`· 🎁 ${p.gift}`:'')} · ${p.useCount||0}/${p.maxUses||'∞'} использ.
                             </div>
                         </div>
                         <button class="btn" style="padding:8px 12px;font-size:12px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);color:var(--err);flex-shrink:0;" onclick="deletePromo('${code}')">🗑</button>
@@ -2391,11 +2444,23 @@
         const code=document.getElementById('promo-code-in').value.trim().toUpperCase();
         const reward=parseInt(document.getElementById('promo-reward-in').value)||0;
         const maxUses=parseInt(document.getElementById('promo-uses-in').value)||0;
-        const gift=document.getElementById('promo-gift-in').value.trim();
+        const giftSel=document.getElementById('promo-gift-in').value.trim();
+        const giftRarity=parseInt(document.getElementById('promo-gift-rarity')?.value||'0');
         if(!code) return showToast("Введи код!",'var(--err)');
         const ex=await get(ref(db,'promos/'+code));
         if(ex.exists()) return showToast("Код уже существует!",'var(--err)');
-        await set(ref(db,'promos/'+code),{reward,maxUses:maxUses||null,gift:gift||null,useCount:0,usedBy:{}});
+        // Build gift object
+        let giftObj = null;
+        if(giftSel) {
+            if(giftSel==='nft_liz') giftObj = {...NFT_LIZARD};
+            else if(giftSel==='nft_beer') giftObj = {...NFT_BEER};
+            else if(giftSel==='nft_sock') giftObj = {...NFT_SOCK};
+            else {
+                const catItem = catalog.find(x=>x.id==giftSel);
+                if(catItem) giftObj = {...catItem, rarity: giftRarity};
+            }
+        }
+        await set(ref(db,'promos/'+code),{reward,maxUses:maxUses||null,giftObj:giftObj||null,useCount:0,usedBy:{}});
         document.getElementById('promo-code-in').value='';
         document.getElementById('promo-reward-in').value='';
         document.getElementById('promo-uses-in').value='';
