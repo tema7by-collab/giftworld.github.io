@@ -1369,7 +1369,7 @@
         inv.push(upgradedItem);
         await update(r,{cloudInv:inv});
         const newRarObj2=RARITY_LEVELS[newRarity]||RARITY_LEVELS[0];
-        getTgId(user.id).then(cid=>sendTg(cid,`⚗️ <b>Слияние завершено!</b>\n\n${newRarObj2.icon} <b>${baseItem.n}</b> повышен до <b>${newRarObj2.label}</b>`));
+        getTgId(user.id).then(cid=>sendTg(cid,`⚗️ <b>Слияние завершено!</b>\n\n${newRarObj2.icon} <b>${baseItem.n}</b>\n⬆️ Редкость: <b>${newRarObj2.label}</b>\n\n🎉 Поздравляем с улучшением!`));
         spawnConfetti(window.innerWidth/2,window.innerHeight/2,60);
         flyEmoji(rarObj.icon,window.innerWidth/2,window.innerHeight/2);
         showToast(`${rarObj.icon} Слияние успешно! Получен ${rarObj.label}!`,"#a29bfe");
@@ -1684,7 +1684,7 @@
         if(sS.exists()) await update(ref(db,'users/'+sellerId),{balance:sS.val().balance+parseInt(p)});
         // Notify seller via Telegram
         const rarObj=getRarityObj(itm);
-        getTgId(sellerId).then(cid=>sendTg(cid,`🛒 <b>${user.name}</b> купил твой товар!\n\n${rarObj.icon} <b>${itm.n}</b> ${itm.i||''}\nТы получил <b>${p}💰</b>`));
+        getTgId(sellerId).then(cid=>sendTg(cid,`🛒 <b>Продажа на рынке!</b>\n\n<b>${user.name}</b> купил твой товар:\n${rarObj.icon} <b>${itm.n}</b> ${itm.i||''}\n\n💰 Ты получил: <b>${p.toLocaleString()} монет</b>\n🏷 Редкость: <b>${rarObj.label||'—'}</b>`));
         if(e) flyEmoji(itm.i,e.clientX,e.clientY);
         flashBalance(); showToast("Куплено! "+itm.i);
     };
@@ -1701,7 +1701,7 @@
         const fs=await get(ref(db,'users/'+t));
         if(!fs.exists()) return showToast("Не найден!",'var(--err)');
         await update(ref(db,`users/${t}/requests/${user.id}`),{from:user.id,name:user.name});
-        getTgId(t).then(cid=>sendTg(cid,`👥 <b>${user.name}</b> хочет добавить тебя в друзья!\n\nОткрой приложение чтобы принять.`));
+        getTgId(t).then(cid=>sendTg(cid,`👥 <b>Запрос в друзья!</b>\n\n<b>${user.name}</b> хочет добавить тебя в друзья.\n\n✅ Открой приложение → Друзья → Входящие запросы`));
         showToast("Запрос отправлен!");
     };
     async function renderFriends(d){
@@ -1775,7 +1775,7 @@
         await update(ref(db,`users/${fid}/friends/${user.id}`),{name:user.name});
         await remove(ref(db,`users/${user.id}/requests/${fid}`));showToast("Добавлен!");
         // Notify via TG
-        getTgId(fid).then(cid=>sendTg(cid,`✅ <b>${user.name}</b> принял твой запрос в друзья!`));
+        getTgId(fid).then(cid=>sendTg(cid,`✅ <b>Запрос принят!</b>\n\n<b>${user.name}</b> принял твой запрос в друзья.\n\n👥 Теперь вы друзья — можете обмениваться подарками и вызывать на дуэль!`));
     };
     window.removeFriend = async (fid, fname) => {
         const ok = await showConfirm('Удалить друга', `Удалить @${fname} из друзей? Это удалит вас друг у друга.`, '🗑️', 'var(--err)', 'Удалить');
@@ -1850,7 +1850,7 @@
             itemInst: selectedTradeInst, itemName: itm.n, itemEmoji: itm.i||'🎁',
             ts: Date.now()
         });
-        getTgId(friendId).then(cid=>sendTg(cid,`🔄 <b>${user.name}</b> предлагает обмен подарком <b>${itm.n} ${itm.i||''}</b>!\n\nОткрой приложение → Друзья → входящие обмены.`));
+        getTgId(friendId).then(cid=>sendTg(cid,`🔄 <b>Предложение обмена!</b>\n\n<b>${user.name}</b> предлагает тебе:\n🎁 <b>${itm.n} ${itm.i||''}</b>\n\n📱 Открой приложение → Друзья → Входящие обмены\nчтобы принять или отклонить.`));
         closeModal();
         showToast(`🔄 Предложение отправлено ${friendName}!`,'var(--green)');
     };
@@ -1928,7 +1928,7 @@
             update(ref(db,'users/'+fromId),{cloudInv:theirInv}),
             remove(ref(db,`tradeOffers/${user.id}/${offerKey}`))
         ]);
-        getTgId(fromId).then(cid=>sendTg(cid,`🔄 <b>${user.name}</b> принял обмен! Ты получил <b>${myItem.n}</b> взамен!`));
+        getTgId(fromId).then(cid=>sendTg(cid,`🔄 <b>Обмен завершён!</b>\n\n<b>${user.name}</b> принял твоё предложение.\n\n📥 Ты получил: <b>${myItem.n} ${myItem.i||''}</b>\n📤 Ты отдал: <b>${theirItem&&theirItem.n||'подарок'}</b>`));
         closeModal();
         spawnConfetti(window.innerWidth/2,window.innerHeight/2,35);
         flyEmoji('🔄',window.innerWidth/2,window.innerHeight/2);
@@ -2071,7 +2071,7 @@
                 if(snap.exists()) await remove(ref(db,`duelChallenges/${friendId}/${duelKey}`));
             } catch(e){}
         }, 15*60*1000);
-        getTgId(friendId).then(cid=>sendTg(cid,`⚔️ <b>${user.name}</b> вызывает тебя на дуэль!\nСтавка: <b>${myItem.n} ${myItem.i||''}</b>\n\nПобедитель заберёт оба подарка! Открой приложение → Друзья.`));
+        getTgId(friendId).then(cid=>sendTg(cid,`⚔️ <b>Вызов на дуэль!</b>\n\n<b>${user.name}</b> бросает тебе вызов!\n\n🎯 Его ставка: <b>${myItem.n} ${myItem.i||''}</b>\n🏆 Победитель заберёт оба подарка!\n\n📱 Открой приложение → Друзья → Дуэли`));
         closeModal();
         showToast(`⚔️ Вызов отправлен ${friendName}!`,'#ff6b6b','⚔️');
     };
@@ -2242,10 +2242,10 @@
         // Уведомления с правильными предметами
         if(iWin) {
             // challenger проиграл свою ставку (theirItem)
-            getTgId(challengerId).then(cid=>sendTg(cid,`⚔️ Дуэль завершена! <b>${winnerName}</b> победил!\nТы проиграл <b>${theirItemName}</b> ${theirEmoji}`));
+            getTgId(challengerId).then(cid=>sendTg(cid,`⚔️ <b>Дуэль завершена!</b>\n\n🏆 Победитель: <b>${winnerName}</b>\n\n😔 К сожалению, ты проиграл.\n❌ Утеряно: <b>${theirItemName}</b> ${theirEmoji}`));
         } else {
             // challenger выиграл оба предмета
-            getTgId(challengerId).then(cid=>sendTg(cid,`⚔️ Дуэль завершена! <b>${winnerName}</b> победил!\nТы выиграл <b>${theirItemName}</b> ${theirEmoji} и <b>${myItem.n}</b> ${myEmoji2}!`));
+            getTgId(challengerId).then(cid=>sendTg(cid,`⚔️ <b>Дуэль завершена!</b>\n\n🏆 Победитель: <b>${winnerName}</b>\n\n🎉 Поздравляем, ты победил!\n✅ Получено: <b>${theirItemName}</b> ${theirEmoji}\n✅ Сохранено: <b>${myItem.n}</b> ${myEmoji2}`));
         }
     };
 
@@ -2329,7 +2329,7 @@
         const frS=await get(ref(db,'users/'+fid)),frInv=frS.val().cloudInv||[];
         frInv.push({...itm,from:user.name,seen:false,inst:Date.now()});
         await update(ref(db,'users/'+fid),{cloudInv:frInv});
-        getTgId(fid).then(cid=>sendTg(cid,`🎁 <b>${user.name}</b> подарил тебе <b>${itm.n}</b> ${itm.i||''}`));
+        getTgId(fid).then(cid=>sendTg(cid,`🎁 <b>Новый подарок!</b>\n\n<b>${user.name}</b> подарил тебе:\n${itm.i||'🎁'} <b>${itm.n}</b>\n\n🏷 Редкость: <b>${RARITY_LEVELS[itm.r]&&RARITY_LEVELS[itm.r].label||'Обычный'}</b>\n\nОткрой приложение чтобы посмотреть!`));
         closeModal();spawnConfetti(window.innerWidth/2,window.innerHeight/2,40);
         flyEmoji('🎁',window.innerWidth/2,window.innerHeight/2);
         showToast("Подарок отправлен! 🎁",'var(--green)');renderInv();
@@ -2988,7 +2988,7 @@
         const s=await get(ref(db,'users/'+id)),inv=s.val().cloudInv||[];
         inv.push({...itm,rarity:itm.nft?undefined:rar,inst:Date.now(),from:"ADMIN",seen:false});
         await update(ref(db,'users/'+id),{cloudInv:inv});
-        getTgId(id).then(cid=>sendTg(cid,`🎁 <b>Подарок от администратора!</b>\n\nТебе выдан ${rarLabel} <b>${itm.n}</b> ${itm.i}`));
+        getTgId(id).then(cid=>sendTg(cid,`🎁 <b>Подарок от администратора!</b>\n\nТебе был выдан специальный подарок:\n${itm.i} <b>${itm.n}</b>\n🏷 Редкость: <b>${rarLabel}</b>\n\n🎉 Он уже в твоём инвентаре!`));
         showToast(`${rarLabel}${itm.i} ${itm.n} → @${id}`,'var(--green)');
     };
 
@@ -3030,7 +3030,7 @@
         const up={};for(let id in us) up[`users/${id}/balance`]=(us[id].balance||0)+amount;
         await update(ref(db),up);
         // Notify all TG users
-        for(let id in us){if(us[id].tgChatId)sendTg(us[id].tgChatId,`📢 <b>Администратор выдал всем ${amount}💰!</b>`);}
+        for(let id in us){if(us[id].tgChatId)sendTg(us[id].tgChatId,`💰 <b>Монеты от администратора!</b>\n\nВсем игрокам начислено:\n<b>${Number(amount).toLocaleString()} монет</b>\n\n🎉 Они уже на твоём балансе!`);}
         showToast(`✅ Разослано ${amount}💰 всем!`,'var(--green)');
         document.getElementById('bcast-coins').value='';
     };
@@ -3043,7 +3043,7 @@
         const up={};
         for(let id in us){const inv=(us[id].cloudInv||[]);inv.push({...itm,inst:Date.now(),from:"ADMIN",seen:false});up[`users/${id}/cloudInv`]=inv;}
         await update(ref(db),up);
-        for(let id in us){if(us[id].tgChatId)sendTg(us[id].tgChatId,`🎁 <b>Администратор выдал всем подарок:</b>\n\n<b>${itm.n}</b> ${itm.i}`);}
+        for(let id in us){if(us[id].tgChatId)sendTg(us[id].tgChatId,`🎁 <b>Подарок всем игрокам!</b>\n\nАдминистратор выдал всем:\n${itm.i} <b>${itm.n}</b>\n\n✅ Подарок уже в твоём инвентаре!`);}
         showToast(`✅ ${itm.i} выдан всем!`,'var(--green)');
     };
 
@@ -3122,7 +3122,7 @@
         let sent=0;
         for(let id in us){
             if(us[id].tgChatId){
-                await sendTg(us[id].tgChatId,`📢 <b>Сообщение от администратора:</b>\n\n${msg}`);
+                await sendTg(us[id].tgChatId,`📢 <b>Сообщение от администрации Gift World</b>\n\n${msg}\n\n───────────────\n🎁 Gift World`);
                 sent++;
             }
         }
