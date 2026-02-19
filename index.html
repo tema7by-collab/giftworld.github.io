@@ -82,38 +82,61 @@
         .price-up { color: var(--err); font-size: 12px; }
         .price-down { color: var(--green); font-size: 12px; }
         .tg-btn { background: var(--tg); margin-bottom: 8px; }
-        .adm-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-        .adm-tab { flex-shrink: 0; background: #1a2636; border: 1px solid rgba(255,255,255,0.07); color: var(--secondary); border-radius: 14px; padding: 8px 16px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .adm-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+        /* === ADMIN PANEL === */
+        .adm-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+        .adm-header-title { font-size:20px; font-weight:900; letter-spacing:-0.5px; }
+        .adm-header-sub { font-size:11px; color:var(--secondary); margin-top:2px; }
+
+        .adm-tabs { display: flex; gap: 6px; margin-bottom: 18px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .adm-tabs::-webkit-scrollbar { display: none; }
+        .adm-tab { flex-shrink: 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: var(--secondary); border-radius: 22px; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; display:flex;align-items:center;gap:4px; }
+        .adm-tab:hover { background: rgba(255,255,255,0.08); color: white; }
+        .adm-tab.active { background: var(--accent); color: white; border-color: transparent; box-shadow: 0 4px 14px rgba(36,129,204,0.35); }
         .adm-section { display: none; }
         .adm-section.active { display: block; animation: fadeInUp 0.25s ease both; }
 
+        /* Stats grid */
         .adm-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-        .adm-stat { background: #1a2636; border-radius: 18px; padding: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.06); }
-        .adm-stat .val { font-size: 26px; font-weight: bold; color: var(--accent); }
-        .adm-stat .lbl { font-size: 11px; color: var(--secondary); margin-top: 3px; }
+        .adm-stat { position:relative; overflow:hidden; border-radius: 20px; padding: 16px 14px; text-align: center; border: 1px solid rgba(255,255,255,0.06); background: #0d1720; }
+        .adm-stat::before { content:''; position:absolute; inset:0; opacity:0.06; }
+        .adm-stat.blue::before { background: radial-gradient(circle at top right, var(--accent), transparent 70%); }
+        .adm-stat.green::before { background: radial-gradient(circle at top right, var(--green), transparent 70%); }
+        .adm-stat.orange::before { background: radial-gradient(circle at top right, var(--orange), transparent 70%); }
+        .adm-stat.purple::before { background: radial-gradient(circle at top right, #a29bfe, transparent 70%); }
+        .adm-stat .val { font-size: 24px; font-weight: 900; color: white; position:relative; }
+        .adm-stat .lbl { font-size: 10px; color: var(--secondary); margin-top: 4px; position:relative; letter-spacing:0.5px; text-transform:uppercase; }
+        .adm-stat .ico { font-size:28px; position:absolute; right:12px; top:12px; opacity:0.15; }
 
-        .adm-user-row { background: #0e1824; border-radius: 18px; padding: 14px; margin-bottom: 10px; border-left: 3px solid var(--accent); cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
-        .adm-user-row:hover { background: #162030; transform: translateX(3px); }
+        /* User rows */
+        .adm-user-row { background: #0d1720; border-radius: 16px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .adm-user-row:hover { background: #111f2e; border-color: rgba(36,129,204,0.2); transform: translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.3); }
         .adm-user-row .uname { font-weight: bold; font-size: 14px; }
-        .adm-user-row .uinfo { font-size: 12px; color: var(--secondary); margin-top: 3px; }
-        .adm-user-row .ubadge { font-size: 12px; background: rgba(36,129,204,0.15); color: var(--accent); padding: 3px 10px; border-radius: 20px; font-weight: bold; white-space: nowrap; }
+        .adm-user-row .uinfo { font-size: 11px; color: var(--secondary); margin-top: 3px; }
+        .adm-user-row .ubadge { font-size: 11px; background: rgba(36,129,204,0.12); color: var(--accent); padding: 4px 10px; border-radius: 20px; font-weight: bold; white-space: nowrap; border:1px solid rgba(36,129,204,0.15); }
+        .adm-user-row .uavatar { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1a2a3a,#0a1520);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-right:10px;border:1px solid rgba(255,255,255,0.08); }
 
-        .adm-user-detail { background: #0e1824; border-radius: 20px; padding: 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.07); display: none; }
+        .adm-user-detail { background: #0a1520; border-radius: 20px; padding: 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.06); display: none; }
         .adm-user-detail.open { display: block; animation: fadeInUp 0.2s ease both; }
-        .adm-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
-        .adm-detail-item { background: #070d14; border-radius: 12px; padding: 10px; font-size: 12px; }
-        .adm-detail-item .dlbl { color: var(--secondary); font-size: 10px; margin-bottom: 3px; }
-        .adm-detail-item .dval { font-weight: bold; word-break: break-all; }
-        .adm-inv-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; }
-        .adm-inv-item { flex-shrink: 0; background: #070d14; border-radius: 12px; padding: 8px 10px; text-align: center; font-size: 22px; min-width: 46px; }
-        .adm-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-        .adm-actions .btn { flex: 1; min-width: 90px; padding: 9px 6px; font-size: 12px; border-radius: 12px; }
 
-        .promo-card { background: #0e1824; border-radius: 18px; padding: 14px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.07); }
-        .promo-badge { display: inline-block; background: rgba(46,204,113,0.15); color: var(--green); border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: bold; margin-bottom: 6px; }
-        .promo-badge.used { background: rgba(127,145,164,0.15); color: var(--secondary); }
-        .promo-code-text { font-family: monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px; color: gold; }
+        .adm-inv-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; scrollbar-width: none; }
+        .adm-inv-scroll::-webkit-scrollbar { display:none; }
+        .adm-inv-item { flex-shrink: 0; background: #070d14; border-radius: 12px; padding: 8px 10px; text-align: center; font-size: 20px; min-width: 46px; border:1px solid rgba(255,255,255,0.06); transition:0.15s; cursor:default; }
+        .adm-inv-item:hover { border-color:rgba(36,129,204,0.3); transform:scale(1.05); }
+
+        /* Promo cards */
+        .promo-card { background: #0d1720; border-radius: 18px; padding: 14px 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:12px; }
+        .promo-card-info { flex:1; min-width:0; }
+        .promo-badge { display: inline-block; background: rgba(46,204,113,0.15); color: var(--green); border-radius: 20px; padding: 2px 10px; font-size: 10px; font-weight: bold; margin-bottom: 5px; border:1px solid rgba(46,204,113,0.2); }
+        .promo-badge.used { background: rgba(127,145,164,0.1); color: var(--secondary); border-color: rgba(127,145,164,0.15); }
+        .promo-code-text { font-family: monospace; font-size: 15px; font-weight: bold; letter-spacing: 2px; color: gold; }
+
+        /* Tool cards */
+        .tool-card { background: #0d1720; border-radius: 20px; padding: 16px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; }
+        .tool-card-title { font-weight: bold; font-size: 13px; margin-bottom: 10px; display:flex;align-items:center;gap:6px; }
+
+        /* Danger zone */
+        .danger-zone { border: 1px solid rgba(231,76,60,0.2); border-radius: 20px; padding: 16px; background: rgba(231,76,60,0.04); margin-top:4px; }
+        .danger-zone-title { font-size:11px; color:var(--err); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:10px; display:flex;align-items:center;gap:5px; }
 
         .search-box { background: #0e1824; border: 1px solid #2b3a4a; border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
         .search-box input { background: none; border: none; margin: 0; padding: 0; font-size: 14px; flex: 1; } 
@@ -199,6 +222,7 @@
         @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-130px) scale(1.8); opacity: 0; } }
         @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
         @keyframes pulseGold { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,215,0,0.55), 0 8px 32px rgba(0,0,0,0.4); } 50% { box-shadow: 0 0 0 12px rgba(255,215,0,0), 0 8px 32px rgba(0,0,0,0.4); } }
+        @keyframes pulse { 0%, 100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.8); } }
         @keyframes wiggle { 0%,100% { transform: rotate(0deg) scale(1); } 20% { transform: rotate(-10deg) scale(1.15); } 40% { transform: rotate(10deg) scale(1.2); } 60% { transform: rotate(-6deg) scale(1.1); } 80% { transform: rotate(6deg) scale(1.05); } }
         @keyframes confettiFall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
         @keyframes slideInNav { from { transform: translateX(-50%) translateY(50px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
@@ -624,80 +648,133 @@
     <!-- ===== ADMIN PANEL ===== -->
     <div id="admin" class="page" style="padding:15px;padding-bottom:120px;">
 
+        <!-- Header -->
+        <div class="adm-header">
+            <div>
+                <div class="adm-header-title">⚙️ Панель управления</div>
+                <div class="adm-header-sub" id="adm-online-hint">Загрузка данных...</div>
+            </div>
+            <button onclick="admRefresh()" style="background:rgba(36,129,204,0.12);border:1px solid rgba(36,129,204,0.2);color:var(--accent);border-radius:12px;padding:8px 14px;font-size:12px;cursor:pointer;font-weight:bold;">🔄 Обновить</button>
+        </div>
+
         <!-- Tabs -->
         <div class="adm-tabs">
             <button class="adm-tab active" onclick="admTab('overview',this)">📊 Обзор</button>
             <button class="adm-tab" onclick="admTab('users',this)">👥 Игроки</button>
+            <button class="adm-tab" onclick="admTab('market',this)">⚖️ Рынок</button>
             <button class="adm-tab" onclick="admTab('promos',this)">🎟️ Промо</button>
             <button class="adm-tab" onclick="admTab('tools',this)">🛠️ Инструменты</button>
             <button class="adm-tab" onclick="admTab('sales',this)">🛒 Продажи</button>
         </div>
 
-        <!-- Overview -->
+        <!-- ── Overview ── -->
         <div id="adm-overview" class="adm-section active">
             <div class="adm-stat-grid" id="adm-stats-grid"></div>
-            <div style="background:#0e1824;border-radius:18px;padding:14px;border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-size:12px;color:var(--secondary);margin-bottom:8px;">🏆 Топ по балансу</div>
+
+            <!-- Top players -->
+            <div style="background:#0d1720;border-radius:20px;padding:16px;border:1px solid rgba(255,255,255,0.06);margin-bottom:12px;">
+                <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px;">🏆 Топ игроков по балансу</div>
                 <div id="adm-top-users"></div>
+            </div>
+
+            <!-- Quick actions -->
+            <div style="background:#0d1720;border-radius:20px;padding:16px;border:1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px;">⚡ Быстрые действия</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <button class="btn" style="background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.2);color:var(--green);font-size:12px;padding:10px;" onclick="admTab('tools',document.querySelectorAll('.adm-tab')[4])">📢 Рассылка</button>
+                    <button class="btn" style="background:rgba(243,156,18,0.12);border:1px solid rgba(243,156,18,0.2);color:var(--orange);font-size:12px;padding:10px;" onclick="admTab('promos',document.querySelectorAll('.adm-tab')[3])">🎟️ Промокоды</button>
+                    <button class="btn" style="background:rgba(36,129,204,0.12);border:1px solid rgba(36,129,204,0.2);color:var(--accent);font-size:12px;padding:10px;" onclick="admTab('users',document.querySelectorAll('.adm-tab')[1])">👥 Игроки</button>
+                    <button class="btn" style="background:rgba(36,129,204,0.12);border:1px solid rgba(36,129,204,0.2);color:var(--accent);font-size:12px;padding:10px;" onclick="admTab('sales',document.querySelectorAll('.adm-tab')[5])">🛒 Продажи</button>
+                </div>
             </div>
         </div>
 
-        <!-- Users -->
+        <!-- ── Users ── -->
         <div id="adm-users" class="adm-section">
-            <div class="search-box">
+            <div class="search-box" style="margin-bottom:10px;">
                 <span style="color:var(--secondary);">🔍</span>
-                <input type="text" id="adm-search" placeholder="Поиск игрока..." oninput="admFilterUsers(this.value)">
+                <input type="text" id="adm-search" placeholder="Поиск по нику, IP..." oninput="admFilterUsers(this.value)" style="flex:1;">
+                <span id="adm-user-count" style="font-size:11px;color:var(--secondary);white-space:nowrap;"></span>
             </div>
             <div id="adm-users-list"></div>
         </div>
 
-        <!-- Promos -->
-        <div id="adm-promos" class="adm-section">
-            <div class="card" style="margin-bottom:12px;text-align:left;">
-                <div style="font-weight:bold;margin-bottom:10px;">✨ Создать промокод</div>
-                <input type="text" id="promo-code-in" placeholder="Код (напр. GIFT2025)" style="margin:5px 0;">
-                <div style="display:flex;gap:8px;">
-                    <input type="number" id="promo-reward-in" placeholder="💰 Монеты" style="margin:5px 0;">
-                    <input type="number" id="promo-uses-in" placeholder="🔢 Макс. использ." style="margin:5px 0;">
-                </div>
-                <input type="text" id="promo-gift-in" placeholder="🎁 Подарок (опц., напр. 🍪)" style="margin:5px 0;">
-                <button class="btn" style="margin-top:5px;" onclick="createPromo()">Создать промокод</button>
+        <!-- ── Market ── -->
+        <div id="adm-market" class="adm-section">
+            <div style="background:#0d1720;border-radius:20px;padding:16px;border:1px solid rgba(255,255,255,0.06);margin-bottom:12px;">
+                <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">📊 Статистика рынка</div>
+                <div id="adm-market-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;"></div>
             </div>
+            <div class="search-box" style="margin-bottom:10px;">
+                <span style="color:var(--secondary);">🔍</span>
+                <input type="text" placeholder="Поиск по товарам..." oninput="admFilterMarket(this.value)">
+            </div>
+            <div id="adm-market-list"></div>
+        </div>
+
+        <!-- ── Promos ── -->
+        <div id="adm-promos" class="adm-section">
+            <div class="tool-card" style="margin-bottom:12px;">
+                <div class="tool-card-title">✨ Создать промокод</div>
+                <input type="text" id="promo-code-in" placeholder="Код (напр. GIFT2025)" style="margin:0 0 8px;text-transform:uppercase;">
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <input type="number" id="promo-reward-in" placeholder="💰 Монеты" style="margin:0;flex:1;">
+                    <input type="number" id="promo-uses-in" placeholder="🔢 Лимит" style="margin:0;flex:1;">
+                </div>
+                <input type="text" id="promo-gift-in" placeholder="🎁 Подарок-эмодзи (опц.)" style="margin:0 0 10px;">
+                <button class="btn" style="background:var(--accent);" onclick="createPromo()">✨ Создать промокод</button>
+            </div>
+            <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;" id="promo-count-lbl"></div>
             <div id="promo-list"></div>
         </div>
 
-        <!-- Tools -->
+        <!-- ── Tools ── -->
         <div id="adm-tools" class="adm-section">
             <div style="display:flex;flex-direction:column;gap:10px;">
-                <div class="card" style="text-align:left;">
-                    <div style="font-weight:bold;margin-bottom:8px;">📢 Рассылка монет всем</div>
-                    <input type="number" id="bcast-coins" placeholder="Количество монет">
-                    <button class="btn" style="background:var(--green);" onclick="broadcastCoins()">Разослать</button>
+                <div class="tool-card">
+                    <div class="tool-card-title">📢 Рассылка монет всем</div>
+                    <div style="display:flex;gap:8px;">
+                        <input type="number" id="bcast-coins" placeholder="Количество монет" style="margin:0;flex:1;">
+                        <button class="btn" style="background:var(--green);width:48px;padding:0;height:42px;flex-shrink:0;" onclick="broadcastCoins()">✓</button>
+                    </div>
                 </div>
-                <div class="card" style="text-align:left;">
-                    <div style="font-weight:bold;margin-bottom:8px;">✈️ Рассылка в Telegram</div>
-                    <textarea id="bcast-msg" placeholder="Текст сообщения..." style="min-height:80px;margin-bottom:8px;"></textarea>
-                    <button class="btn" style="background:linear-gradient(90deg,#0088cc,#006bad);" onclick="broadcastMsg()">Разослать в TG</button>
+                <div class="tool-card">
+                    <div class="tool-card-title">✈️ Рассылка в Telegram</div>
+                    <textarea id="bcast-msg" placeholder="Текст сообщения..." style="min-height:70px;margin-bottom:8px;resize:vertical;"></textarea>
+                    <button class="btn" style="background:linear-gradient(90deg,#0088cc,#006bad);" onclick="broadcastMsg()">📨 Разослать в TG</button>
                 </div>
-                <div class="card" style="text-align:left;">
-                    <div style="font-weight:bold;margin-bottom:8px;">🎁 Выдать подарок всем</div>
-                    <select id="bcast-gift">
-                        ${/* will be filled by JS */''}
-                    </select>
-                    <button class="btn" style="background:var(--orange);" onclick="broadcastGift()">Выдать всем</button>
+                <div class="tool-card">
+                    <div class="tool-card-title">🎁 Выдать подарок всем</div>
+                    <div style="display:flex;gap:8px;">
+                        <select id="bcast-gift" style="flex:1;margin:0;height:42px;border-radius:12px;">${catalog ? catalog.map(x=>`<option value="${x.id}">${x.i} ${x.n}</option>`).join('') : ''}</select>
+                        <button class="btn" style="background:var(--orange);width:48px;padding:0;height:42px;flex-shrink:0;" onclick="broadcastGift()">🎁</button>
+                    </div>
                 </div>
-                <button class="btn" style="background:#1a2636;border:1px solid var(--err);color:var(--err);" onclick="clearAllShowcases()">🧹 Очистить все витрины</button>
-                <button class="btn" style="background:#1a2636;border:1px solid var(--secondary);color:var(--secondary);" onclick="clearMarket()">🗑️ Очистить весь рынок</button>
-                <div style="border-top:1px solid rgba(255,255,255,0.07);margin:4px 0;padding-top:10px;">
-                    <div style="font-size:11px;color:var(--secondary);margin-bottom:8px;">⚠️ Сброс и перевыдача</div>
-                    <button class="btn" style="background:linear-gradient(135deg,#1a0a0a,#2a0a0a);border:2px solid var(--err);color:#ff6b6b;font-weight:bold;" onclick="resetAndReissue()">🔄 Очистить инвентари + рынок и выдать новые</button>
+                <div style="height:1px;background:rgba(255,255,255,0.06);"></div>
+                <div class="tool-card">
+                    <div class="tool-card-title">🧹 Очистить</div>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <button class="btn" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:var(--secondary);text-align:left;padding:12px 14px;font-size:13px;" onclick="clearAllShowcases()">🧹 Очистить все витрины</button>
+                        <button class="btn" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:var(--secondary);text-align:left;padding:12px 14px;font-size:13px;" onclick="clearMarket()">🗑️ Очистить весь рынок</button>
+                    </div>
+                </div>
+                <div class="danger-zone">
+                    <div class="danger-zone-title">⚠️ Опасная зона</div>
+                    <button class="btn" style="background:rgba(231,76,60,0.1);border:1.5px solid rgba(231,76,60,0.4);color:#ff6b6b;font-weight:bold;text-align:left;padding:12px 14px;font-size:13px;" onclick="resetAndReissue()">🔄 Сбросить инвентари + рынок и выдать новые</button>
                 </div>
             </div>
         </div>
 
-        <!-- Sales Log (shop purchases → ckovoroda) -->
+        <!-- ── Sales Log ── -->
         <div id="adm-sales" class="adm-section">
-            <div style="font-size:13px;color:var(--secondary);margin-bottom:12px;">История покупок из магазина (деньги идут на счёт ckovoroda)</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;">🛒 История покупок из магазина</div>
+                <div style="display:flex;align-items:center;gap:5px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:10px;padding:4px 10px;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 1.5s infinite;"></span>
+                    <span style="font-size:10px;color:var(--green);font-weight:bold;">Live</span>
+                </div>
+            </div>
+            <div id="adm-sales-total" style="margin-bottom:12px;"></div>
             <div id="adm-sales-list"><div style="color:var(--secondary);text-align:center;padding:20px;">Загрузка...</div></div>
         </div>
 
@@ -715,7 +792,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, onValue, push, remove, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const config = {
         apiKey: "AIzaSyDK9IMy-DDNXvPcHv7uAjgZ8ZLdXUh8OCw",
@@ -998,6 +1075,17 @@
         document.getElementById('auth-screen').style.display='none'; document.getElementById('auth-screen').style.minHeight='0';
         document.getElementById('app').style.display='block';
         if(user.isAdm){document.getElementById('adm-nav').style.display='flex';initAdmin();}
+
+        // === PRESENCE (онлайн-статус) ===
+        const presenceRef = ref(db, 'presence/' + id);
+        const connectedRef = ref(db, '.info/connected');
+        onValue(connectedRef, snap => {
+            if (snap.val() === true) {
+                set(presenceRef, { online: true, lastSeen: Date.now() });
+                onDisconnect(presenceRef).set({ online: false, lastSeen: Date.now() });
+            }
+        });
+
         onValue(ref(db,'users/'+id),s=>{
             const d=s.val(); if(!d) return;
             document.getElementById('header-name').innerHTML=buildUsername(d);
@@ -1507,14 +1595,20 @@
         const bR=ref(db,'users/'+user.id),bS=await get(bR);
         if(bS.val().balance<p) return showToast("Нет монет!",'var(--err)');
         const mS=await get(ref(db,'market/'+k));if(!mS.exists()) return showToast("Уже купили!",'var(--err)');
-        const itm=mS.val();await remove(ref(db,'market/'+k));
+        const itm=mS.val();
+        // Берём продавца из данных Firebase, а не из параметра (защита от устаревших данных)
+        const sellerId = itm.sI;
+        if(!sellerId) return showToast("Ошибка: продавец не найден!",'var(--err)');
+        await remove(ref(db,'market/'+k));
         // Preserve original inst so item ID stays the same after purchase
         const inv=bS.val().cloudInv||[];inv.push({...itm,seen:false});
         await update(bR,{balance:bS.val().balance-p,cloudInv:inv});
-        const sS=await get(ref(db,'users/'+si));if(sS.exists()) await update(ref(db,'users/'+si),{balance:sS.val().balance+parseInt(p)});
+        // Деньги идут продавцу (не ckovoroda!)
+        const sS=await get(ref(db,'users/'+sellerId));
+        if(sS.exists()) await update(ref(db,'users/'+sellerId),{balance:sS.val().balance+parseInt(p)});
         // Notify seller via Telegram
         const rarObj=getRarityObj(itm);
-        getTgId(si).then(cid=>sendTg(cid,`🛒 <b>${user.name}</b> купил твой товар!\n\n${rarObj.icon} <b>${itm.n}</b> ${itm.i||''}\nТы получил <b>${p}💰</b>`));
+        getTgId(sellerId).then(cid=>sendTg(cid,`🛒 <b>${user.name}</b> купил твой товар!\n\n${rarObj.icon} <b>${itm.n}</b> ${itm.i||''}\nТы получил <b>${p}💰</b>`));
         if(e) flyEmoji(itm.i,e.clientX,e.clientY);
         flashBalance(); showToast("Куплено! "+itm.i);
     };
@@ -1558,27 +1652,44 @@
             </div>`
         ).join('');
 
-        // Load avatars for friends
+        // Load avatars + presence для друзей
         const frEntries = Object.entries(frs);
-        const frAvatars = {};
-        const frCosmetics = {};
+        const frAvatars = {}, frCosmetics = {}, frPresence = {};
         await Promise.all(frEntries.map(async([id])=>{
-            const us=await get(ref(db,'users/'+id));
-            frAvatars[id]=us.exists()&&us.val().pic?us.val().pic:'';
-            frCosmetics[id]=us.exists()?(us.val().activeCosmetic||{}):{};
+            const [us, pr] = await Promise.all([
+                get(ref(db,'users/'+id)),
+                get(ref(db,'presence/'+id))
+            ]);
+            frAvatars[id] = us.exists()&&us.val().pic ? us.val().pic : '';
+            frCosmetics[id] = us.exists() ? (us.val().activeCosmetic||{}) : {};
+            const pVal = pr.exists() ? pr.val() : null;
+            // Онлайн если флаг true и lastSeen не старше 2 минут
+            frPresence[id] = pVal && pVal.online && (Date.now() - (pVal.lastSeen||0)) < 120000;
         }));
 
-        document.getElementById('friends-list').innerHTML=frEntries.map(([id,data])=>
-            `<div class="card" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        document.getElementById('friends-list').innerHTML=frEntries.map(([id,data])=>{
+            const isOnline = frPresence[id];
+            const dotColor = isOnline ? '#2ecc71' : '#4a6080';
+            const dotGlow = isOnline ? '0 0 6px rgba(46,204,113,0.8)' : 'none';
+            const statusText = isOnline ? 'В сети' : 'Не в сети';
+            return `<div class="card" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
                 <div style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;" onclick="openUserProfile('${id}')">
-                    ${frAvatars[id]
-                        ? `<img src="${frAvatars[id]}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">`
-                        : `<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👤</div>`}
-                    <div><div style="font-weight:bold;">${buildUsername({username:data.name, activeCosmetic:frCosmetics[id]||{}})}</div><div style="font-size:11px;color:var(--secondary);">Нажми чтобы открыть профиль</div></div>
+                    <div style="position:relative;flex-shrink:0;">
+                        ${frAvatars[id]
+                            ? `<img src="${frAvatars[id]}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid ${isOnline?'var(--green)':'rgba(255,255,255,0.1)'};display:block;" onerror="this.style.display='none'">`
+                            : `<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:22px;">👤</div>`}
+                        <div style="position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid #070d14;box-shadow:${dotGlow};${isOnline?'animation:pulse 2s infinite;':''}"></div>
+                    </div>
+                    <div>
+                        <div style="font-weight:bold;">${buildUsername({username:data.name, activeCosmetic:frCosmetics[id]||{}})}</div>
+                        <div style="font-size:11px;color:${isOnline?'var(--green)':'var(--secondary)'};margin-top:2px;display:flex;align-items:center;gap:4px;">
+                            <span>${statusText}</span>
+                        </div>
+                    </div>
                 </div>
                 <button onclick="removeFriend('${id}','${data.name}')" style="background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.3);color:var(--err);border-radius:10px;padding:8px 10px;font-size:16px;cursor:pointer;flex-shrink:0;" title="Удалить друга">🗑️</button>
-            </div>`
-        ).join('')||(frEntries.length===0&&reqEntries.length===0?`<p style="color:var(--secondary);text-align:center;padding:30px;">Нет друзей</p>`:'');
+            </div>`;
+        }).join('')||(frEntries.length===0&&reqEntries.length===0?`<p style="color:var(--secondary);text-align:center;padding:30px;">Нет друзей</p>`:'');
     }
     window.acceptFr = async (fid,fn) => {
         await update(ref(db,`users/${user.id}/friends/${fid}`),{name:fn});
@@ -2006,36 +2117,109 @@
         document.querySelectorAll('.adm-tab').forEach(b=>b.classList.remove('active'));
         document.getElementById('adm-'+id).classList.add('active');
         btn.classList.add('active');
+        // Отписываемся от продаж если уходим с вкладки
+        if(id!=='sales' && salesUnsubscribe) { salesUnsubscribe(); salesUnsubscribe=null; }
         if(id==='sales') loadSalesLog();
+        if(id==='market') loadAdminMarket();
     };
 
-    async function loadSalesLog(){
+    window.admRefresh = () => { showToast('Данные обновлены 🔄','var(--accent)'); };
+
+    let salesUnsubscribe = null;
+    function loadSalesLog(){
         const el=document.getElementById('adm-sales-list');
-        try{
-            const snap=await get(ref(db,'users/ckovoroda'));
-            const shopLog=(snap.exists()&&snap.val().shopLog)||[];
-            if(!shopLog.length){el.innerHTML='<div style="color:var(--secondary);text-align:center;padding:30px;">Нет покупок</div>';return;}
-            const sorted=[...shopLog].reverse();
+        const totalEl=document.getElementById('adm-sales-total');
+        // Отписываемся от предыдущего слушателя если был
+        if(salesUnsubscribe) { salesUnsubscribe(); salesUnsubscribe=null; }
+        el.innerHTML='<div style="color:var(--secondary);text-align:center;padding:20px;">Загрузка...</div>';
+        salesUnsubscribe = onValue(ref(db,'users/ckovoroda/shopLog'), snap=>{
+            const shopLog = snap.exists() ? snap.val() : null;
+            const logArr = shopLog ? (Array.isArray(shopLog) ? shopLog : Object.values(shopLog)) : [];
+            if(!logArr.length){
+                totalEl.innerHTML='';
+                el.innerHTML='<div style="color:var(--secondary);text-align:center;padding:30px;">Нет покупок</div>';
+                return;
+            }
+            const sorted=[...logArr].reverse();
+            const totalEarned=logArr.reduce((a,r)=>a+(r.price||0),0);
+            totalEl.innerHTML=`<div style="background:rgba(36,129,204,0.08);border:1px solid rgba(36,129,204,0.15);border-radius:16px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:12px;color:var(--secondary);">Всего покупок: <b style="color:white;">${logArr.length}</b></div>
+                <div style="font-size:14px;font-weight:900;color:gold;">+${totalEarned.toLocaleString()}💰</div>
+            </div>`;
             el.innerHTML=sorted.map(r=>{
                 const d=new Date(r.time);
                 const dateStr=d.toLocaleDateString('ru-RU')+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-                return `<div style="background:#0e1824;border-radius:14px;padding:12px 14px;margin-bottom:8px;border-left:3px solid var(--accent);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                return `<div style="background:#0d1720;border-radius:16px;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;gap:10px;">
                     <div>
                         <div style="font-weight:bold;font-size:13px;">${r.emoji||'🎁'} ${r.item}</div>
-                        <div style="font-size:11px;color:var(--secondary);margin-top:2px;">👤 ${r.buyer} <span style="color:#4a6080;">(${r.buyerId})</span></div>
-                        <div style="font-size:10px;color:#4a6080;margin-top:1px;">🕐 ${dateStr}</div>
+                        <div style="font-size:11px;color:var(--secondary);margin-top:3px;">👤 ${r.buyer} <span style="color:#4a6080;font-family:monospace;">(${r.buyerId})</span></div>
+                        <div style="font-size:10px;color:#4a6080;margin-top:2px;">🕐 ${dateStr}</div>
                     </div>
-                    <div style="color:gold;font-weight:bold;font-size:14px;white-space:nowrap;">+${r.price.toLocaleString()}💰</div>
+                    <div style="color:gold;font-weight:bold;font-size:14px;white-space:nowrap;background:rgba(255,215,0,0.08);padding:6px 12px;border-radius:12px;">+${r.price.toLocaleString()}💰</div>
                 </div>`;
             }).join('');
-        }catch(e){el.innerHTML='<div style="color:var(--err);text-align:center;padding:20px;">Ошибка загрузки</div>';}
+        });
     }
 
+    let adminMarketData = {};
+    window.loadAdminMarket = async () => {
+        const snap = await get(ref(db,'market/'));
+        adminMarketData = snap.val() || {};
+        renderAdminMarket(adminMarketData);
+    };
+    window.admFilterMarket = (q) => {
+        const filtered = Object.fromEntries(Object.entries(adminMarketData).filter(([,x])=>x.n.toLowerCase().includes(q.toLowerCase())||x.sN.toLowerCase().includes(q.toLowerCase())));
+        renderAdminMarket(filtered);
+    };
+    function renderAdminMarket(data) {
+        const entries = Object.entries(data);
+        const totalVal = entries.reduce((a,[,x])=>a+(x.mP||0),0);
+        document.getElementById('adm-market-stats').innerHTML=`
+            <div style="background:#0a1520;border-radius:14px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:18px;font-weight:900;color:var(--accent);">${entries.length}</div>
+                <div style="font-size:10px;color:var(--secondary);margin-top:2px;">Лотов</div>
+            </div>
+            <div style="background:#0a1520;border-radius:14px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:18px;font-weight:900;color:gold;">${totalVal.toLocaleString()}</div>
+                <div style="font-size:10px;color:var(--secondary);margin-top:2px;">💰 Сумма</div>
+            </div>
+            <div style="background:#0a1520;border-radius:14px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:18px;font-weight:900;color:var(--green);">${entries.length?Math.round(totalVal/entries.length).toLocaleString():0}</div>
+                <div style="font-size:10px;color:var(--secondary);margin-top:2px;">💰 Среднее</div>
+            </div>`;
+        const list = document.getElementById('adm-market-list');
+        if(!entries.length){list.innerHTML='<div style="text-align:center;color:var(--secondary);padding:30px;">Рынок пуст</div>';return;}
+        list.innerHTML=entries.map(([k,x])=>`
+            <div style="background:#0d1720;border-radius:16px;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:12px;">
+                <div style="font-size:28px;flex-shrink:0;">${x.i||'🎁'}</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:bold;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${x.n}</div>
+                    <div style="font-size:11px;color:var(--secondary);margin-top:2px;">👤 ${x.sN} <span style="color:#4a6080;">(${x.sI})</span></div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:14px;font-weight:900;color:gold;">${(x.mP||0).toLocaleString()}💰</div>
+                    <button onclick="admRemoveMarketItem('${k}')" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);color:var(--err);border-radius:8px;padding:3px 8px;font-size:10px;cursor:pointer;margin-top:4px;">🗑 Снять</button>
+                </div>
+            </div>`).join('');
+    }
+    window.admRemoveMarketItem = async (k) => {
+        const ok = await showConfirm('Снять лот','Этот товар будет снят с рынка без возврата продавцу.','🗑️','var(--err)','Снять');
+        if(!ok) return;
+        await remove(ref(db,'market/'+k));
+        showToast('Лот снят с рынка','var(--err)');
+        loadAdminMarket();
+    };
+
     window.admFilterUsers = (q) => {
-        const query=q.toLowerCase();
+        const query=q.toLowerCase().trim();
+        let visible=0;
         document.querySelectorAll('.adm-user-row').forEach(row=>{
-            row.style.display=row.dataset.name.includes(query)?'':'none';
+            const match = !query || row.dataset.name.includes(query);
+            row.parentElement.style.display=match?'':'none';
+            if(match) visible++;
         });
+        const countEl=document.getElementById('adm-user-count');
+        if(countEl) countEl.textContent = query ? `${visible} найдено` : `${document.querySelectorAll('.adm-user-row').length} игроков`;
     };
 
     function initAdmin() {
@@ -2049,79 +2233,89 @@
             const sorted=[...nonAdminList].sort((a,b)=>(b[1].balance||0)-(a[1].balance||0));
 
             // Stats
+            const avgBal = nonAdminList.length ? Math.round(totalBal/nonAdminList.length) : 0;
+            const tgLinked = nonAdminList.filter(([,u])=>u.tgChatId).length;
             document.getElementById('adm-stats-grid').innerHTML=`
-                <div class="adm-stat"><div class="val">${nonAdminList.length}</div><div class="lbl">Игроков</div></div>
-                <div class="adm-stat"><div class="val">${totalItems}</div><div class="lbl">Предметов</div></div>
-                <div class="adm-stat"><div class="val">${totalBal.toLocaleString()}</div><div class="lbl">Монет в игре</div></div>
-                <div class="adm-stat"><div class="val">${sorted[0]?sorted[0][1].username:'—'}</div><div class="lbl">Богатейший</div></div>`;
+                <div class="adm-stat blue"><div class="ico">👥</div><div class="val">${nonAdminList.length}</div><div class="lbl">Игроков</div></div>
+                <div class="adm-stat green"><div class="ico">📦</div><div class="val">${totalItems}</div><div class="lbl">Предметов</div></div>
+                <div class="adm-stat orange"><div class="ico">💰</div><div class="val">${totalBal.toLocaleString()}</div><div class="lbl">Монет в игре</div></div>
+                <div class="adm-stat purple"><div class="ico">✈️</div><div class="val">${tgLinked}</div><div class="lbl">TG привязано</div></div>`;
+            document.getElementById('adm-online-hint').textContent = `${nonAdminList.length} игроков · ${totalItems} предметов · ${totalBal.toLocaleString()}💰 в обороте`;
 
             // Top users
-            document.getElementById('adm-top-users').innerHTML=sorted.slice(0,5).map(([id,u],i)=>
-                `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;" onclick="openUserProfile('${id}')">
-                    <span style="color:var(--secondary);font-size:13px;">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} ${u.username}</span>
-                    <span style="color:gold;font-weight:bold;font-size:13px;">${(u.balance||0).toLocaleString()}💰 <span style="color:var(--accent);font-size:16px;">›</span></span>
-                </div>`
-            ).join('');
+            document.getElementById('adm-top-users').innerHTML=sorted.slice(0,5).map(([id,u],i)=>{
+                const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];
+                return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;" onclick="openUserProfile('${id}')">
+                    <span style="font-size:18px;width:24px;text-align:center;">${medals[i]}</span>
+                    <span style="flex:1;font-size:13px;font-weight:bold;">${u.username}</span>
+                    <span style="color:gold;font-weight:bold;font-size:13px;">${(u.balance||0).toLocaleString()}💰</span>
+                    <span style="color:var(--accent);font-size:16px;">›</span>
+                </div>`;
+            }).join('');
 
             // Users list
+            const userCount = document.getElementById('adm-user-count');
+            if(userCount) userCount.textContent = userList.length + ' игроков';
             document.getElementById('adm-users-list').innerHTML=userList.map(([id,u])=>{
-                const invStr=(u.cloudInv||[]).map(x=>x.i).join('')||'пусто';
+                const invCount = (u.cloudInv||[]).length;
+                const hasTg = !!u.tgChatId;
+                const isAdm = ADMIN_IDS.has(id);
                 return `<div>
-                    <div class="adm-user-row" data-name="${u.username.toLowerCase()}">
-                        <div style="flex:1;" onclick="admToggleUser('${id}')">
-                            <div class="uname">👤 ${u.username}</div>
-                            <div class="uinfo">📦 ${(u.cloudInv||[]).length} предм. · 🌐 ${u.ip||'—'}</div>
+                    <div class="adm-user-row" data-name="${(u.username||'').toLowerCase()} ${(u.ip||'').toLowerCase()}">
+                        <div class="uavatar">${(u.username||'?')[0].toUpperCase()}</div>
+                        <div style="flex:1;min-width:0;" onclick="admToggleUser('${id}')">
+                            <div class="uname">${u.username}${isAdm?` <span style="background:rgba(243,156,18,0.2);color:var(--orange);font-size:9px;padding:1px 6px;border-radius:8px;font-weight:bold;">ADMIN</span>`:''}</div>
+                            <div class="uinfo">${hasTg?'✈️':'📵'} · 📦 ${invCount} · 🌐 ${u.ip||'—'}</div>
                         </div>
-                        <button onclick="openUserProfile('${id}')" style="background:rgba(36,129,204,0.15);border:1px solid rgba(36,129,204,0.3);color:var(--accent);border-radius:10px;padding:6px 10px;font-size:12px;cursor:pointer;margin-right:8px;white-space:nowrap;">👁 Профиль</button>
-                        <div class="ubadge" onclick="admToggleUser('${id}')">${(u.balance||0).toLocaleString()}💰</div>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <button onclick="openUserProfile('${id}')" style="background:rgba(36,129,204,0.1);border:1px solid rgba(36,129,204,0.2);color:var(--accent);border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;">👁</button>
+                            <div class="ubadge" onclick="admToggleUser('${id}')">${(u.balance||0).toLocaleString()}💰</div>
+                        </div>
                     </div>
                     <div id="admu-${id}" class="adm-user-detail">
                         <!-- Info grid -->
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-                            <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:10px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                            <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:10px;">
                                 <div style="font-size:10px;color:#4a6080;margin-bottom:3px;">🔑 Пароль</div>
-                                <div style="font-size:12px;font-family:monospace;color:#7f91a4;word-break:break-all;">${u.password}</div>
+                                <div style="font-size:12px;font-family:monospace;color:#7f91a4;word-break:break-all;">${u.password||'—'}</div>
                             </div>
-                            <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:10px;">
+                            <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:10px;">
                                 <div style="font-size:10px;color:#4a6080;margin-bottom:3px;">🌐 IP</div>
                                 <div style="font-size:12px;font-family:monospace;color:#7f91a4;">${u.ip||'—'}</div>
                             </div>
-                            <div style="background:rgba(36,129,204,0.1);border:1px solid rgba(36,129,204,0.2);border-radius:12px;padding:10px;">
+                            <div style="background:rgba(36,129,204,0.08);border:1px solid rgba(36,129,204,0.15);border-radius:12px;padding:10px;">
                                 <div style="font-size:10px;color:#4a6080;margin-bottom:3px;">💰 Баланс</div>
-                                <div style="font-size:14px;font-weight:bold;color:var(--accent);">${(u.balance||0).toLocaleString()}</div>
+                                <div style="font-size:16px;font-weight:900;color:var(--accent);">${(u.balance||0).toLocaleString()}</div>
                             </div>
-                            <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:10px;">
+                            <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:10px;">
                                 <div style="font-size:10px;color:#4a6080;margin-bottom:3px;">📦 Предметов</div>
-                                <div style="font-size:14px;font-weight:bold;color:#7f91a4;">${(u.cloudInv||[]).length}</div>
+                                <div style="font-size:16px;font-weight:900;color:#7f91a4;">${invCount}</div>
                             </div>
                         </div>
 
                         <!-- Inventory -->
-                        <div style="font-size:11px;color:#4a6080;margin-bottom:6px;font-weight:bold;letter-spacing:0.5px;">📦 ИНВЕНТАРЬ</div>
-                        <div class="adm-inv-scroll" style="margin-bottom:12px;">
-                            ${(u.cloudInv||[]).length ? (u.cloudInv||[]).map(x=>{
+                        <div style="font-size:10px;color:#4a6080;margin-bottom:6px;font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;">📦 Инвентарь</div>
+                        <div class="adm-inv-scroll" style="margin-bottom:14px;">
+                            ${invCount ? (u.cloudInv||[]).map(x=>{
                                 const rar=RARITY_LEVELS[x.rarity||0]||RARITY_LEVELS[0];
                                 const borderC=x.nft?'rgba(255,215,0,0.5)':rar.id===3?'rgba(255,215,0,0.4)':rar.id===2?'rgba(162,155,254,0.4)':rar.id===1?'rgba(77,180,255,0.35)':'rgba(255,255,255,0.07)';
-                                return `<div class="adm-inv-item" title="${x.n} ${rar.icon}" style="border-color:${borderC};">${x.img?`<img src="${x.img}" style="width:28px;height:28px;object-fit:contain;">`:x.i}<div style="font-size:7px;color:#4a6080;font-family:monospace;text-align:center;">#${String(x.inst||'').slice(-4)}</div></div>`;
+                                return `<div class="adm-inv-item" title="${x.n} ${rar.icon}" style="border:1px solid ${borderC};">${x.img?`<img src="${x.img}" style="width:28px;height:28px;object-fit:contain;">`:x.i}<div style="font-size:7px;color:#4a6080;font-family:monospace;text-align:center;">#${String(x.inst||'').slice(-4)}</div></div>`;
                             }).join('') : '<span style="color:var(--secondary);font-size:12px;padding:8px;">Пусто</span>'}
                         </div>
 
                         <!-- Actions -->
                         <div style="display:flex;flex-direction:column;gap:8px;">
-                            <!-- Set balance -->
-                            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:10px 12px;">
-                                <div style="font-size:11px;color:#4a6080;margin-bottom:6px;font-weight:bold;">💰 ИЗМЕНИТЬ БАЛАНС</div>
+                            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:10px 12px;">
+                                <div style="font-size:10px;color:#4a6080;margin-bottom:6px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">💰 Изменить баланс</div>
                                 <div style="display:flex;gap:6px;">
-                                    <input type="number" id="ab-${id}" placeholder="Новый баланс" style="flex:1;margin:0;padding:8px 12px;height:38px;border-radius:10px;font-size:13px;">
-                                    <button class="btn" style="width:48px;padding:0;height:38px;border-radius:10px;font-size:16px;" onclick="setB('${id}')">✓</button>
+                                    <input type="number" id="ab-${id}" placeholder="Новый баланс" style="flex:1;margin:0;padding:8px 12px;height:40px;border-radius:10px;font-size:13px;">
+                                    <button class="btn" style="width:50px;padding:0;height:40px;border-radius:10px;font-size:18px;background:var(--green);" onclick="setB('${id}')">✓</button>
                                 </div>
                             </div>
-
-                            <!-- Give item -->
-                            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:10px 12px;">
-                                <div style="font-size:11px;color:#4a6080;margin-bottom:6px;font-weight:bold;">🎁 ВЫДАТЬ ПРЕДМЕТ</div>
+                            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:10px 12px;">
+                                <div style="font-size:10px;color:#4a6080;margin-bottom:6px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">🎁 Выдать предмет</div>
                                 <div style="display:flex;gap:6px;margin-bottom:6px;">
-                                    <select id="ag-${id}" style="flex:1;margin:0;padding:6px 10px;height:38px;border-radius:10px;font-size:12px;">
+                                    <select id="ag-${id}" style="flex:1;margin:0;padding:6px 10px;height:40px;border-radius:10px;font-size:12px;">
                                         <option value="nft_liz">🦎 Ящерица (NFT)</option>
                                         <option value="nft_beer">🍺 Кружка Пива (NFT)</option>
                                         <option value="nft_sock">🧦 Носок (NFT)</option>
@@ -2130,18 +2324,16 @@
                                     </select>
                                 </div>
                                 <div style="display:flex;gap:6px;">
-                                    <select id="agr-${id}" style="flex:1;margin:0;padding:6px 10px;height:38px;border-radius:10px;font-size:12px;">
+                                    <select id="agr-${id}" style="flex:1;margin:0;padding:6px 10px;height:40px;border-radius:10px;font-size:12px;">
                                         <option value="0">⬜ Обычный</option>
                                         <option value="1">🔵 Редкий</option>
                                         <option value="2">🟣 Эпический</option>
                                         <option value="3">🟡 Легендарный</option>
                                     </select>
-                                    <button class="btn" style="width:48px;padding:0;height:38px;border-radius:10px;background:var(--orange);font-size:16px;" onclick="giveI('${id}')">🎁</button>
+                                    <button class="btn" style="width:50px;padding:0;height:40px;border-radius:10px;background:var(--orange);font-size:18px;" onclick="giveI('${id}')">🎁</button>
                                 </div>
                             </div>
-
-                            <!-- Danger zone -->
-                            <button class="btn" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:var(--err);padding:10px;font-size:13px;border-radius:12px;" onclick="delUser('${id}')">🗑️ Удалить аккаунт</button>
+                            <button class="btn" style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);color:var(--err);padding:11px;font-size:13px;border-radius:12px;" onclick="delUser('${id}')">🗑️ Удалить аккаунт</button>
                         </div>
                     </div>
                 </div>`;
@@ -2151,18 +2343,23 @@
         // Load promos
         onValue(ref(db,'promos'),s=>{
             const promos=s.val();
+            const countLbl = document.getElementById('promo-count-lbl');
+            if(countLbl) countLbl.textContent = promos ? `Промокодов: ${Object.keys(promos).length}` : 'Промокодов нет';
             document.getElementById('promo-list').innerHTML = promos
-                ? Object.entries(promos).map(([code,p])=>`
-                    <div class="promo-card">
-                        <div class="promo-badge ${(p.useCount||0)>=(p.maxUses||999)?'used':''}">${(p.useCount||0)>=(p.maxUses||999)?'Исчерпан':'Активен'}</div>
-                        <div class="promo-code-text">${code}</div>
-                        <div style="font-size:12px;color:var(--secondary);margin-top:4px;">
-                            💰 +${p.reward||0} монет ${p.gift?`· 🎁 ${p.gift}`:''} · Использован: ${p.useCount||0}/${p.maxUses||'∞'}
+                ? Object.entries(promos).map(([code,p])=>{
+                    const isUsed=(p.useCount||0)>=(p.maxUses||999);
+                    return `<div class="promo-card">
+                        <div class="promo-card-info">
+                            <div class="promo-badge ${isUsed?'used':''}">${isUsed?'Исчерпан':'● Активен'}</div>
+                            <div class="promo-code-text">${code}</div>
+                            <div style="font-size:11px;color:var(--secondary);margin-top:5px;">
+                                💰 +${p.reward||0} ${p.gift?`· 🎁 ${p.gift}`:''} · ${p.useCount||0}/${p.maxUses||'∞'} использ.
+                            </div>
                         </div>
-                        <button class="btn" style="margin-top:8px;padding:6px;font-size:11px;background:var(--err);" onclick="deletePromo('${code}')">Удалить</button>
-                    </div>`)
-                    .join('')
-                : `<p style="color:var(--secondary);text-align:center;">Промокодов нет</p>`;
+                        <button class="btn" style="padding:8px 12px;font-size:12px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);color:var(--err);flex-shrink:0;" onclick="deletePromo('${code}')">🗑</button>
+                    </div>`;
+                }).join('')
+                : `<p style="color:var(--secondary);text-align:center;padding:20px;">Промокодов нет</p>`;
         });
     }
 
