@@ -2623,9 +2623,11 @@
         const friends = d.friends || {};
 
         const rarityMap = [
-            {max:19, label:'Обычный', color:'#7f91a4'},
-            {max:20, label:'Эпический', color:'#a29bfe'},
-            {max:99, label:'Обычный', color:'#7f91a4'}
+            {label:'Обычный',   color:'#7f91a4', icon:'⚪'},
+            {label:'Редкий',    color:'#4db4ff', icon:'🔵'},
+            {label:'Эпический', color:'#a29bfe', icon:'🟣'},
+            {label:'Легендарный',color:'#ffd700',icon:'🟡'},
+            {label:'NFT',       color:'#ffd700', icon:'✦'},
         ];
 
         const giftCard = (x, isPinCard=false) => {
