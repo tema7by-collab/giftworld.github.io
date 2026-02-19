@@ -1308,7 +1308,7 @@
                     :isEpic?'color:#a29bfe;font-weight:bold;':isRare?'color:#4db4ff;font-weight:bold;':'';
                 const priceColor=isLizard?'#4dff91':isNFT||isLeg?'gold':isEpic?'#a29bfe':isRare?'#4db4ff':'var(--accent)';
                 const rarLabel = isNFT?'':isLeg?'🟡 Легенд.':isEpic?'🟣 Эпик':isRare?'🔵 Редкий':'';
-                const itemId = x.nftSerial ? x.nftSerial : (x.inst ? String(x.inst).slice(-6) : '');
+                const itemId = x.inst ? String(x.inst).slice(-6) : '';
 
                 return `<div style="padding:0;display:flex;flex-direction:column;background:${cardBg};border:1.5px solid ${cardBorder};box-shadow:${cardGlow};border-radius:20px;position:relative;overflow:hidden;">
                     ${isNFT||isLeg?`<div style="position:absolute;inset:0;border-radius:20px;background:linear-gradient(120deg,transparent 30%,${isLizard?'rgba(77,255,145,0.05)':isLeg?'rgba(255,215,0,0.06)':'rgba(255,215,0,0.06)'} 50%,transparent 70%);background-size:200% 100%;pointer-events:none;"></div>`:''}
