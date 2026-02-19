@@ -1784,21 +1784,28 @@
     // ═══════════════════════════════════════════
     //  🔄 ОБМЕН ПОДАРКАМИ
     // ═══════════════════════════════════════════
+    const GIFT_CARD_SIZE = 80;
+
+    function makeTradeCard(x, onclickFn, selClass) {
+        const cat = catalog.find(c=>c.id==x.id);
+        const img = x.img||(cat&&cat.img);
+        const emoji = x.i||(cat&&cat.i)||'🎁';
+        const isNFT = !!x.nft;
+        return `<div onclick="${onclickFn}('${x.inst}',this)" data-inst="${x.inst}"
+            style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:8px 6px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;position:relative;width:${GIFT_CARD_SIZE}px;height:${GIFT_CARD_SIZE}px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;"
+            class="${selClass}">
+            ${isNFT?`<div style="position:absolute;top:2px;right:2px;background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-size:6px;font-weight:900;border-radius:4px;padding:1px 3px;">NFT</div>`:''}
+            ${img
+                ?`<img src="${img}" style="width:44px;height:44px;object-fit:contain;display:block;margin:0 auto 4px;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:32px;line-height:1;">${emoji}</span>`
+                :`<span style="font-size:32px;line-height:1;margin-bottom:4px;">${emoji}</span>`}
+            <div style="font-size:9px;font-weight:bold;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:72px;">${x.n}</div>
+        </div>`;
+    }
+
     window.openTradeModal = async (friendId, friendName) => {
         const s = await get(ref(db,'users/'+user.id)), d = s.val();
         const myInv = d.cloudInv || [];
         if(!myInv.length) return showToast('У тебя нет подарков для обмена!','var(--err)');
-        const makeCard = (x) => {
-            const cat = catalog.find(c=>c.id==x.id);
-            const img = x.img||(cat&&cat.img);
-            const emoji = x.i||(cat&&cat.i)||'🎁';
-            const isNFT = !!x.nft;
-            return `<div onclick="selectTradeGift('${x.inst}',this)" data-inst="${x.inst}" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:10px 8px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;position:relative;" class="trade-gift-card">
-                ${isNFT?`<div style="position:absolute;top:3px;right:3px;background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-size:7px;font-weight:900;border-radius:5px;padding:1px 4px;">NFT</div>`:''}
-                ${img?`<img src="${img}" style="width:44px;height:44px;object-fit:contain;display:block;margin:0 auto 5px;" onerror="this.style.display='none'">`:`<div style="font-size:36px;line-height:1;margin-bottom:5px;">${emoji}</div>`}
-                <div style="font-size:10px;font-weight:bold;color:white;">${x.n}</div>
-            </div>`;
-        };
         document.getElementById('modal-content').innerHTML = `
             <div style="padding:5px 0;">
                 <div style="text-align:center;margin-bottom:16px;">
@@ -1807,8 +1814,8 @@
                     <div style="font-size:13px;color:var(--secondary);">с <b style="color:white;">${friendName}</b></div>
                 </div>
                 <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;margin-bottom:8px;">ВЫБЕРИ СВОЙ ПОДАРОК:</div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:260px;overflow-y:auto;margin-bottom:14px;" id="trade-my-grid">
-                    ${myInv.map(makeCard).join('')}
+                <div style="display:flex;flex-wrap:wrap;gap:8px;max-height:260px;overflow-y:auto;margin-bottom:14px;" id="trade-my-grid">
+                    ${myInv.map(x=>makeTradeCard(x,'selectTradeGift','trade-gift-card')).join('')}
                 </div>
                 <div id="trade-selected-info" style="display:none;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);border-radius:14px;padding:10px;text-align:center;margin-bottom:12px;animation:tradeGlow 1.5s ease infinite;">
                     <div style="font-size:11px;color:var(--secondary);margin-bottom:4px;">ВЫБРАНО</div>
@@ -1829,7 +1836,7 @@
         });
         el.style.border = '2px solid var(--green)';
         el.style.background = 'rgba(46,204,113,0.1)';
-        const name = el.querySelector('div[style*="font-weight:bold"]')?.innerText || '?';
+        const name = el.querySelector('div[style*="font-size:9px"]')?.innerText || '?';
         document.getElementById('trade-selected-info').style.display='block';
         document.getElementById('trade-selected-name').innerText = name;
         document.getElementById('trade-send-btn').style.display='block';
@@ -1845,50 +1852,42 @@
         await set(ref(db,`tradeOffers/${friendId}/${offerKey}`),{
             fromId: user.id, fromName: user.name,
             itemInst: selectedTradeInst, itemName: itm.n, itemEmoji: itm.i||'🎁',
-            ts: Date.now()
+            itemImg: itm.img||'',
+            ts: Date.now(), status: 'waiting_reply'
         });
         getTgId(friendId).then(cid=>sendTg(cid,`🔄 <b>${user.name}</b> предлагает обмен подарком <b>${itm.n} ${itm.i||''}</b>!\n\nОткрой приложение → Друзья → входящие обмены.`));
         closeModal();
         showToast(`🔄 Предложение отправлено ${friendName}!`,'var(--green)');
     };
 
+    // Б выбирает свой подарок в ответ
     window.acceptTradeOffer = async (offerKey, offer) => {
-        // Show my gifts to pick what I give in return
         const s = await get(ref(db,'users/'+user.id)), d = s.val();
         const myInv = d.cloudInv||[];
         if(!myInv.length) return showToast('У тебя нет подарков для обмена!','var(--err)');
-        const makeCard = (x) => {
-            const cat = catalog.find(c=>c.id==x.id);
-            const img = x.img||(cat&&cat.img);
-            const emoji = x.i||(cat&&cat.i)||'🎁';
-            return `<div onclick="selectAcceptGift('${x.inst}',this)" data-inst="${x.inst}" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:10px 8px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;" class="accept-gift-card">
-                ${img?`<img src="${img}" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 5px;" onerror="this.style.display='none'">`:`<div style="font-size:32px;line-height:1;margin-bottom:5px;">${emoji}</div>`}
-                <div style="font-size:10px;font-weight:bold;color:white;">${x.n}</div>
-            </div>`;
-        };
         document.getElementById('modal-content').innerHTML = `
             <div style="padding:5px 0;">
                 <div style="text-align:center;margin-bottom:14px;">
                     <div style="font-size:32px;">🔄</div>
-                    <h3 style="margin:6px 0 4px;">Принять обмен</h3>
-                    <div style="background:#0a1520;border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;">
-                        <div style="font-size:24px;">${offer.itemEmoji}</div>
-                        <div>
-                            <div style="font-size:11px;color:var(--secondary);">ОТ ${offer.fromName.toUpperCase()}</div>
+                    <h3 style="margin:6px 0 4px;">Ответить на обмен</h3>
+                    <div style="background:#0a1520;border-radius:12px;padding:10px;display:flex;align-items:center;gap:10px;margin:10px 0;">
+                        <div style="font-size:28px;">${offer.itemEmoji}</div>
+                        <div style="text-align:left;">
+                            <div style="font-size:10px;color:var(--secondary);">ПРЕДЛАГАЕТ ${offer.fromName.toUpperCase()}</div>
                             <div style="font-weight:bold;">${offer.itemName}</div>
                         </div>
                     </div>
                     <div style="font-size:13px;color:var(--secondary);">↕️ Выбери что отдашь взамен:</div>
                 </div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:220px;overflow-y:auto;margin-bottom:14px;">
-                    ${myInv.map(makeCard).join('')}
+                <div style="display:flex;flex-wrap:wrap;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:14px;">
+                    ${myInv.map(x=>makeTradeCard(x,'selectAcceptGift','accept-gift-card')).join('')}
                 </div>
                 <div id="accept-selected-info" style="display:none;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);border-radius:14px;padding:8px;text-align:center;margin-bottom:12px;">
                     <div style="font-size:11px;color:var(--secondary);">ТЫ ОТДАЁШЬ</div>
                     <div id="accept-selected-name" style="font-weight:bold;color:var(--green);"></div>
                 </div>
-                <button id="accept-confirm-btn" class="btn" style="background:var(--green);display:none;" onclick="confirmTrade('${offerKey}','${offer.fromId}','${offer.itemInst}')">✅ Подтвердить обмен</button>
-                <button class="btn" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:var(--err);margin-top:8px;" onclick="declineTrade('${offerKey}')">❌ Отклонить</button>
+                <button id="accept-confirm-btn" class="btn" style="background:var(--green);display:none;" onclick="replyTradeOffer('${offerKey}','${offer.fromId}','${offer.itemInst}','${offer.itemName}','${offer.itemEmoji}')">📨 Отправить ответ</button>
+                <button class="btn" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:var(--err);margin-top:8px;" onclick="declineTrade('${offerKey}','${offer.fromId}')">❌ Отклонить</button>
                 <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);margin-top:8px;" onclick="closeModal()">Закрыть</button>
             </div>`;
         openModal();
@@ -1899,44 +1898,105 @@
         selectedAcceptInst = inst;
         document.querySelectorAll('.accept-gift-card').forEach(c=>{c.style.border='2px solid rgba(255,255,255,0.06)';c.style.background='#0a1520';});
         el.style.border='2px solid var(--green)';el.style.background='rgba(46,204,113,0.1)';
-        const name = el.querySelector('div[style*="font-weight:bold"]')?.innerText||'?';
+        const name = el.querySelector('div[style*="font-size:9px"]')?.innerText||'?';
         document.getElementById('accept-selected-info').style.display='block';
         document.getElementById('accept-selected-name').innerText=name;
         document.getElementById('accept-confirm-btn').style.display='block';
     };
 
-    window.confirmTrade = async (offerKey, fromId, theirInst) => {
+    // Б отправляет ответ → запись попадает к А на подтверждение
+    window.replyTradeOffer = async (offerKey, fromId, theirInst, theirItemName, theirItemEmoji) => {
         if(!selectedAcceptInst) return showToast('Выбери подарок!','var(--err)');
-        // Fetch both inventories
-        const [mySnap, theirSnap] = await Promise.all([get(ref(db,'users/'+user.id)), get(ref(db,'users/'+fromId))]);
+        const s = await get(ref(db,'users/'+user.id)), d = s.val();
+        const myInv = d.cloudInv||[];
+        const myItem = myInv.find(x=>String(x.inst)==String(selectedAcceptInst));
+        if(!myItem) return showToast('Подарок не найден!','var(--err)');
+        const confirmKey = `confirm_${offerKey}`;
+        await Promise.all([
+            remove(ref(db,`tradeOffers/${user.id}/${offerKey}`)),
+            set(ref(db,`tradeOffers/${fromId}/${confirmKey}`),{
+                fromId: user.id, fromName: user.name,
+                itemInst: selectedAcceptInst, itemName: myItem.n, itemEmoji: myItem.i||'🎁',
+                itemImg: myItem.img||'',
+                theirInst: theirInst, theirItemName: theirItemName, theirItemEmoji: theirItemEmoji,
+                ts: Date.now(), status: 'pending_confirm',
+                originalOfferKey: offerKey
+            })
+        ]);
+        getTgId(fromId).then(cid=>sendTg(cid,`🔄 <b>${user.name}</b> ответил на твоё предложение!\nОн предлагает <b>${myItem.n} ${myItem.i||''}</b> за твой <b>${theirItemName}</b>\n\nОткрой Друзья → подтверди обмен!`));
+        closeModal();
+        showToast('📨 Ответ отправлен! Ждём подтверждения.','var(--green)');
+    };
+
+    // А видит pending_confirm и подтверждает/отклоняет
+    window.confirmTradeOffer = async (confirmKey, offerJson) => {
+        const offer = JSON.parse(decodeURIComponent(offerJson));
+        document.getElementById('modal-content').innerHTML = `
+            <div style="padding:5px 0;">
+                <div style="text-align:center;margin-bottom:16px;">
+                    <div style="font-size:36px;">🤝</div>
+                    <h3 style="margin:6px 0 4px;">Подтвердить обмен</h3>
+                    <div style="font-size:13px;color:var(--secondary);">от <b style="color:white;">${offer.fromName}</b></div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:16px 0;background:#0a1520;border-radius:16px;padding:16px;">
+                    <div style="text-align:center;flex:1;">
+                        <div style="font-size:10px;color:var(--secondary);margin-bottom:6px;">ТЫ ОТДАЁШЬ</div>
+                        <div style="font-size:36px;">${offer.theirItemEmoji}</div>
+                        <div style="font-size:11px;font-weight:bold;margin-top:4px;">${offer.theirItemName}</div>
+                    </div>
+                    <div style="font-size:28px;color:var(--green);">⇄</div>
+                    <div style="text-align:center;flex:1;">
+                        <div style="font-size:10px;color:var(--secondary);margin-bottom:6px;">ТЫ ПОЛУЧАЕШЬ</div>
+                        <div style="font-size:36px;">${offer.itemEmoji}</div>
+                        <div style="font-size:11px;font-weight:bold;margin-top:4px;">${offer.itemName}</div>
+                    </div>
+                </div>
+                <button class="btn" style="background:var(--green);font-weight:bold;" onclick="finalizeTrade('${confirmKey}','${encodeURIComponent(JSON.stringify(offer))}')">✅ Подтвердить</button>
+                <button class="btn" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:var(--err);margin-top:8px;" onclick="cancelConfirmTrade('${confirmKey}','${offer.fromId}')">❌ Отклонить</button>
+                <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);margin-top:8px;" onclick="closeModal()">Закрыть</button>
+            </div>`;
+        openModal();
+    };
+
+    window.finalizeTrade = async (confirmKey, offerJson) => {
+        const offer = JSON.parse(decodeURIComponent(offerJson));
+        const [mySnap, theirSnap] = await Promise.all([get(ref(db,'users/'+user.id)), get(ref(db,'users/'+offer.fromId))]);
         const myD = mySnap.val(), theirD = theirSnap.val();
         let myInv = myD.cloudInv||[], theirInv = theirD.cloudInv||[];
-        const myItem = myInv.find(x=>String(x.inst)==String(selectedAcceptInst));
-        const theirItem = theirInv.find(x=>String(x.inst)==String(theirInst));
+        const myItem = myInv.find(x=>String(x.inst)==String(offer.theirInst));
+        const theirItem = theirInv.find(x=>String(x.inst)==String(offer.itemInst));
         if(!myItem) return showToast('Твой подарок не найден!','var(--err)');
-        if(!theirItem) return showToast('Подарок партнёра уже не доступен!','var(--err)');
-        // Swap items
-        myInv = myInv.filter(x=>String(x.inst)!=String(selectedAcceptInst));
-        theirInv = theirInv.filter(x=>String(x.inst)!=String(theirInst));
-        myInv.push({...theirItem, from:`🔄 ${theirD.name}`, seen:false, inst:Date.now()});
+        if(!theirItem) return showToast('Подарок партнёра уже недоступен!','var(--err)');
+        myInv = myInv.filter(x=>String(x.inst)!=String(offer.theirInst));
+        theirInv = theirInv.filter(x=>String(x.inst)!=String(offer.itemInst));
+        myInv.push({...theirItem, from:`🔄 ${theirD.username||theirD.name}`, seen:false, inst:Date.now()});
         theirInv.push({...myItem, from:`🔄 ${user.name}`, seen:false, inst:Date.now()+1});
         await Promise.all([
             update(ref(db,'users/'+user.id),{cloudInv:myInv}),
-            update(ref(db,'users/'+fromId),{cloudInv:theirInv}),
-            remove(ref(db,`tradeOffers/${user.id}/${offerKey}`))
+            update(ref(db,'users/'+offer.fromId),{cloudInv:theirInv}),
+            remove(ref(db,`tradeOffers/${user.id}/${confirmKey}`))
         ]);
-        getTgId(fromId).then(cid=>sendTg(cid,`🔄 <b>${user.name}</b> принял обмен! Ты получил <b>${myItem.n}</b> взамен!`));
+        getTgId(offer.fromId).then(cid=>sendTg(cid,`✅ <b>${user.name}</b> подтвердил обмен!\nТы получил <b>${myItem.n}</b> взамен <b>${offer.itemName}</b>!`));
         closeModal();
         spawnConfetti(window.innerWidth/2,window.innerHeight/2,35);
         flyEmoji('🔄',window.innerWidth/2,window.innerHeight/2);
-        showToast(`🔄 Обмен завершён! Ты получил ${theirItem.n}!`,'var(--green)');
+        showToast(`✅ Обмен завершён! Ты получил ${offer.itemName}!`,'var(--green)');
     };
 
-    window.declineTrade = async (offerKey) => {
-        await remove(ref(db,`tradeOffers/${user.id}/${offerKey}`));
+    window.cancelConfirmTrade = async (confirmKey, fromId) => {
+        await remove(ref(db,`tradeOffers/${user.id}/${confirmKey}`));
+        getTgId(fromId).then(cid=>sendTg(cid,`❌ <b>${user.name}</b> отклонил обмен.`));
         closeModal();
         showToast('Обмен отклонён','var(--secondary)');
     };
+
+    window.declineTrade = async (offerKey, fromId) => {
+        await remove(ref(db,`tradeOffers/${user.id}/${offerKey}`));
+        if(fromId) getTgId(fromId).then(cid=>sendTg(cid,`❌ <b>${user.name}</b> отклонил твоё предложение обмена.`));
+        closeModal();
+        showToast('Обмен отклонён','var(--secondary)');
+    };
+
 
     // Listen for incoming trade offers
     function listenTradeOffers() {
@@ -1964,10 +2024,47 @@
         if(!container) return;
         const entries = Object.entries(offers);
         if(!entries.length){container.innerHTML='';return;}
-        container.innerHTML=`
-            <div style="background:linear-gradient(135deg,rgba(46,204,113,0.08),rgba(46,204,113,0.03));border:1px solid rgba(46,204,113,0.25);border-radius:18px;padding:14px;margin-bottom:12px;">
-                <div style="font-size:11px;font-weight:bold;color:var(--green);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;">🔄 Входящие обмены (${entries.length})</div>
-                ${entries.map(([key,offer])=>`
+
+        // Разделяем: входящие предложения и ожидающие подтверждения
+        const incoming = entries.filter(([k,o]) => o.status !== 'pending_confirm');
+        const pendingConfirm = entries.filter(([k,o]) => o.status === 'pending_confirm');
+
+        let html = '';
+
+        // Блок: ожидает подтверждения от меня (А)
+        if(pendingConfirm.length) {
+            html += `<div style="background:linear-gradient(135deg,rgba(243,156,18,0.08),rgba(243,156,18,0.03));border:1px solid rgba(243,156,18,0.35);border-radius:18px;padding:14px;margin-bottom:12px;">
+                <div style="font-size:11px;font-weight:bold;color:var(--orange);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;">🤝 Ожидает твоего подтверждения (${pendingConfirm.length})</div>
+                ${pendingConfirm.map(([key,offer])=>`
+                    <div style="background:#0a1520;border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid rgba(243,156,18,0.2);">
+                        <div style="font-size:11px;color:var(--secondary);margin-bottom:8px;">от <b style="color:white;">${offer.fromName}</b></div>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+                            <div style="text-align:center;">
+                                <div style="font-size:10px;color:var(--secondary);">ТЫ ОТДАЁШЬ</div>
+                                <div style="font-size:28px;">${offer.theirItemEmoji||'🎁'}</div>
+                                <div style="font-size:10px;font-weight:bold;">${offer.theirItemName||'?'}</div>
+                            </div>
+                            <div style="font-size:22px;color:var(--green);">⇄</div>
+                            <div style="text-align:center;">
+                                <div style="font-size:10px;color:var(--secondary);">ТЫ ПОЛУЧАЕШЬ</div>
+                                <div style="font-size:28px;">${offer.itemEmoji}</div>
+                                <div style="font-size:10px;font-weight:bold;">${offer.itemName}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn" style="padding:8px;font-size:12px;background:var(--green);" onclick='confirmTradeOffer("${key}","${encodeURIComponent(JSON.stringify(offer))}")'>✅ Подтвердить</button>
+                            <button class="btn" style="padding:8px;font-size:12px;background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.3);color:var(--err);" onclick='cancelConfirmTrade("${key}","${offer.fromId}")'>❌ Отклонить</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        // Блок: входящие предложения (Б отвечает)
+        if(incoming.length) {
+            html += `<div style="background:linear-gradient(135deg,rgba(46,204,113,0.08),rgba(46,204,113,0.03));border:1px solid rgba(46,204,113,0.25);border-radius:18px;padding:14px;margin-bottom:12px;">
+                <div style="font-size:11px;font-weight:bold;color:var(--green);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;">🔄 Входящие обмены (${incoming.length})</div>
+                ${incoming.map(([key,offer])=>`
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0a1520;border-radius:12px;padding:10px 12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.06);">
                         <div style="display:flex;align-items:center;gap:10px;flex:1;">
                             <div style="font-size:28px;">${offer.itemEmoji}</div>
@@ -1976,10 +2073,14 @@
                                 <div style="font-size:11px;color:var(--secondary);">от ${offer.fromName}</div>
                             </div>
                         </div>
-                        <button class="btn" style="padding:8px 14px;font-size:12px;width:auto;background:var(--green);" onclick='acceptTradeOffer("${key}",${JSON.stringify(offer)})'>🔄 Принять</button>
+                        <button class="btn" style="padding:8px 14px;font-size:12px;width:auto;background:var(--green);" onclick='acceptTradeOffer("${key}",${JSON.stringify(offer)})'>↕️ Ответить</button>
                     </div>
                 `).join('')}
             </div>`;
+        }
+
+        container.innerHTML = html;
+    }
     }
 
     // ═══════════════════════════════════════════
@@ -2047,9 +2148,11 @@
             const cat = catalog.find(c=>c.id==x.id);
             const img = x.img||(cat&&cat.img);
             const emoji = x.i||(cat&&cat.i)||'🎁';
-            return `<div onclick="selectDuelGift('${x.inst}',this)" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:10px 8px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;" class="duel-my-card">
-                ${img?`<img src="${img}" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 5px;" onerror="this.style.display='none'">`:`<div style="font-size:32px;line-height:1;margin-bottom:5px;">${emoji}</div>`}
-                <div style="font-size:10px;font-weight:bold;color:white;">${x.n}</div>
+            const isNFT = !!x.nft;
+            return `<div onclick="selectDuelGift('${x.inst}',this)" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:8px 6px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;position:relative;width:80px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;" class="duel-my-card">
+                ${isNFT?`<div style="position:absolute;top:2px;right:2px;background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-size:6px;font-weight:900;border-radius:4px;padding:1px 3px;">NFT</div>`:''}
+                ${img?`<img src="${img}" style="width:44px;height:44px;object-fit:contain;display:block;margin:0 auto 4px;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:32px;line-height:1;">${emoji}</span>`:`<span style="font-size:32px;line-height:1;margin-bottom:4px;">${emoji}</span>`}
+                <div style="font-size:9px;font-weight:bold;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:72px;">${x.n}</div>
             </div>`;
         };
         document.getElementById('modal-content').innerHTML=`
@@ -2063,7 +2166,7 @@
                     </div>
                     <div style="font-size:12px;color:var(--secondary);">Выбери свою ставку:</div>
                 </div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:220px;overflow-y:auto;margin-bottom:14px;">
+                <div style="display:flex;flex-wrap:wrap;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:14px;">
                     ${myInv.map(makeCard).join('')}
                 </div>
                 <div id="duel-selected-info" style="display:none;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.3);border-radius:14px;padding:8px;text-align:center;margin-bottom:12px;">
