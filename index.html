@@ -254,6 +254,56 @@
         .duel-clash-emoji { position:fixed; top:50%; left:50%; font-size:64px; pointer-events:none; z-index:9999; animation: duelClash 0.85s ease forwards; }
         .duel-sword-spin { position:fixed; top:50%; left:50%; font-size:52px; pointer-events:none; z-index:9999; animation: swordSpin 0.6s ease-in-out; }
 
+
+        /* ═══ PINNED GIFTS RING AROUND AVATAR ═══ */
+        @keyframes orbitRing {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        @keyframes counterOrbit {
+            from { transform: rotate(0deg) scale(1); }
+            to   { transform: rotate(-360deg) scale(1); }
+        }
+        @keyframes ringPulse {
+            0%,100% { opacity:0.6; transform: scale(1); }
+            50%      { opacity:1;   transform: scale(1.15); }
+        }
+        .avatar-ring-wrap {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 14px;
+        }
+        .avatar-ring-orbit {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 148px; height: 148px;
+            margin-left: -74px; margin-top: -74px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: orbitRing 8s linear infinite;
+        }
+        .avatar-ring-item {
+            position: absolute;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: rgba(10,21,32,0.92);
+            border: 1.5px solid rgba(255,255,255,0.18);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+            overflow: hidden;
+            animation: counterOrbit 8s linear infinite;
+        }
+        .avatar-ring-item img {
+            width: 22px; height: 22px;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+        }
+        .avatar-ring-item span { font-size: 16px; line-height: 1; }
+        .avatar-ring-item.ring-nft {
+            border-color: rgba(255,215,0,0.7);
+            background: rgba(26,18,0,0.95);
+            box-shadow: 0 0 8px rgba(255,215,0,0.4), 0 2px 10px rgba(0,0,0,0.6);
+        }
         .nft-card { animation: pulseGold 4s ease-in-out infinite, fadeInScale 0.4s ease both !important; }
         .nft-card::before { content: ''; position: absolute; inset: 0; border-radius: 25px; pointer-events: none; background: linear-gradient(105deg, transparent 30%, rgba(255,215,0,0.12) 50%, transparent 70%); z-index: 1; }
         .nft-emoji { animation: float 3.5s ease-in-out infinite; }
@@ -1714,6 +1764,9 @@
         if(t===user.id) return showToast("Это ты сам!",'var(--err)');
         const fs=await get(ref(db,'users/'+t));
         if(!fs.exists()) return showToast("Не найден!",'var(--err)');
+        const frPrivSnap=await get(ref(db,'users/'+t));
+        const frPriv=(frPrivSnap.val()&&frPrivSnap.val().privacy)||{};
+        if(frPriv.allowFriends===false) return showToast("❌ Вы не можете отправить заявку этому пользователю из-за его настроек конфиденциальности",'var(--err)');
         await update(ref(db,`users/${t}/requests/${user.id}`),{from:user.id,name:user.name});
         getTgId(t).then(cid=>sendTg(cid,`👥 <b>Запрос в друзья!</b>\n\n<b>${user.name}</b> хочет добавить тебя в друзья.\n\n✅ Открой приложение → Друзья → Входящие запросы`));
         showToast("Запрос отправлен!");
@@ -2068,6 +2121,10 @@
     };
 
     window.startDuel = async (myInst, friendId, friendName) => {
+        // Проверка конфиденциальности
+        const dPrivSnap=await get(ref(db,'users/'+friendId));
+        const dPriv=(dPrivSnap.val()&&dPrivSnap.val().privacy)||{};
+        if(dPriv.allowDuel===false) return showToast(`❌ Вы не можете вызвать ${friendName} на дуэль из-за его настроек конфиденциальности`,'var(--err)');
         // Send duel challenge
         const s = await get(ref(db,'users/'+user.id)), d = s.val();
         const myItem = (d.cloudInv||[]).find(x=>String(x.inst)==String(myInst));
@@ -2338,6 +2395,10 @@
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
         const inv=d.cloudInv||[],itm=inv.find(x=>x.inst==inst);
         if(!itm) return showToast("Не найден!",'var(--err)');
+        // Проверка конфиденциальности получателя
+        const frSnap2=await get(ref(db,'users/'+fid));
+        const frPrivacy=(frSnap2.val()&&frSnap2.val().privacy)||{};
+        if(frPrivacy.allowGifts===false) return showToast("❌ Вы не можете отправить подарок этому пользователю из-за его настроек конфиденциальности",'var(--err)');
         const newGiven=(d.giftsGiven||0)+1;
         await update(r,{cloudInv:inv.filter(x=>x.inst!=inst),pinnedInsts:(d.pinnedInsts||[]).filter(id=>String(id)!=String(inst)),giftsGiven:newGiven});
         const frS=await get(ref(db,'users/'+fid)),frInv=frS.val().cloudInv||[];
@@ -2391,11 +2452,30 @@
         document.getElementById('profile').innerHTML = `
         <div class="tg-profile">
             <div class="tg-profile-hero">
-                <div class="tg-avatar-wrap">
-                    <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
-                         class="tg-avatar" onclick="openEdit()"
-                         onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-                    <div class="tg-avatar-edit" onclick="openEdit()">✏️</div>
+                <div class="avatar-ring-wrap">
+                    ${(() => {
+                        const pinnedArr = [...pinnedInsts].slice(0,6);
+                        if(!pinnedArr.length) return '';
+                        const angle = 360 / pinnedArr.length;
+                        const radius = 58;
+                        return `<div class="avatar-ring-orbit">${pinnedArr.map((inst, i) => {
+                            const item = inv.find(x => String(x.inst) === String(inst));
+                            if(!item) return '';
+                            const cat2 = catalog.find(c => c.id == item.id);
+                            const img2 = item.img || (cat2 && cat2.img);
+                            const em2 = item.i || (cat2 && cat2.i) || '🎁';
+                            const rad = (angle * i - 90) * Math.PI / 180;
+                            const x2 = 74 + radius * Math.cos(rad) - 16;
+                            const y2 = 74 + radius * Math.sin(rad) - 16;
+                            return \`<div class="avatar-ring-item\${item.nft?' ring-nft':''}" style="left:\${x2}px;top:\${y2}px;">\${img2?'<img src="'+img2+'" onerror="this.style.display='none'">':'<span>'+em2+'</span>'}</div>\`;
+                        }).join('')}</div>`;
+                    })()}
+                    <div class="tg-avatar-wrap" style="position:relative;z-index:2;">
+                        <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
+                             class="tg-avatar" onclick="openEdit()"
+                             onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                        <div class="tg-avatar-edit" onclick="openEdit()">✏️</div>
+                    </div>
                 </div>
                 <h2 class="tg-username">${buildUsername(d)}</h2>
                 <p class="tg-bio">${d.bio || 'Нет описания'}</p>
@@ -2556,6 +2636,38 @@
             <button class="btn" onclick="saveP()" style="margin-bottom:4px;">Сохранить профиль</button>
             <hr style="border-color:rgba(255,255,255,0.07);margin:12px 0;">
 
+
+            <!-- Privacy collapsible -->
+            <div style="background:rgba(255,107,107,0.05);border:1px solid rgba(255,107,107,0.2);border-radius:14px;padding:10px 14px;margin-bottom:10px;">
+                <div class="collapsible-header" onclick="toggleCollapsible('privacy-section',this)">
+                    <span style="font-weight:bold;font-size:14px;">🔒 Конфиденциальность</span>
+                    <span class="collapsible-arrow">▼</span>
+                </div>
+                <div class="collapsible-body" id="privacy-section">
+                    <div style="padding:8px 0 4px;display:flex;flex-direction:column;gap:10px;">
+                        <p style="font-size:11px;color:var(--secondary);margin:0 0 6px;">Если функция выключена — другие пользователи не смогут выполнить это действие.</p>
+                        ${['showGifts:👁️ Показывать мои подарки:Другие видят твои подарки в профиле',
+                           'allowGifts:🎁 Принимать подарки:Другие могут дарить тебе подарки',
+                           'allowTrade:🔄 Принимать обмены:Другие могут предлагать обмены',
+                           'allowDuel:⚔️ Принимать дуэли:Другие могут вызывать тебя на дуэль',
+                           'allowFriends:👥 Принимать заявки в друзья:Другие могут добавить тебя в друзья'
+                          ].map(item => {
+                            const [key, label, desc] = item.split(':');
+                            const isOn = (d.privacy||{})[key] !== false;
+                            return \`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0a1520;border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,0.06);">
+                                <div>
+                                    <div style="font-size:13px;font-weight:bold;">\${label}</div>
+                                    <div style="font-size:11px;color:var(--secondary);margin-top:2px;">\${desc}</div>
+                                </div>
+                                <div onclick="togglePrivacy('\${key}')" style="cursor:pointer;width:44px;height:24px;border-radius:12px;background:\${isOn?'var(--green)':'rgba(255,255,255,0.1)'};position:relative;transition:background 0.25s;flex-shrink:0;border:1.5px solid \${isOn?'rgba(46,204,113,0.5)':'rgba(255,255,255,0.08)'};">
+                                    <div style="position:absolute;top:2px;\${isOn?'right:2px':'left:2px'};width:18px;height:18px;border-radius:50%;background:white;transition:all 0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>
+                                </div>
+                            </div>\`;
+                          }).join('')}
+                    </div>
+                </div>
+            </div>
+
             <!-- Telegram collapsible -->
             <div style="background:rgba(0,136,204,0.08);border:1px solid rgba(0,136,204,0.2);border-radius:14px;padding:10px 14px;margin-bottom:10px;">
                 <div class="collapsible-header" onclick="toggleCollapsible('tg-section',this)">
@@ -2594,6 +2706,16 @@
         openModal();
     };
 
+
+    window.togglePrivacy = async (key) => {
+        const s = await get(ref(db,'users/'+user.id)), d = s.val();
+        const privacy = d.privacy || {};
+        const current = privacy[key] !== false;
+        privacy[key] = !current;
+        await update(ref(db,'users/'+user.id), {privacy});
+        showToast(privacy[key] ? '✅ Включено' : '🔒 Выключено', privacy[key] ? 'var(--green)' : 'var(--secondary)');
+        openEdit();
+    };
     window.cosmClick = async (id, type, isOwned, canBuy, price) => {
         const r=ref(db,'users/'+user.id);
         const s=await get(r); const d=s.val();
@@ -2694,9 +2816,29 @@
             <div style="padding:5px 0;">
                 <!-- Header -->
                 <div style="text-align:center;margin-bottom:16px;">
-                    <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
-                         style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);margin-bottom:10px;background:#0e1824;"
-                         onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                    <div style="position:relative;display:inline-block;margin-bottom:10px;">
+                        ${(() => {
+                            const pArr = pinned.slice(0,6);
+                            if(!pArr.length) return '';
+                            const ang = 360/pArr.length;
+                            const rad2 = 50;
+                            return '<div style="position:absolute;top:50%;left:50%;width:120px;height:120px;margin-left:-60px;margin-top:-60px;border-radius:50%;animation:orbitRing 8s linear infinite;">' +
+                            pArr.map((inst2,i2) => {
+                                const it2 = inv.find(x=>String(x.inst)===String(inst2));
+                                if(!it2) return '';
+                                const ct2 = catalog.find(c=>c.id==it2.id);
+                                const mg2 = it2.img||(ct2&&ct2.img);
+                                const em3 = it2.i||(ct2&&ct2.i)||'🎁';
+                                const r3 = (ang*i2-90)*Math.PI/180;
+                                const x3 = 60+rad2*Math.cos(r3)-13;
+                                const y3 = 60+rad2*Math.sin(r3)-13;
+                                return \`<div class="avatar-ring-item\${it2.nft?' ring-nft':''}" style="left:\${x3}px;top:\${y3}px;width:26px;height:26px;animation:counterOrbit 8s linear infinite;">\${mg2?'<img src="'+mg2+'" style="width:18px;height:18px;" onerror="this.style.display=\'none\'">':'<span style=\"font-size:13px;\">'+em3+'</span>'}</div>\`;
+                            }).join('') + '</div>';
+                        })()}
+                        <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
+                             style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);background:#0e1824;position:relative;z-index:2;"
+                             onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                    </div>
                     <h3 style="margin:0 0 4px;">${buildUsername(d)}</h3>
                     ${d.bio ? `<p style="color:var(--secondary);font-size:13px;margin:0 0 10px;">${d.bio}</p>` : ''}
                     <div style="display:flex;justify-content:center;gap:20px;">
@@ -2706,13 +2848,14 @@
                 </div>
 
                 <!-- All gifts (pinned first) -->
+                ${((d.privacy||{}).showGifts !== false) ? `
                 <div style="margin-bottom:14px;">
                     <div style="font-size:13px;font-weight:bold;color:var(--secondary);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
                         <span>🎁 Подарки</span>
                         <span style="background:rgba(255,255,255,0.07);border-radius:20px;padding:2px 10px;font-size:11px;">${inv.length}</span>
                     </div>
                     ${allGiftsHtml}
-                </div>
+                </div>` : `<div style="text-align:center;padding:20px;color:var(--secondary);font-size:13px;">🔒 Подарки скрыты настройками конфиденциальности</div>`}
 
                 <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);border:1px solid rgba(255,255,255,0.08);" onclick="closeModal()">Закрыть</button>
             </div>`;
