@@ -2467,7 +2467,7 @@
                             const rad = (angle * i - 90) * Math.PI / 180;
                             const x2 = 74 + radius * Math.cos(rad) - 16;
                             const y2 = 74 + radius * Math.sin(rad) - 16;
-                            return \`<div class="avatar-ring-item\${item.nft?' ring-nft':''}" style="left:\${x2}px;top:\${y2}px;">\${img2?'<img src="'+img2+'" onerror="this.style.display='none'">':'<span>'+em2+'</span>'}</div>\`;
+                            return `<div class="avatar-ring-item${item.nft?' ring-nft':''}" style="left:${x2}px;top:${y2}px;">${img2?'<img src="'+img2+'" onerror="this.style.display=\'none\'">':'<span>'+em2+'</span>'}</div>`;
                         }).join('')}</div>`;
                     })()}
                     <div class="tg-avatar-wrap" style="position:relative;z-index:2;">
@@ -2654,15 +2654,15 @@
                           ].map(item => {
                             const [key, label, desc] = item.split(':');
                             const isOn = (d.privacy||{})[key] !== false;
-                            return \`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0a1520;border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,0.06);">
+                            return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0a1520;border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,0.06);">
                                 <div>
-                                    <div style="font-size:13px;font-weight:bold;">\${label}</div>
-                                    <div style="font-size:11px;color:var(--secondary);margin-top:2px;">\${desc}</div>
+                                    <div style="font-size:13px;font-weight:bold;">${label}</div>
+                                    <div style="font-size:11px;color:var(--secondary);margin-top:2px;">${desc}</div>
                                 </div>
-                                <div onclick="togglePrivacy('\${key}')" style="cursor:pointer;width:44px;height:24px;border-radius:12px;background:\${isOn?'var(--green)':'rgba(255,255,255,0.1)'};position:relative;transition:background 0.25s;flex-shrink:0;border:1.5px solid \${isOn?'rgba(46,204,113,0.5)':'rgba(255,255,255,0.08)'};">
-                                    <div style="position:absolute;top:2px;\${isOn?'right:2px':'left:2px'};width:18px;height:18px;border-radius:50%;background:white;transition:all 0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>
+                                <div onclick="togglePrivacy('${key}')" style="cursor:pointer;width:44px;height:24px;border-radius:12px;background:${isOn?'var(--green)':'rgba(255,255,255,0.1)'};position:relative;transition:background 0.25s;flex-shrink:0;border:1.5px solid ${isOn?'rgba(46,204,113,0.5)':'rgba(255,255,255,0.08)'};">
+                                    <div style="position:absolute;top:2px;${isOn?'right:2px':'left:2px'};width:18px;height:18px;border-radius:50%;background:white;transition:all 0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>
                                 </div>
-                            </div>\`;
+                            </div>`;
                           }).join('')}
                     </div>
                 </div>
@@ -2832,7 +2832,7 @@
                                 const r3 = (ang*i2-90)*Math.PI/180;
                                 const x3 = 60+rad2*Math.cos(r3)-13;
                                 const y3 = 60+rad2*Math.sin(r3)-13;
-                                return \`<div class="avatar-ring-item\${it2.nft?' ring-nft':''}" style="left:\${x3}px;top:\${y3}px;width:26px;height:26px;animation:counterOrbit 8s linear infinite;">\${mg2?'<img src="'+mg2+'" style="width:18px;height:18px;" onerror="this.style.display=\'none\'">':'<span style=\"font-size:13px;\">'+em3+'</span>'}</div>\`;
+                                return `<div class="avatar-ring-item${it2.nft?' ring-nft':''}" style="left:${x3}px;top:${y3}px;width:26px;height:26px;animation:counterOrbit 8s linear infinite;">${mg2?'<img src="'+mg2+'" style="width:18px;height:18px;" onerror="this.style.display=\'none\'">':'<span style="font-size:13px;">'+em3+'</span>'}</div>`;
                             }).join('') + '</div>';
                         })()}
                         <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
