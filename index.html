@@ -1367,7 +1367,7 @@
         const upgradedItem={...baseItem,rarity:newRarity,nftSerial:newSerial,inst:Date.now(),seen:true,from:"⚗️ Слияние"};
         if(isNewNft){upgradedItem.nft=true;delete upgradedItem.rarity;}
         inv.push(upgradedItem);
-        await update(r,{cloudInv:inv});
+        await update(r,{cloudInv:inv, totalMerges:(d.totalMerges||0)+1});
         const newRarObj2=RARITY_LEVELS[newRarity]||RARITY_LEVELS[0];
         getTgId(user.id).then(cid=>sendTg(cid,`⚗️ <b>Слияние завершено!</b>\n\n${newRarObj2.icon} <b>${baseItem.n}</b>\n⬆️ Редкость: <b>${newRarObj2.label}</b>\n\n🎉 Поздравляем с улучшением!`));
         spawnConfetti(window.innerWidth/2,window.innerHeight/2,60);
@@ -2328,7 +2328,7 @@
         await update(r,{cloudInv:inv.filter(x=>x.inst!=inst),pinnedInsts:(d.pinnedInsts||[]).filter(id=>String(id)!=String(inst)),giftsGiven:newGiven});
         const frS=await get(ref(db,'users/'+fid)),frInv=frS.val().cloudInv||[];
         frInv.push({...itm,from:user.name,seen:false,inst:Date.now()});
-        await update(ref(db,'users/'+fid),{cloudInv:frInv});
+        await update(ref(db,'users/'+fid),{cloudInv:frInv,giftsReceived:(frS.val().giftsReceived||0)+1});
         getTgId(fid).then(cid=>sendTg(cid,`🎁 <b>Новый подарок!</b>\n\n<b>${user.name}</b> подарил тебе:\n${itm.i||'🎁'} <b>${itm.n}</b>\n\n🏷 Редкость: <b>${RARITY_LEVELS[itm.r]&&RARITY_LEVELS[itm.r].label||'Обычный'}</b>\n\nОткрой приложение чтобы посмотреть!`));
         closeModal();spawnConfetti(window.innerWidth/2,window.innerHeight/2,40);
         flyEmoji('🎁',window.innerWidth/2,window.innerHeight/2);
