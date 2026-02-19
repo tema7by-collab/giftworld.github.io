@@ -37,6 +37,12 @@
         .nav-btn i { font-size: 22px; margin-bottom: 4px; font-style: normal; }
 
         .badge { position: absolute; top: -2px; right: 15px; background: var(--err); color: white; font-size: 10px; min-width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--bg); }
+        .badge-merge { position: absolute; top: -2px; left: 15px; background: #7c3aed; color: white; font-size: 10px; min-width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--bg); }
+        .collapsible-header { display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding:10px 0 6px; user-select:none; }
+        .collapsible-header:hover { opacity:0.8; }
+        .collapsible-arrow { transition:transform 0.25s; font-size:14px; color:var(--secondary); }
+        .collapsible-body { overflow:hidden; max-height:0; transition:max-height 0.35s ease; }
+        .collapsible-body.open { max-height:3000px; }
         .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--accent); object-fit: cover; background: #0e1621; margin-bottom: 15px; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s; }
         .avatar:hover { transform: scale(1.08) rotate(4deg); border-color: gold; }
 
@@ -602,6 +608,11 @@
                     <button class="btn" style="background:var(--green);" onclick="broadcastCoins()">Разослать</button>
                 </div>
                 <div class="card" style="text-align:left;">
+                    <div style="font-weight:bold;margin-bottom:8px;">✈️ Рассылка в Telegram</div>
+                    <textarea id="bcast-msg" placeholder="Текст сообщения..." style="min-height:80px;margin-bottom:8px;"></textarea>
+                    <button class="btn" style="background:linear-gradient(90deg,#0088cc,#006bad);" onclick="broadcastMsg()">Разослать в TG</button>
+                </div>
+                <div class="card" style="text-align:left;">
                     <div style="font-weight:bold;margin-bottom:8px;">🎁 Выдать подарок всем</div>
                     <select id="bcast-gift">
                         ${/* will be filled by JS */''}
@@ -621,7 +632,7 @@
 
     <div class="nav">
         <button class="nav-btn active" onclick="tab('shop',this)"><i>🛍️</i><span>Магазин</span></button>
-        <button class="nav-btn" onclick="tab('inv',this)"><div id="badge-inv" class="badge">0</div><i>📦</i><span>Склад</span></button>
+        <button class="nav-btn" onclick="tab('inv',this)"><div id="badge-inv" class="badge">0</div><div id="badge-merge" class="badge-merge">0</div><i>📦</i><span>Склад</span></button>
         <button class="nav-btn" onclick="tab('market',this)"><i>⚖️</i><span>Рынок</span></button>
         <button class="nav-btn" onclick="tab('friends',this)"><div id="badge-fr" class="badge">0</div><i>👥</i><span>Друзья</span></button>
         <button class="nav-btn" onclick="tab('profile',this)"><i>👤</i><span>Профиль</span></button>
@@ -919,6 +930,15 @@
             document.getElementById('header-name').innerHTML=buildUsername(d);
             document.getElementById('u-bal').innerText=d.balance;
             renderFriends(d); renderMyProfile(d);
+            // 🔴 Unseen gifts badge
+            const inv=d.cloudInv||[];
+            const unseen=inv.filter(x=>!x.seen).length;
+            const bInv=document.getElementById('badge-inv');
+            bInv.innerText=unseen; bInv.style.display=unseen>0?'flex':'none';
+            // 🟣 Merge badge
+            const mergeCount=getMergeable(inv).length;
+            const bMerge=document.getElementById('badge-merge');
+            bMerge.innerText=mergeCount; bMerge.style.display=mergeCount>0?'flex':'none';
         });
         renderShop(); listenMarket(); giveNftToCkovoroda();
     }
@@ -1115,6 +1135,8 @@
         if(isNewNft){upgradedItem.nft=true;delete upgradedItem.rarity;}
         inv.push(upgradedItem);
         await update(r,{cloudInv:inv});
+        const newRarObj2=RARITY_LEVELS[newRarity]||RARITY_LEVELS[0];
+        getTgId(user.id).then(cid=>sendTg(cid,`⚗️ <b>Слияние завершено!</b>\n\n${newRarObj2.icon} <b>${baseItem.n}</b> повышен до <b>${newRarObj2.label}</b>`));
         spawnConfetti(window.innerWidth/2,window.innerHeight/2,60);
         flyEmoji(rarObj.icon,window.innerWidth/2,window.innerHeight/2);
         showToast(`${rarObj.icon} Слияние успешно! Получен ${rarObj.label}!`,"#a29bfe");
@@ -1406,6 +1428,9 @@
         const inv=bS.val().cloudInv||[];inv.push({...itm,seen:false});
         await update(bR,{balance:bS.val().balance-p,cloudInv:inv});
         const sS=await get(ref(db,'users/'+si));if(sS.exists()) await update(ref(db,'users/'+si),{balance:sS.val().balance+parseInt(p)});
+        // Notify seller via Telegram
+        const rarObj=getRarityObj(itm);
+        getTgId(si).then(cid=>sendTg(cid,`🛒 <b>${user.name}</b> купил твой товар!\n\n${rarObj.icon} <b>${itm.n}</b> ${itm.i||''}\nТы получил <b>${p}💰</b>`));
         if(e) flyEmoji(itm.i,e.clientX,e.clientY);
         flashBalance(); showToast("Куплено! "+itm.i);
     };
@@ -1422,6 +1447,7 @@
         const fs=await get(ref(db,'users/'+t));
         if(!fs.exists()) return showToast("Не найден!",'var(--err)');
         await update(ref(db,`users/${t}/requests/${user.id}`),{from:user.id,name:user.name});
+        getTgId(t).then(cid=>sendTg(cid,`👥 <b>${user.name}</b> хочет добавить тебя в друзья!\n\nОткрой приложение чтобы принять.`));
         showToast("Запрос отправлен!");
     };
     async function renderFriends(d){
@@ -1459,14 +1485,14 @@
         }));
 
         document.getElementById('friends-list').innerHTML=frEntries.map(([id,data])=>
-            `<div class="card" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;" onclick="openUserProfile('${id}')">
-                <div style="display:flex;align-items:center;gap:12px;">
+            `<div class="card" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;" onclick="openUserProfile('${id}')">
                     ${frAvatars[id]
                         ? `<img src="${frAvatars[id]}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">`
                         : `<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👤</div>`}
                     <div><div style="font-weight:bold;">${buildUsername({username:data.name, activeCosmetic:frCosmetics[id]||{}})}</div><div style="font-size:11px;color:var(--secondary);">Нажми чтобы открыть профиль</div></div>
                 </div>
-                <span style="color:var(--accent);font-size:20px;">&#x203A;</span>
+                <button onclick="removeFriend('${id}','${data.name}')" style="background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.3);color:var(--err);border-radius:10px;padding:8px 10px;font-size:16px;cursor:pointer;flex-shrink:0;" title="Удалить друга">🗑️</button>
             </div>`
         ).join('')||(frEntries.length===0&&reqEntries.length===0?`<p style="color:var(--secondary);text-align:center;padding:30px;">Нет друзей</p>`:'');
     }
@@ -1474,6 +1500,15 @@
         await update(ref(db,`users/${user.id}/friends/${fid}`),{name:fn});
         await update(ref(db,`users/${fid}/friends/${user.id}`),{name:user.name});
         await remove(ref(db,`users/${user.id}/requests/${fid}`));showToast("Добавлен!");
+        // Notify via TG
+        getTgId(fid).then(cid=>sendTg(cid,`✅ <b>${user.name}</b> принял твой запрос в друзья!`));
+    };
+    window.removeFriend = async (fid, fname) => {
+        const ok = await showConfirm('Удалить друга', `Удалить @${fname} из друзей? Это удалит вас друг у друга.`, '🗑️', 'var(--err)', 'Удалить');
+        if(!ok) return;
+        await remove(ref(db,`users/${user.id}/friends/${fid}`));
+        await remove(ref(db,`users/${fid}/friends/${user.id}`));
+        showToast('Друг удалён', 'var(--secondary)');
     };
     window.giftOpen = async (inst) => {
         const s=await get(ref(db,'users/'+user.id)),frs=s.val().friends||{};
@@ -1495,6 +1530,7 @@
         const frS=await get(ref(db,'users/'+fid)),frInv=frS.val().cloudInv||[];
         frInv.push({...itm,from:user.name,seen:false,inst:Date.now()});
         await update(ref(db,'users/'+fid),{cloudInv:frInv});
+        getTgId(fid).then(cid=>sendTg(cid,`🎁 <b>${user.name}</b> подарил тебе <b>${itm.n}</b> ${itm.i||''}`));
         closeModal();spawnConfetti(window.innerWidth/2,window.innerHeight/2,40);
         flyEmoji('🎁',window.innerWidth/2,window.innerHeight/2);
         showToast("Подарок отправлен! 🎁",'var(--green)');renderInv();
@@ -1705,11 +1741,41 @@
             <input type="file" id="efile" accept="image/*" style="padding:5px;font-size:12px;">
             <button class="btn" onclick="saveP()" style="margin-bottom:4px;">Сохранить профиль</button>
             <hr style="border-color:rgba(255,255,255,0.07);margin:12px 0;">
-            <h3 style="margin-bottom:4px;">🎨 Косметика</h3>
-            <p style="font-size:11px;color:var(--secondary);margin:0 0 8px;">Нажми на активную чтобы снять</p>
-            ${renderCosm('prefix','✨ Префикс')}
-            ${renderCosm('color','🎨 Цвет ника')}
-            ${renderCosm('badge','🏆 Значок')}
+
+            <!-- Telegram collapsible -->
+            <div style="background:rgba(0,136,204,0.08);border:1px solid rgba(0,136,204,0.2);border-radius:14px;padding:10px 14px;margin-bottom:10px;">
+                <div class="collapsible-header" onclick="toggleCollapsible('tg-section',this)">
+                    <span style="font-weight:bold;font-size:14px;">📱 Привязка Telegram</span>
+                    <span class="collapsible-arrow">▼</span>
+                </div>
+                <div class="collapsible-body" id="tg-section">
+                    <div style="padding-bottom:10px;">
+                        ${d.tgChatId
+                            ? `<div style="background:rgba(0,136,204,0.12);border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;">✅ Telegram привязан (ID: <code>${d.tgChatId}</code>)</div>
+                               <button class="btn" style="background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.3);color:var(--err);font-size:13px;" onclick="unlinkTg()">🔓 Отвязать Telegram</button>`
+                            : `<p style="font-size:13px;color:var(--secondary);margin:0 0 10px;">Привяжи Telegram чтобы получать уведомления о подарках, продажах и друзьях.</p>
+                               <a href="https://t.me/GiftsWorldProBot?start=link_${user.id}" target="_blank" class="btn" style="background:linear-gradient(90deg,#0088cc,#006bad);display:block;text-align:center;">✈️ Привязать через бота</a>
+                               <p style="font-size:11px;color:var(--secondary);margin:8px 0 0;text-align:center;">Или напиши боту: /link ${user.id} [пароль]</p>`
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cosmetics collapsible -->
+            <div style="background:rgba(162,155,254,0.05);border:1px solid rgba(162,155,254,0.15);border-radius:14px;padding:10px 14px;">
+                <div class="collapsible-header" onclick="toggleCollapsible('cosm-section',this)">
+                    <span style="font-weight:bold;font-size:14px;">🎨 Косметика</span>
+                    <span class="collapsible-arrow">▼</span>
+                </div>
+                <div class="collapsible-body" id="cosm-section">
+                    <div style="padding-bottom:10px;">
+                        <p style="font-size:11px;color:var(--secondary);margin:0 0 8px;">Нажми на активную чтобы снять</p>
+                        ${renderCosm('prefix','✨ Префикс')}
+                        ${renderCosm('color','🎨 Цвет ника')}
+                        ${renderCosm('badge','🏆 Значок')}
+                    </div>
+                </div>
+            </div>
         `;
         openModal();
     };
@@ -1837,6 +1903,19 @@
         openModal();
     };
 
+    window.toggleCollapsible = (id, header) => {
+        const body = document.getElementById(id);
+        const arrow = header.querySelector('.collapsible-arrow');
+        const isOpen = body.classList.toggle('open');
+        if(arrow) arrow.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+    };
+    window.unlinkTg = async () => {
+        const ok = await showConfirm('Отвязать Telegram','Уведомления перестанут приходить в Telegram.','📱','var(--err)','Отвязать');
+        if(!ok) return;
+        await update(ref(db,'users/'+user.id),{tgChatId:null});
+        showToast('Telegram отвязан','var(--secondary)');
+        openEdit();
+    };
     window.logout=()=>{localStorage.removeItem('gifts_user');location.reload();};
     window.admTab = (id, btn) => {
         document.querySelectorAll('.adm-section').forEach(s=>s.classList.remove('active'));
@@ -2028,6 +2107,8 @@
         const s=await get(ref(db,'users')),us=s.val();
         const up={};for(let id in us) up[`users/${id}/balance`]=(us[id].balance||0)+amount;
         await update(ref(db),up);
+        // Notify all TG users
+        for(let id in us){if(us[id].tgChatId)sendTg(us[id].tgChatId,`📢 <b>Администратор выдал всем ${amount}💰!</b>`);}
         showToast(`✅ Разослано ${amount}💰 всем!`,'var(--green)');
         document.getElementById('bcast-coins').value='';
     };
@@ -2040,6 +2121,7 @@
         const up={};
         for(let id in us){const inv=(us[id].cloudInv||[]);inv.push({...itm,inst:Date.now(),from:"ADMIN",seen:false});up[`users/${id}/cloudInv`]=inv;}
         await update(ref(db),up);
+        for(let id in us){if(us[id].tgChatId)sendTg(us[id].tgChatId,`🎁 <b>Администратор выдал всем подарок:</b>\n\n<b>${itm.n}</b> ${itm.i}`);}
         showToast(`✅ ${itm.i} выдан всем!`,'var(--green)');
     };
 
@@ -2095,6 +2177,37 @@
         if(id==='inv') renderInv();
         if(id==='profile') { get(ref(db,'users/'+user.id)).then(s=>{ if(s.val()) renderMyProfile(s.val()); }); }
     };
+    // ===== TELEGRAM INTEGRATION =====
+    const TG_BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE'; // Замени на токен бота
+    async function getTgId(uid) {
+        try { const s=await get(ref(db,'users/'+uid)); return s.exists()&&s.val().tgChatId?s.val().tgChatId:null; } catch(e){return null;}
+    }
+    async function sendTg(chatId, text) {
+        if(!chatId) return;
+        try {
+            await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`,{
+                method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({chat_id:chatId,text,parse_mode:'HTML'})
+            });
+        } catch(e){}
+    }
+    window.broadcastMsg = async () => {
+        const msg=document.getElementById('bcast-msg')?.value?.trim();
+        if(!msg) return showToast('Введи сообщение!','var(--err)');
+        const ok=await showConfirm('Рассылка в Telegram','Отправить сообщение всем у кого привязан Telegram?','📢','var(--accent)','Разослать');
+        if(!ok) return;
+        const s=await get(ref(db,'users')),us=s.val();
+        let sent=0;
+        for(let id in us){
+            if(us[id].tgChatId){
+                await sendTg(us[id].tgChatId,`📢 <b>Сообщение от администратора:</b>\n\n${msg}`);
+                sent++;
+            }
+        }
+        showToast(`✅ Отправлено ${sent} пользователям`,'var(--green)');
+        if(document.getElementById('bcast-msg')) document.getElementById('bcast-msg').value='';
+    };
+
     window.onload=()=>{const s=localStorage.getItem('gifts_user');if(s){const d=JSON.parse(s);startApp(d.name,d.id);}};
 </script>
 </body>
