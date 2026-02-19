@@ -342,14 +342,16 @@
             background:linear-gradient(145deg,#1c1200,#0f1a1f,#1a1100) !important;
             animation:nftGoldPulse 2.5s ease-in-out infinite;
             border-color:rgba(255,215,0,0.6) !important;
+            will-change:box-shadow;
         }
         .tg-gift-nft::before {
             content:''; position:absolute; inset:0; border-radius:18px; pointer-events:none; z-index:0;
             background:linear-gradient(105deg,transparent 25%,rgba(255,215,0,0.12) 50%,transparent 75%);
             background-size:200% 100%; animation:nftGoldShimmer 2.5s linear infinite;
+            will-change:background-position;
         }
         .tg-gift-nft .tg-gift-inner { z-index:1; }
-        .tg-gift-nft .tg-gift-inner img { animation:nftImgFloat 3s ease-in-out infinite; filter:drop-shadow(0 4px 16px rgba(255,215,0,0.55)); }
+        .tg-gift-nft .tg-gift-inner img { animation:nftImgFloat 3s ease-in-out infinite; filter:drop-shadow(0 4px 16px rgba(255,215,0,0.55)); will-change:transform; }
         .tg-gift-nft .tg-gift-name {
             background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);
             background-size:200% auto;
@@ -363,6 +365,7 @@
             background-size:200% auto; animation:nftGoldShimmer 1.8s linear infinite;
             color:#000; font-size:7px; font-weight:900; border-radius:6px; padding:2px 5px;
             letter-spacing:0.5px; box-shadow:0 1px 6px rgba(255,215,0,0.5);
+            will-change:background-position;
         }
         .tg-gift-nft-serial {
             position:absolute; bottom:22px; left:0; right:0; text-align:center; z-index:3;
@@ -377,14 +380,16 @@
             background:linear-gradient(145deg,#001a08,#0a1f12,#001208) !important;
             animation:nftLizPulse 2.5s ease-in-out infinite;
             border-color:rgba(77,255,145,0.6) !important;
+            will-change:box-shadow;
         }
         .tg-gift-nft-lizard::before {
             content:''; position:absolute; inset:0; border-radius:18px; pointer-events:none; z-index:0;
             background:linear-gradient(105deg,transparent 25%,rgba(77,255,145,0.12) 50%,transparent 75%);
             background-size:200% 100%; animation:nftGoldShimmer 2.5s linear infinite;
+            will-change:background-position;
         }
         .tg-gift-nft-lizard .tg-gift-inner { z-index:1; }
-        .tg-gift-nft-lizard .tg-gift-inner img { animation:nftImgFloat 3s ease-in-out infinite; filter:drop-shadow(0 4px 16px rgba(77,255,145,0.6)); }
+        .tg-gift-nft-lizard .tg-gift-inner img { animation:nftImgFloat 3s ease-in-out infinite; filter:drop-shadow(0 4px 16px rgba(77,255,145,0.6)); will-change:transform; }
         .tg-gift-nft-lizard .tg-gift-name {
             background:linear-gradient(90deg,#00ff88,#4dff91,#00cc66);
             background-size:200% auto; animation:nftGoldShimmer 2s linear infinite;
@@ -1879,6 +1884,8 @@
         const rarLevel2 = getRarityLevel(x);
 
         const price = x.nft ? 5000 : getPrice(x.id||0);
+        const rarMultiplier = x.nft ? 1 : [1, 2, 5, 15][rarLevel2] || 1;
+        const marketPrice = x.nft ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:5000) : Math.round(price * rarMultiplier);
         const origin = x.from ? (x.from === 'PROMO' ? '🎟️ Промокод' : x.from === 'ADMIN' ? '🛠️ Выдан админом' : x.from === 'RESET' ? '🔄 Сброс' : x.from === '⚗️ Слияние' ? '⚗️ Получен слиянием' : '🎁 Подарено: ' + x.from) : '🛒 Куплено в магазине';
 
         const rarLabel = x.nft
@@ -1908,7 +1915,7 @@
                     </div>
                     <div style="background:#0a1520;border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
                         <div style="font-size:10px;color:var(--secondary);margin-bottom:4px;">РЫНОЧНАЯ ЦЕНА</div>
-                        <div style="font-size:12px;font-weight:bold;color:var(--accent);">${price.toLocaleString()} 💰</div>
+                        <div style="font-size:12px;font-weight:bold;color:var(--accent);">${marketPrice.toLocaleString()} 💰</div>
                     </div>
                     <div style="background:#0a1520;border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
                         <div style="font-size:10px;color:var(--secondary);margin-bottom:4px;">РЕДКОСТЬ</div>
@@ -1925,7 +1932,6 @@
                     <button class="btn" style="background:${isPinned?'var(--secondary)':'var(--orange)'};" onclick="togglePin('${inst}');closeModal()">
                         ${isPinned ? '📌 Снять' : '📌 Закрепить'}
                     </button>
-                    <button class="btn" style="background:var(--accent);" onclick="toMarket('${inst}');closeModal()">⚖️ Выставить на рынок</button>
                     <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);border:1px solid rgba(255,255,255,0.08);" onclick="closeModal()">Закрыть</button>
                 </div>
             </div>`;
