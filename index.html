@@ -2178,7 +2178,7 @@
         if(id==='profile') { get(ref(db,'users/'+user.id)).then(s=>{ if(s.val()) renderMyProfile(s.val()); }); }
     };
     // ===== TELEGRAM INTEGRATION =====
-    const TG_BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE'; // Замени на токен бота
+    const TG_BOT_TOKEN = '8080771405:AAGsN_dudAoaiNmqLdgWsol8iL7ZDwqu-Ho';
     async function getTgId(uid) {
         try { const s=await get(ref(db,'users/'+uid)); return s.exists()&&s.val().tgChatId?s.val().tgChatId:null; } catch(e){return null;}
     }
