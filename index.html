@@ -230,6 +230,19 @@
         @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-7px); } }
         @keyframes balanceFlash { 0% { color: var(--accent); transform: scale(1); } 35% { color: #2ecc71; transform: scale(1.3); } 100% { color: var(--accent); transform: scale(1); } }
 
+        /* ===== DUEL & TRADE ANIMATIONS ===== */
+        @keyframes duelShakeL { 0%,100%{transform:translateX(0) rotate(0deg)} 20%{transform:translateX(-18px) rotate(-8deg)} 40%{transform:translateX(12px) rotate(5deg)} 60%{transform:translateX(-8px) rotate(-4deg)} 80%{transform:translateX(5px) rotate(2deg)} }
+        @keyframes duelShakeR { 0%,100%{transform:translateX(0) rotate(0deg)} 20%{transform:translateX(18px) rotate(8deg)} 40%{transform:translateX(-12px) rotate(-5deg)} 60%{transform:translateX(8px) rotate(4deg)} 80%{transform:translateX(-5px) rotate(-2deg)} }
+        @keyframes duelClash { 0%{transform:translate(-50%,-50%) scale(1) rotate(0deg);opacity:1} 25%{transform:translate(-50%,-50%) scale(2.5) rotate(15deg);opacity:1} 50%{transform:translate(-50%,-50%) scale(3.2) rotate(-10deg);opacity:0.9} 75%{transform:translate(-50%,-50%) scale(2) rotate(5deg);opacity:0.5} 100%{transform:translate(-50%,-50%) scale(0) rotate(0deg);opacity:0} }
+        @keyframes duelWinner { 0%{transform:translateY(0) scale(1)} 30%{transform:translateY(-22px) scale(1.35)} 60%{transform:translateY(-12px) scale(1.25)} 100%{transform:translateY(-6px) scale(1.2)} }
+        @keyframes duelLoser { 0%{transform:scale(1);opacity:1;filter:none} 100%{transform:scale(0.4) translateY(25px);opacity:0.15;filter:grayscale(1) blur(2px)} }
+        @keyframes duelFlash { 0%,100%{background:rgba(0,0,0,0.88)} 30%{background:rgba(255,80,0,0.3)} 60%{background:rgba(255,30,0,0.4)} }
+        @keyframes swordSpin { 0%{transform:translate(-50%,-50%) rotate(0deg) scale(1)} 50%{transform:translate(-50%,-50%) rotate(200deg) scale(2)} 100%{transform:translate(-50%,-50%) rotate(360deg) scale(1)} }
+        @keyframes tradeArrow { 0%,100%{transform:translateX(0);opacity:1} 50%{transform:translateX(6px);opacity:0.6} }
+        @keyframes tradeGlow { 0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,0)} 50%{box-shadow:0 0 0 8px rgba(46,204,113,0.15)} }
+        .duel-clash-emoji { position:fixed; top:50%; left:50%; font-size:64px; pointer-events:none; z-index:9999; animation: duelClash 0.85s ease forwards; }
+        .duel-sword-spin { position:fixed; top:50%; left:50%; font-size:52px; pointer-events:none; z-index:9999; animation: swordSpin 0.6s ease-in-out; }
+
         .nft-card { animation: pulseGold 2.5s ease-in-out infinite, fadeInScale 0.4s ease both !important; }
         .nft-card::before { content: ''; position: absolute; inset: 0; border-radius: 25px; pointer-events: none; background: linear-gradient(105deg, transparent 30%, rgba(255,215,0,0.18) 50%, transparent 70%); background-size: 200% 100%; animation: shimmer 2.4s linear infinite; z-index: 1; }
         .nft-emoji { animation: float 2.8s ease-in-out infinite; }
@@ -642,6 +655,8 @@
     <div id="market" class="page"></div>
 
     <div id="friends" class="page">
+        <div id="duel-challenges-section"></div>
+        <div id="trade-offers-section"></div>
         <input type="text" id="friend-search" placeholder="Ник друга...">
         <button class="btn" onclick="searchFriend()">Найти</button>
         <div id="friend-requests"></div>
@@ -1131,7 +1146,7 @@
             const bMerge=document.getElementById('badge-merge');
             bMerge.innerText=mergeCount; bMerge.style.display=mergeCount>0?'flex':'none';
         });
-        renderShop(); listenMarket(); giveNftToCkovoroda();
+        renderShop(); listenMarket(); giveNftToCkovoroda(); listenTradeOffers(); listenDuelChallenges();
         // Auto-refresh shop prices every 15 seconds (live prices)
         setInterval(()=>{
             const shopCards = document.getElementById('shop-cards');
@@ -1745,7 +1760,10 @@
                         </div>
                     </div>
                 </div>
-                <button onclick="removeFriend('${id}','${data.name}')" style="background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.3);color:var(--err);border-radius:10px;padding:8px 10px;font-size:16px;cursor:pointer;flex-shrink:0;" title="Удалить друга">🗑️</button>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                    <button onclick="openTradeModal('${id}','${data.name}')" style="background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.3);color:var(--green);border-radius:10px;padding:8px 10px;font-size:15px;cursor:pointer;" title="Предложить обмен">🔄</button>
+                    <button onclick="removeFriend('${id}','${data.name}')" style="background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.3);color:var(--err);border-radius:10px;padding:8px 10px;font-size:16px;cursor:pointer;" title="Удалить друга">🗑️</button>
+                </div>
             </div>`;
         }).join('')||(frEntries.length===0&&reqEntries.length===0?`<p style="color:var(--secondary);text-align:center;padding:30px;">Нет друзей</p>`:'');
     }
@@ -1763,6 +1781,452 @@
         await remove(ref(db,`users/${fid}/friends/${user.id}`));
         showToast('Друг удалён', 'var(--secondary)');
     };
+    // ═══════════════════════════════════════════
+    //  🔄 ОБМЕН ПОДАРКАМИ
+    // ═══════════════════════════════════════════
+    window.openTradeModal = async (friendId, friendName) => {
+        const s = await get(ref(db,'users/'+user.id)), d = s.val();
+        const myInv = d.cloudInv || [];
+        if(!myInv.length) return showToast('У тебя нет подарков для обмена!','var(--err)');
+        const makeCard = (x) => {
+            const cat = catalog.find(c=>c.id==x.id);
+            const img = x.img||(cat&&cat.img);
+            const emoji = x.i||(cat&&cat.i)||'🎁';
+            const isNFT = !!x.nft;
+            return `<div onclick="selectTradeGift('${x.inst}',this)" data-inst="${x.inst}" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:10px 8px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;position:relative;" class="trade-gift-card">
+                ${isNFT?`<div style="position:absolute;top:3px;right:3px;background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;font-size:7px;font-weight:900;border-radius:5px;padding:1px 4px;">NFT</div>`:''}
+                ${img?`<img src="${img}" style="width:44px;height:44px;object-fit:contain;display:block;margin:0 auto 5px;" onerror="this.style.display='none'">`:`<div style="font-size:36px;line-height:1;margin-bottom:5px;">${emoji}</div>`}
+                <div style="font-size:10px;font-weight:bold;color:white;">${x.n}</div>
+            </div>`;
+        };
+        document.getElementById('modal-content').innerHTML = `
+            <div style="padding:5px 0;">
+                <div style="text-align:center;margin-bottom:16px;">
+                    <div style="font-size:36px;animation:tradeArrow 1s ease infinite;">🔄</div>
+                    <h3 style="margin:6px 0 4px;">Предложить обмен</h3>
+                    <div style="font-size:13px;color:var(--secondary);">с <b style="color:white;">${friendName}</b></div>
+                </div>
+                <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;margin-bottom:8px;">ВЫБЕРИ СВОЙ ПОДАРОК:</div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:260px;overflow-y:auto;margin-bottom:14px;" id="trade-my-grid">
+                    ${myInv.map(makeCard).join('')}
+                </div>
+                <div id="trade-selected-info" style="display:none;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);border-radius:14px;padding:10px;text-align:center;margin-bottom:12px;animation:tradeGlow 1.5s ease infinite;">
+                    <div style="font-size:11px;color:var(--secondary);margin-bottom:4px;">ВЫБРАНО</div>
+                    <div id="trade-selected-name" style="font-weight:bold;color:var(--green);"></div>
+                </div>
+                <button id="trade-send-btn" class="btn" style="background:var(--green);display:none;" onclick="sendTradeOffer('${friendId}','${friendName}')">🔄 Отправить предложение</button>
+                <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);margin-top:8px;" onclick="closeModal()">Отмена</button>
+            </div>`;
+        openModal();
+    };
+
+    let selectedTradeInst = null;
+    window.selectTradeGift = (inst, el) => {
+        selectedTradeInst = inst;
+        document.querySelectorAll('.trade-gift-card').forEach(c=>{
+            c.style.border = '2px solid rgba(255,255,255,0.06)';
+            c.style.background = '#0a1520';
+        });
+        el.style.border = '2px solid var(--green)';
+        el.style.background = 'rgba(46,204,113,0.1)';
+        const name = el.querySelector('div[style*="font-weight:bold"]')?.innerText || '?';
+        document.getElementById('trade-selected-info').style.display='block';
+        document.getElementById('trade-selected-name').innerText = name;
+        document.getElementById('trade-send-btn').style.display='block';
+    };
+
+    window.sendTradeOffer = async (friendId, friendName) => {
+        if(!selectedTradeInst) return showToast('Выбери подарок!','var(--err)');
+        const s = await get(ref(db,'users/'+user.id)), d = s.val();
+        const inv = d.cloudInv||[];
+        const itm = inv.find(x=>String(x.inst)==String(selectedTradeInst));
+        if(!itm) return showToast('Подарок не найден!','var(--err)');
+        const offerKey = `${user.id}_${Date.now()}`;
+        await set(ref(db,`tradeOffers/${friendId}/${offerKey}`),{
+            fromId: user.id, fromName: user.name,
+            itemInst: selectedTradeInst, itemName: itm.n, itemEmoji: itm.i||'🎁',
+            ts: Date.now()
+        });
+        getTgId(friendId).then(cid=>sendTg(cid,`🔄 <b>${user.name}</b> предлагает обмен подарком <b>${itm.n} ${itm.i||''}</b>!\n\nОткрой приложение → Друзья → входящие обмены.`));
+        closeModal();
+        showToast(`🔄 Предложение отправлено ${friendName}!`,'var(--green)');
+    };
+
+    window.acceptTradeOffer = async (offerKey, offer) => {
+        // Show my gifts to pick what I give in return
+        const s = await get(ref(db,'users/'+user.id)), d = s.val();
+        const myInv = d.cloudInv||[];
+        if(!myInv.length) return showToast('У тебя нет подарков для обмена!','var(--err)');
+        const makeCard = (x) => {
+            const cat = catalog.find(c=>c.id==x.id);
+            const img = x.img||(cat&&cat.img);
+            const emoji = x.i||(cat&&cat.i)||'🎁';
+            return `<div onclick="selectAcceptGift('${x.inst}',this)" data-inst="${x.inst}" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:10px 8px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;" class="accept-gift-card">
+                ${img?`<img src="${img}" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 5px;" onerror="this.style.display='none'">`:`<div style="font-size:32px;line-height:1;margin-bottom:5px;">${emoji}</div>`}
+                <div style="font-size:10px;font-weight:bold;color:white;">${x.n}</div>
+            </div>`;
+        };
+        document.getElementById('modal-content').innerHTML = `
+            <div style="padding:5px 0;">
+                <div style="text-align:center;margin-bottom:14px;">
+                    <div style="font-size:32px;">🔄</div>
+                    <h3 style="margin:6px 0 4px;">Принять обмен</h3>
+                    <div style="background:#0a1520;border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;">
+                        <div style="font-size:24px;">${offer.itemEmoji}</div>
+                        <div>
+                            <div style="font-size:11px;color:var(--secondary);">ОТ ${offer.fromName.toUpperCase()}</div>
+                            <div style="font-weight:bold;">${offer.itemName}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:13px;color:var(--secondary);">↕️ Выбери что отдашь взамен:</div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:220px;overflow-y:auto;margin-bottom:14px;">
+                    ${myInv.map(makeCard).join('')}
+                </div>
+                <div id="accept-selected-info" style="display:none;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);border-radius:14px;padding:8px;text-align:center;margin-bottom:12px;">
+                    <div style="font-size:11px;color:var(--secondary);">ТЫ ОТДАЁШЬ</div>
+                    <div id="accept-selected-name" style="font-weight:bold;color:var(--green);"></div>
+                </div>
+                <button id="accept-confirm-btn" class="btn" style="background:var(--green);display:none;" onclick="confirmTrade('${offerKey}','${offer.fromId}','${offer.itemInst}')">✅ Подтвердить обмен</button>
+                <button class="btn" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:var(--err);margin-top:8px;" onclick="declineTrade('${offerKey}')">❌ Отклонить</button>
+                <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);margin-top:8px;" onclick="closeModal()">Закрыть</button>
+            </div>`;
+        openModal();
+    };
+
+    let selectedAcceptInst = null;
+    window.selectAcceptGift = (inst, el) => {
+        selectedAcceptInst = inst;
+        document.querySelectorAll('.accept-gift-card').forEach(c=>{c.style.border='2px solid rgba(255,255,255,0.06)';c.style.background='#0a1520';});
+        el.style.border='2px solid var(--green)';el.style.background='rgba(46,204,113,0.1)';
+        const name = el.querySelector('div[style*="font-weight:bold"]')?.innerText||'?';
+        document.getElementById('accept-selected-info').style.display='block';
+        document.getElementById('accept-selected-name').innerText=name;
+        document.getElementById('accept-confirm-btn').style.display='block';
+    };
+
+    window.confirmTrade = async (offerKey, fromId, theirInst) => {
+        if(!selectedAcceptInst) return showToast('Выбери подарок!','var(--err)');
+        // Fetch both inventories
+        const [mySnap, theirSnap] = await Promise.all([get(ref(db,'users/'+user.id)), get(ref(db,'users/'+fromId))]);
+        const myD = mySnap.val(), theirD = theirSnap.val();
+        let myInv = myD.cloudInv||[], theirInv = theirD.cloudInv||[];
+        const myItem = myInv.find(x=>String(x.inst)==String(selectedAcceptInst));
+        const theirItem = theirInv.find(x=>String(x.inst)==String(theirInst));
+        if(!myItem) return showToast('Твой подарок не найден!','var(--err)');
+        if(!theirItem) return showToast('Подарок партнёра уже не доступен!','var(--err)');
+        // Swap items
+        myInv = myInv.filter(x=>String(x.inst)!=String(selectedAcceptInst));
+        theirInv = theirInv.filter(x=>String(x.inst)!=String(theirInst));
+        myInv.push({...theirItem, from:`🔄 ${theirD.name}`, seen:false, inst:Date.now()});
+        theirInv.push({...myItem, from:`🔄 ${user.name}`, seen:false, inst:Date.now()+1});
+        await Promise.all([
+            update(ref(db,'users/'+user.id),{cloudInv:myInv}),
+            update(ref(db,'users/'+fromId),{cloudInv:theirInv}),
+            remove(ref(db,`tradeOffers/${user.id}/${offerKey}`))
+        ]);
+        getTgId(fromId).then(cid=>sendTg(cid,`🔄 <b>${user.name}</b> принял обмен! Ты получил <b>${myItem.n}</b> взамен!`));
+        closeModal();
+        spawnConfetti(window.innerWidth/2,window.innerHeight/2,35);
+        flyEmoji('🔄',window.innerWidth/2,window.innerHeight/2);
+        showToast(`🔄 Обмен завершён! Ты получил ${theirItem.n}!`,'var(--green)');
+    };
+
+    window.declineTrade = async (offerKey) => {
+        await remove(ref(db,`tradeOffers/${user.id}/${offerKey}`));
+        closeModal();
+        showToast('Обмен отклонён','var(--secondary)');
+    };
+
+    // Listen for incoming trade offers
+    function listenTradeOffers() {
+        onValue(ref(db,`tradeOffers/${user.id}`), snap => {
+            const offers = snap.val()||{};
+            const count = Object.keys(offers).length;
+            let badge = document.getElementById('badge-trade');
+            if(!badge) {
+                badge = document.createElement('div');
+                badge.id='badge-trade';
+                badge.className='badge';
+                badge.style.cssText='position:absolute;top:-4px;right:-4px;background:#e74c3c;color:white;font-size:9px;font-weight:bold;border-radius:50%;width:16px;height:16px;display:none;align-items:center;justify-content:center;z-index:5;';
+                const frBtn = document.querySelector('.nav-btn[onclick*="friends"]');
+                if(frBtn){frBtn.style.position='relative';frBtn.appendChild(badge);}
+            }
+            badge.innerText=count; badge.style.display=count>0?'flex':'none';
+            // Render incoming trades in friends page
+            const container = document.getElementById('trade-offers-section');
+            if(container) renderTradeOffers(offers);
+        });
+    }
+
+    function renderTradeOffers(offers) {
+        const container = document.getElementById('trade-offers-section');
+        if(!container) return;
+        const entries = Object.entries(offers);
+        if(!entries.length){container.innerHTML='';return;}
+        container.innerHTML=`
+            <div style="background:linear-gradient(135deg,rgba(46,204,113,0.08),rgba(46,204,113,0.03));border:1px solid rgba(46,204,113,0.25);border-radius:18px;padding:14px;margin-bottom:12px;">
+                <div style="font-size:11px;font-weight:bold;color:var(--green);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;">🔄 Входящие обмены (${entries.length})</div>
+                ${entries.map(([key,offer])=>`
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0a1520;border-radius:12px;padding:10px 12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="display:flex;align-items:center;gap:10px;flex:1;">
+                            <div style="font-size:28px;">${offer.itemEmoji}</div>
+                            <div>
+                                <div style="font-weight:bold;font-size:13px;">${offer.itemName}</div>
+                                <div style="font-size:11px;color:var(--secondary);">от ${offer.fromName}</div>
+                            </div>
+                        </div>
+                        <button class="btn" style="padding:8px 14px;font-size:12px;width:auto;background:var(--green);" onclick='acceptTradeOffer("${key}",${JSON.stringify(offer)})'>🔄 Принять</button>
+                    </div>
+                `).join('')}
+            </div>`;
+    }
+
+    // ═══════════════════════════════════════════
+    //  ⚔️ ДУЭЛЬ ПОДАРКАМИ
+    // ═══════════════════════════════════════════
+    window.openDuelModal = async (inst) => {
+        const s = await get(ref(db,'users/'+user.id)), d = s.val();
+        const inv = d.cloudInv||[];
+        const myItem = inv.find(x=>String(x.inst)==String(inst));
+        if(!myItem) return showToast('Подарок не найден!','var(--err)');
+        const friends = d.friends||{};
+        if(!Object.keys(friends).length) return showToast('Нет друзей для дуэли!','var(--err)');
+        const cat = catalog.find(c=>c.id==myItem.id);
+        const img = myItem.img||(cat&&cat.img);
+        const emoji = myItem.i||(cat&&cat.i)||'🎁';
+        document.getElementById('modal-content').innerHTML=`
+            <div style="padding:5px 0;">
+                <div style="text-align:center;margin-bottom:16px;">
+                    <div style="font-size:36px;">⚔️</div>
+                    <h3 style="margin:6px 0 4px;background:linear-gradient(90deg,#ff6b6b,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Дуэль подарками</h3>
+                    <div style="font-size:12px;color:var(--secondary);">Победитель забирает оба подарка!</div>
+                </div>
+                <div style="background:#0a1520;border-radius:14px;padding:12px;text-align:center;margin-bottom:14px;border:2px solid rgba(255,107,107,0.3);">
+                    <div style="font-size:11px;color:var(--secondary);margin-bottom:6px;">ТВОй СТАВКА</div>
+                    ${img?`<img src="${img}" style="width:56px;height:56px;object-fit:contain;margin:0 auto 6px;display:block;">`:`<div style="font-size:44px;">${emoji}</div>`}
+                    <div style="font-weight:bold;color:#ff6b6b;">${myItem.n}</div>
+                </div>
+                <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;margin-bottom:8px;">ВЫБЕРИ ПРОТИВНИКА:</div>
+                <div style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:12px;">
+                    ${Object.entries(friends).map(([fid,fd])=>`
+                        <button class="btn" style="background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25);color:white;display:flex;align-items:center;gap:10px;padding:12px;" onclick="startDuel('${inst}','${fid}','${fd.name}')">
+                            <span style="font-size:20px;">👤</span>
+                            <span style="font-weight:bold;">${fd.name}</span>
+                            <span style="margin-left:auto;font-size:18px;">⚔️</span>
+                        </button>
+                    `).join('')}
+                </div>
+                <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);" onclick="closeModal()">Отмена</button>
+            </div>`;
+        openModal();
+    };
+
+    window.startDuel = async (myInst, friendId, friendName) => {
+        // Send duel challenge
+        const s = await get(ref(db,'users/'+user.id)), d = s.val();
+        const myItem = (d.cloudInv||[]).find(x=>String(x.inst)==String(myInst));
+        if(!myItem) return showToast('Подарок не найден!','var(--err)');
+        const duelKey = `${user.id}_${Date.now()}`;
+        await set(ref(db,`duelChallenges/${friendId}/${duelKey}`),{
+            fromId:user.id, fromName:user.name,
+            itemInst:myInst, itemName:myItem.n, itemEmoji:myItem.i||'🎁',
+            ts:Date.now()
+        });
+        getTgId(friendId).then(cid=>sendTg(cid,`⚔️ <b>${user.name}</b> вызывает тебя на дуэль!\nСтавка: <b>${myItem.n} ${myItem.i||''}</b>\n\nПобедитель заберёт оба подарка! Открой приложение → Друзья.`));
+        closeModal();
+        showToast(`⚔️ Вызов отправлен ${friendName}!`,'#ff6b6b','⚔️');
+    };
+
+    window.acceptDuelChallenge = async (duelKey, challenge) => {
+        // Show your gifts to pick your stake
+        const s = await get(ref(db,'users/'+user.id)), d = s.val();
+        const myInv = d.cloudInv||[];
+        if(!myInv.length) return showToast('У тебя нет подарков для дуэли!','var(--err)');
+        const makeCard = (x) => {
+            const cat = catalog.find(c=>c.id==x.id);
+            const img = x.img||(cat&&cat.img);
+            const emoji = x.i||(cat&&cat.i)||'🎁';
+            return `<div onclick="selectDuelGift('${x.inst}',this)" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:10px 8px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;" class="duel-my-card">
+                ${img?`<img src="${img}" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 5px;" onerror="this.style.display='none'">`:`<div style="font-size:32px;line-height:1;margin-bottom:5px;">${emoji}</div>`}
+                <div style="font-size:10px;font-weight:bold;color:white;">${x.n}</div>
+            </div>`;
+        };
+        document.getElementById('modal-content').innerHTML=`
+            <div style="padding:5px 0;">
+                <div style="text-align:center;margin-bottom:14px;">
+                    <div style="font-size:32px;">⚔️</div>
+                    <h3 style="margin:6px 0 4px;background:linear-gradient(90deg,#ff6b6b,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Дуэль!</h3>
+                    <div style="background:#0a1520;border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;border:1px solid rgba(255,107,107,0.3);">
+                        <div style="font-size:24px;">${challenge.itemEmoji}</div>
+                        <div><div style="font-size:11px;color:var(--secondary);">СТАВКА ${challenge.fromName.toUpperCase()}</div><div style="font-weight:bold;color:#ff6b6b;">${challenge.itemName}</div></div>
+                    </div>
+                    <div style="font-size:12px;color:var(--secondary);">Выбери свою ставку:</div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:220px;overflow-y:auto;margin-bottom:14px;">
+                    ${myInv.map(makeCard).join('')}
+                </div>
+                <div id="duel-selected-info" style="display:none;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.3);border-radius:14px;padding:8px;text-align:center;margin-bottom:12px;">
+                    <div style="font-size:11px;color:var(--secondary);">ТВОЯ СТАВКА</div>
+                    <div id="duel-selected-name" style="font-weight:bold;color:#ff6b6b;"></div>
+                </div>
+                <button id="duel-fight-btn" class="btn" style="background:linear-gradient(90deg,#e74c3c,#c0392b);display:none;" onclick="fightDuel('${duelKey}','${challenge.fromId}','${challenge.itemInst}','${challenge.fromName}','${challenge.itemEmoji}','${challenge.itemName}')">⚔️ В БОЙ!</button>
+                <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);margin-top:8px;" onclick="declineDuel('${duelKey}')">🏳️ Отказаться</button>
+            </div>`;
+        openModal();
+    };
+
+    let selectedDuelInst = null, selectedDuelEmoji = '🎁', selectedDuelName = '';
+    window.selectDuelGift = (inst, el) => {
+        selectedDuelInst = inst;
+        document.querySelectorAll('.duel-my-card').forEach(c=>{c.style.border='2px solid rgba(255,255,255,0.06)';c.style.background='#0a1520';});
+        el.style.border='2px solid #ff6b6b';el.style.background='rgba(255,107,107,0.1)';
+        const imgEl = el.querySelector('img');
+        selectedDuelEmoji = el.querySelector('div[style*="font-size:32px"]')?.innerText || '🎁';
+        selectedDuelName = el.querySelector('div[style*="font-weight:bold"]')?.innerText||'?';
+        document.getElementById('duel-selected-info').style.display='block';
+        document.getElementById('duel-selected-name').innerText=selectedDuelName;
+        document.getElementById('duel-fight-btn').style.display='block';
+    };
+
+    window.fightDuel = async (duelKey, challengerId, theirInst, challengerName, theirEmoji, theirItemName) => {
+        if(!selectedDuelInst) return showToast('Выбери ставку!','var(--err)');
+
+        // Fetch both inventories
+        const [mySnap, theirSnap] = await Promise.all([get(ref(db,'users/'+user.id)), get(ref(db,'users/'+challengerId))]);
+        const myD = mySnap.val(), theirD = theirSnap.val();
+        let myInv = myD.cloudInv||[], theirInv = theirD.cloudInv||[];
+        const myItem = myInv.find(x=>String(x.inst)==String(selectedDuelInst));
+        const theirItem = theirInv.find(x=>String(x.inst)==String(theirInst));
+        if(!myItem||!theirItem) { closeModal(); return showToast('Один из предметов уже недоступен!','var(--err)'); }
+
+        // Determine winner 50/50
+        const iWin = Math.random() < 0.5;
+        const winnerId = iWin ? user.id : challengerId;
+        const winnerName = iWin ? user.name : challengerName;
+        const myEmoji2 = myItem.i||(catalog.find(c=>c.id==myItem.id)?.i)||'🎁';
+
+        // Update inventories
+        if(iWin) {
+            myInv = myInv.filter(x=>String(x.inst)!=String(selectedDuelInst));
+            theirInv = theirInv.filter(x=>String(x.inst)!=String(theirInst));
+            myInv.push({...myItem, from:`⚔️ Дуэль`, inst:Date.now()});
+            myInv.push({...theirItem, from:`⚔️ ${challengerName}`, seen:false, inst:Date.now()+1});
+        } else {
+            myInv = myInv.filter(x=>String(x.inst)!=String(selectedDuelInst));
+            theirInv = theirInv.filter(x=>String(x.inst)!=String(theirInst));
+            theirInv.push({...myItem, from:`⚔️ ${user.name}`, seen:false, inst:Date.now()});
+            theirInv.push({...theirItem, from:`⚔️ Дуэль`, inst:Date.now()+1});
+        }
+
+        await Promise.all([
+            update(ref(db,'users/'+user.id),{cloudInv:myInv}),
+            update(ref(db,'users/'+challengerId),{cloudInv:theirInv}),
+            remove(ref(db,`duelChallenges/${user.id}/${duelKey}`))
+        ]);
+
+        // DUEL ANIMATION
+        const overlay = document.getElementById('modal-overlay');
+        document.getElementById('modal-content').innerHTML = `
+            <div style="text-align:center;padding:20px 0;" id="duel-anim-wrap">
+                <div style="font-size:13px;color:var(--secondary);margin-bottom:20px;letter-spacing:1px;text-transform:uppercase;">⚔️ Дуэль начинается!</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:20px;">
+                    <div id="duel-left" style="text-align:center;transition:all 1s ease;">
+                        <div style="font-size:52px;margin-bottom:8px;">${myEmoji2}</div>
+                        <div style="font-size:12px;font-weight:bold;color:#4db4ff;">${user.name}</div>
+                    </div>
+                    <div id="duel-vs" style="font-size:32px;font-weight:900;color:#ff6b6b;">VS</div>
+                    <div id="duel-right" style="text-align:center;transition:all 1s ease;">
+                        <div style="font-size:52px;margin-bottom:8px;">${theirEmoji}</div>
+                        <div style="font-size:12px;font-weight:bold;color:#ff6b6b;">${challengerName}</div>
+                    </div>
+                </div>
+                <div id="duel-result" style="margin-top:24px;opacity:0;transition:opacity 0.5s;"></div>
+            </div>`;
+
+        // Phase 1: shake
+        setTimeout(()=>{
+            document.getElementById('duel-left').style.animation='duelShakeL 0.4s ease-in-out 4';
+            document.getElementById('duel-right').style.animation='duelShakeR 0.4s ease-in-out 4';
+            overlay.style.animation='duelFlash 0.4s ease 4';
+        },300);
+
+        // Phase 2: clash emoji
+        setTimeout(()=>{
+            const el=document.createElement('div');el.className='duel-clash-emoji';el.innerText='💥';
+            document.body.appendChild(el);setTimeout(()=>el.remove(),900);
+        },900);
+
+        // Phase 3: result
+        setTimeout(()=>{
+            overlay.style.animation='';
+            if(iWin){
+                document.getElementById('duel-left').style.animation='duelWinner 0.6s ease forwards';
+                document.getElementById('duel-right').style.animation='duelLoser 0.6s ease forwards';
+            } else {
+                document.getElementById('duel-right').style.animation='duelWinner 0.6s ease forwards';
+                document.getElementById('duel-left').style.animation='duelLoser 0.6s ease forwards';
+            }
+        },1800);
+
+        // Phase 4: show result text
+        setTimeout(()=>{
+            const res=document.getElementById('duel-result');
+            if(!res) return;
+            res.style.opacity='1';
+            if(iWin){
+                spawnConfetti(window.innerWidth/2,window.innerHeight/2,60);
+                res.innerHTML=`<div style="font-size:36px;margin-bottom:10px;">🏆</div><div style="font-size:20px;font-weight:900;color:gold;">ТЫ ПОБЕДИЛ!</div><div style="font-size:13px;color:var(--secondary);margin-top:6px;">Ты получил оба подарка</div>`;
+            } else {
+                res.innerHTML=`<div style="font-size:36px;margin-bottom:10px;">💀</div><div style="font-size:20px;font-weight:900;color:#ff6b6b;">ТЫ ПРОИГРАЛ</div><div style="font-size:13px;color:var(--secondary);margin-top:6px;">${challengerName} забрал оба подарка</div>`;
+            }
+            setTimeout(()=>{
+                if(!document.getElementById('duel-close-btn')){
+                    const btn=document.createElement('button');btn.className='btn';btn.id='duel-close-btn';btn.style.marginTop='16px';btn.innerText='Закрыть';btn.onclick=closeModal;
+                    document.getElementById('duel-result').appendChild(btn);
+                }
+            },200);
+        },2600);
+
+        getTgId(challengerId).then(cid=>sendTg(cid,`⚔️ Дуэль завершена! <b>${winnerName}</b> победил!\n${iWin?`Ты проиграл ${myItem.n} ${myEmoji2}`:`Ты выиграл ${myItem.n} ${myEmoji2} и ${theirItemName}!`}`));
+    };
+
+    window.declineDuel = async (duelKey) => {
+        await remove(ref(db,`duelChallenges/${user.id}/${duelKey}`));
+        closeModal();
+        showToast('Вызов отклонён','var(--secondary)');
+    };
+
+    // Listen for duel challenges
+    function listenDuelChallenges() {
+        onValue(ref(db,`duelChallenges/${user.id}`), snap => {
+            const challenges = snap.val()||{};
+            const count = Object.keys(challenges).length;
+            const container = document.getElementById('duel-challenges-section');
+            if(container) renderDuelChallenges(challenges);
+        });
+    }
+
+    function renderDuelChallenges(challenges) {
+        const container = document.getElementById('duel-challenges-section');
+        if(!container) return;
+        const entries = Object.entries(challenges);
+        if(!entries.length){container.innerHTML='';return;}
+        container.innerHTML=`
+            <div style="background:linear-gradient(135deg,rgba(255,107,107,0.08),rgba(255,107,107,0.03));border:1px solid rgba(255,107,107,0.3);border-radius:18px;padding:14px;margin-bottom:12px;">
+                <div style="font-size:11px;font-weight:bold;color:#ff6b6b;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;">⚔️ Вызовы на дуэль (${entries.length})</div>
+                ${entries.map(([key,ch])=>`
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0a1520;border-radius:12px;padding:10px 12px;margin-bottom:8px;border:1px solid rgba(255,107,107,0.2);">
+                        <div style="display:flex;align-items:center;gap:10px;flex:1;">
+                            <div style="font-size:28px;">${ch.itemEmoji}</div>
+                            <div><div style="font-weight:bold;font-size:13px;">${ch.itemName}</div><div style="font-size:11px;color:var(--secondary);">от ${ch.fromName}</div></div>
+                        </div>
+                        <button class="btn" style="padding:8px 14px;font-size:12px;width:auto;background:linear-gradient(90deg,#e74c3c,#c0392b);" onclick='acceptDuelChallenge("${key}",${JSON.stringify(ch)})'>⚔️ Принять</button>
+                    </div>
+                `).join('')}
+            </div>`;
+    }
+
     window.giftOpen = async (inst) => {
         const s=await get(ref(db,'users/'+user.id)),frs=s.val().friends||{};
         if(!Object.keys(frs).length) return showToast("Нет друзей!",'var(--err)');
@@ -1931,6 +2395,9 @@
                 <div style="display:flex;flex-direction:column;gap:8px;">
                     <button class="btn" style="background:${isPinned?'var(--secondary)':'var(--orange)'};" onclick="togglePin('${inst}');closeModal()">
                         ${isPinned ? '📌 Снять' : '📌 Закрепить'}
+                    </button>
+                    <button class="btn" style="background:linear-gradient(90deg,#c0392b,#e74c3c);font-weight:bold;" onclick="closeModal();setTimeout(()=>openDuelModal('${inst}'),300)">
+                        ⚔️ Вызвать на дуэль
                     </button>
                     <button class="btn" style="background:rgba(255,255,255,0.05);color:var(--secondary);border:1px solid rgba(255,255,255,0.08);" onclick="closeModal()">Закрыть</button>
                 </div>
