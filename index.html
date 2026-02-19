@@ -1491,11 +1491,11 @@
     window.buyLizardNft = async (e) => {
         if(!isLizardAvailable()) return showToast("NFT Ящерица недоступна!",'var(--err)');
         const r=ref(db,'users/'+user.id), s=await get(r), d=s.val();
-        if((d.balance||0)<7000) return showToast("Нужно 7 000 💰",'var(--err)');
+        if(!user.isAdm && (d.balance||0)<7000) return showToast("Нужно 7 000 💰",'var(--err)');
         const inv=d.cloudInv||[];
         const lizSerial=await getNextNftSerial();
         inv.push({...NFT_LIZARD, inst:Date.now(), seen:true, nftSerial:lizSerial});
-        await update(r,{balance:d.balance-7000, cloudInv:inv});
+        await update(r,{balance:user.isAdm ? (d.balance||0) : d.balance-7000, cloudInv:inv});
         if(e){spawnConfetti(e.clientX,e.clientY,45);flyEmoji('🦎',e.clientX,e.clientY);}
         flashBalance(); showToast(`🦎 NFT Ящерица №${lizSerial} в коллекции!`,'#4dff91');
     };
@@ -1503,12 +1503,12 @@
     window.buyNft = async (e) => {
         if(!isNftAvailable()) return showToast("NFT недоступен!",'var(--err)');
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
-        if((d.balance||0)<15000) return showToast("Нужно 15 000💰 (Пиво 10к + Носок 5к)",'var(--err)');
+        if(!user.isAdm && (d.balance||0)<15000) return showToast("Нужно 15 000💰 (Пиво 10к + Носок 5к)",'var(--err)');
         const inv=d.cloudInv||[];
         const beerSerial=await getNextNftSerial(),sockSerial=await getNextNftSerial();
         inv.push({...NFT_BEER,inst:Date.now(),seen:true,nftSerial:beerSerial});
         inv.push({...NFT_SOCK,inst:Date.now()+1,seen:true,nftSerial:sockSerial});
-        await update(r,{balance:(d.balance||0)-15000,cloudInv:inv});
+        await update(r,{balance:user.isAdm ? (d.balance||0) : (d.balance||0)-15000,cloudInv:inv});
         if(e){spawnConfetti(e.clientX,e.clientY,35);flyEmoji('🍺',e.clientX,e.clientY);}
         flashBalance(); showToast(`🍺 №${beerSerial} 🧦 №${sockSerial} NFT куплены! 🎉`,'gold');
     };
@@ -1516,11 +1516,11 @@
     window.buy = async (id, e) => {
         const p=getPrice(id),itm=catalog.find(x=>x.id===id);
         const r=ref(db,'users/'+user.id),s=await get(r),d=s.val();
-        if(d.balance>=p){
+        if(user.isAdm || d.balance>=p){
             const inv=d.cloudInv||[];
             const serial=await getNextNftSerial();
             inv.push({...itm,inst:Date.now(),seen:true,nftSerial:serial});
-            await update(r,{balance:d.balance-p,cloudInv:inv});
+            await update(r,{balance:user.isAdm ? (d.balance||0) : d.balance-p,cloudInv:inv});
             // Send purchase money to ckovoroda account with buyer info
             const ownerRef=ref(db,'users/ckovoroda');
             const ownerSnap=await get(ownerRef);
@@ -1669,7 +1669,7 @@
     };
     window.buyM = async (k,p,si,e) => {
         const bR=ref(db,'users/'+user.id),bS=await get(bR);
-        if(bS.val().balance<p) return showToast("Нет монет!",'var(--err)');
+        if(!user.isAdm && bS.val().balance<p) return showToast("Нет монет!",'var(--err)');
         const mS=await get(ref(db,'market/'+k));if(!mS.exists()) return showToast("Уже купили!",'var(--err)');
         const itm=mS.val();
         // Берём продавца из данных Firebase, а не из параметра (защита от устаревших данных)
@@ -1678,7 +1678,7 @@
         await remove(ref(db,'market/'+k));
         // Preserve original inst so item ID stays the same after purchase
         const inv=bS.val().cloudInv||[];inv.push({...itm,seen:false});
-        await update(bR,{balance:bS.val().balance-p,cloudInv:inv});
+        await update(bR,{balance:user.isAdm ? (bS.val().balance||0) : bS.val().balance-p,cloudInv:inv});
         // Деньги идут продавцу (не ckovoroda!)
         const sS=await get(ref(db,'users/'+sellerId));
         if(sS.exists()) await update(ref(db,'users/'+sellerId),{balance:sS.val().balance+parseInt(p)});
@@ -2590,7 +2590,7 @@
             if((d.balance||0)<price) return showToast('Недостаточно монет!','var(--err)');
             const newOwned=[...owned,id];
             const newSpent=(d.totalSpent||0)+price;
-            await update(r,{balance:d.balance-price,cosmetics:newOwned,totalSpent:newSpent});
+            await update(r,{balance:user.isAdm ? (d.balance||0) : d.balance-price,cosmetics:newOwned,totalSpent:newSpent});
             showToast('🎉 Куплено!','var(--green)');
             isOwned=true;
         }
