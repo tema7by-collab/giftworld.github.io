@@ -443,6 +443,11 @@
     .auth-links a { flex:1; padding:10px; font-size:13px; border-radius:14px; }
 
         .cosm-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:8px 0; }
+        .settings-collapse-btn { width:100%; background:#0e1824; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px 16px; color:#fff; font-size:14px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; text-align:left; }
+        .settings-collapse-btn .arrow { transition:transform 0.25s; display:inline-block; }
+        .settings-collapse-btn.open .arrow { transform:rotate(90deg); }
+        .settings-collapse-body { overflow:hidden; max-height:0; transition:max-height 0.3s ease; }
+        .settings-collapse-body.open { max-height:2000px; }
         .cosm-item { background:#0a1520; border:1.5px solid rgba(255,255,255,0.07); border-radius:14px; padding:10px 12px; cursor:pointer; transition:0.18s; display:flex; flex-direction:column; gap:4px; }
         .cosm-item:hover { border-color:rgba(36,129,204,0.4); }
         .cosm-item.active-cosm { border-color:var(--accent); background:rgba(36,129,204,0.12); box-shadow:0 0 0 1px rgba(36,129,204,0.3); }
@@ -609,6 +614,12 @@
                     <select id="bcast-gift">
                         ${/* will be filled by JS */''}
                     </select>
+                    <select id="bcast-rarity" style="margin-top:8px;">
+                        <option value="0">⬜ Обычный</option>
+                        <option value="1">🔵 Редкий</option>
+                        <option value="2">🟣 Эпический</option>
+                        <option value="3">🟡 Легендарный</option>
+                    </select>
                     <button class="btn" style="background:var(--orange);" onclick="broadcastGift()">Выдать всем</button>
                 </div>
                 <div class="card" style="text-align:left;">
@@ -629,7 +640,7 @@
 
     <div class="nav">
         <button class="nav-btn active" onclick="tab('shop',this)"><i>🛍️</i><span>Магазин</span></button>
-        <button class="nav-btn" onclick="tab('inv',this)"><div id="badge-inv" class="badge">0</div><i>📦</i><span>Склад</span></button>
+        <button class="nav-btn" onclick="tab('inv',this)"><div id="badge-inv" class="badge">0</div><div id="badge-gifts" class="badge" style="background:var(--err);display:none;right:2px;left:auto;">0</div><div id="badge-merge" class="badge" style="background:#7c3aed;display:none;right:2px;left:auto;top:18px;">0</div><i>📦</i><span>Склад</span></button>
         <button class="nav-btn" onclick="tab('market',this)"><i>⚖️</i><span>Рынок</span></button>
         <button class="nav-btn" onclick="tab('friends',this)"><div id="badge-fr" class="badge">0</div><i>👥</i><span>Друзья</span></button>
         <button class="nav-btn" onclick="tab('profile',this)"><i>👤</i><span>Профиль</span></button>
@@ -945,7 +956,7 @@
             const d=s.val(); if(!d) return;
             document.getElementById('header-name').innerHTML=buildUsername(d);
             document.getElementById('u-bal').innerText=d.balance;
-            renderFriends(d); renderMyProfile(d);
+            renderFriends(d); renderMyProfile(d); updateInvBadges();
         });
         renderShop(); listenMarket(); giveNftToCkovoroda();
     }
@@ -992,10 +1003,29 @@
         const fresh=await get(r); if(fresh.exists()) { renderMyProfile(fresh.val()); renderInv(); }
     };
 
+    window.updateInvBadges = async () => {
+        const s=await get(ref(db,'users/'+user.id));
+        if(!s.exists()) return;
+        const inv=s.val().cloudInv||[];
+        const unseenGifts=inv.filter(x=>!x.seen).length;
+        const mergeCount=getMergeable(inv).length;
+        const bG=document.getElementById('badge-gifts');
+        const bM=document.getElementById('badge-merge');
+        if(bG){bG.innerText=unseenGifts;bG.style.display=unseenGifts>0?'flex':'none';}
+        if(bM){bM.innerText=mergeCount;bM.style.display=mergeCount>0?'flex':'none';}
+    };
     window.renderInv = async () => {
         const s=await get(ref(db,'users/'+user.id)),d=s.val(),inv=d.cloudInv||[];
+        // Update badges BEFORE marking seen
+        const unseenCount=inv.filter(x=>!x.seen).length;
+        const mergeCount=getMergeable(inv).length;
+        const bG=document.getElementById('badge-gifts');
+        const bM=document.getElementById('badge-merge');
+        if(bG){bG.innerText=unseenCount;bG.style.display=unseenCount>0?'flex':'none';}
+        if(bM){bM.innerText=mergeCount;bM.style.display=mergeCount>0?'flex':'none';}
         const upd=inv.map(x=>({...x,seen:true}));
         await update(ref(db,'users/'+user.id),{cloudInv:upd});
+        if(bG){bG.style.display='none';}
         
         const searchVal = document.getElementById('inv-search')?.value?.toLowerCase() || '';
         const filtered = searchVal ? upd.filter(x=>x.n.toLowerCase().includes(searchVal)) : upd;
@@ -1429,7 +1459,7 @@
         if(e) flyEmoji(itm.i,e.clientX,e.clientY);
         const rarLbl = getRarityObj(itm).label;
         getTgId(si).then(cid=>sendTg(cid,`🛒 <b>Продажа на рынке!</b>\n\n${user.name} купил твой <b>${itm.n}</b> ${itm.i}\nРедкость: ${rarLbl}\n💰 +${parseInt(p).toLocaleString()} монет`));
-        flashBalance(); showToast("Куплено! "+itm.i);
+        flashBalance(); showToast("Куплено! "+itm.i); updateInvBadges();
     };
     window.remM = async (k) => {
         const mS=await get(ref(db,'market/'+k));if(!mS.exists()) return;
@@ -1482,14 +1512,14 @@
         }));
 
         document.getElementById('friends-list').innerHTML=frEntries.map(([id,data])=>
-            `<div class="card" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;" onclick="openUserProfile('${id}')">
-                <div style="display:flex;align-items:center;gap:12px;">
+            `<div class="card" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="display:flex;align-items:center;gap:12px;cursor:pointer;flex:1;min-width:0;" onclick="openUserProfile('${id}')">
                     ${frAvatars[id]
                         ? `<img src="${frAvatars[id]}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">`
                         : `<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👤</div>`}
-                    <div><div style="font-weight:bold;">${buildUsername({username:data.name, activeCosmetic:frCosmetics[id]||{}})}</div><div style="font-size:11px;color:var(--secondary);">Нажми чтобы открыть профиль</div></div>
+                    <div style="min-width:0;"><div style="font-weight:bold;">${buildUsername({username:data.name, activeCosmetic:frCosmetics[id]||{}})}</div><div style="font-size:11px;color:var(--secondary);">Нажми чтобы открыть профиль</div></div>
                 </div>
-                <span style="color:var(--accent);font-size:20px;">&#x203A;</span>
+                <button onclick="removeFriend('${id}','${data.name}')" style="background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.3);color:var(--err);border-radius:12px;padding:8px 10px;font-size:13px;cursor:pointer;flex-shrink:0;" title="Удалить друга">🗑️</button>
             </div>`
         ).join('')||(frEntries.length===0&&reqEntries.length===0?`<p style="color:var(--secondary);text-align:center;padding:30px;">Нет друзей</p>`:'');
     }
@@ -1499,6 +1529,15 @@
         await remove(ref(db,`users/${user.id}/requests/${fid}`));
         getTgId(fid).then(cid=>sendTg(cid,`✅ <b>Запрос принят!</b>\n\n<b>${user.name}</b> принял твой запрос в друзья 🤝`));
         showToast("Добавлен!");
+    };
+    window.removeFriend = async (fid, fname) => {
+        const ok = await showConfirm('Удалить друга', `Удалить ${fname} из друзей?`, '🗑️', 'var(--err)', 'Удалить');
+        if(!ok) return;
+        await remove(ref(db,`users/${user.id}/friends/${fid}`));
+        await remove(ref(db,`users/${fid}/friends/${user.id}`));
+        showToast('Удалено');
+        const s=await get(ref(db,'users/'+user.id));
+        if(s.exists()) renderFriends(s.val());
     };
     window.giftOpen = async (inst) => {
         const s=await get(ref(db,'users/'+user.id)),frs=s.val().friends||{};
@@ -1698,6 +1737,11 @@
             <button class="btn" style="background:none;margin-top:5px;" onclick="closeModal()">Отмена</button>`;
         openModal();
     };
+    window.toggleCollapse = (btn) => {
+        btn.classList.toggle('open');
+        const body = btn.nextElementSibling;
+        body.classList.toggle('open');
+    };
     window.openEdit = async () => {
         const s=await get(ref(db,'users/'+user.id));
         const d=s.val();
@@ -1740,20 +1784,30 @@
             <textarea id="ebio" placeholder="О себе">${d.bio||''}</textarea>
             <p style="font-size:12px;color:var(--secondary)">Аватар (с устройства):</p>
             <input type="file" id="efile" accept="image/*" style="padding:5px;font-size:12px;">
-            <hr style="border-color:rgba(255,255,255,0.07);margin:10px 0 8px;">
-            <p style="font-size:12px;color:var(--secondary);margin:0 0 6px;">📱 Telegram уведомления:</p>
-            ${d.tgChatId
-                ? `<div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:12px;padding:10px;font-size:12px;color:#2ecc71;margin-bottom:6px;">✅ Telegram привязан (ID: ${d.tgChatId})</div>`
-                : `<div style="background:rgba(36,129,204,0.08);border:1px solid rgba(36,129,204,0.2);border-radius:12px;padding:10px;font-size:12px;color:var(--secondary);margin-bottom:6px;">❌ Telegram не привязан</div>`
-            }
-            <a href="https://t.me/Gift_world_to_market_bot?start=link_${user.id}" target="_blank" class="btn" style="background:var(--tg);font-size:13px;padding:10px;margin-bottom:0;">📱 Привязать Telegram</a>
-            <button class="btn" onclick="saveP()" style="margin-bottom:4px;">Сохранить профиль</button>
-            <hr style="border-color:rgba(255,255,255,0.07);margin:12px 0;">
-            <h3 style="margin-bottom:4px;">🎨 Косметика</h3>
-            <p style="font-size:11px;color:var(--secondary);margin:0 0 8px;">Нажми на активную чтобы снять</p>
-            ${renderCosm('prefix','✨ Префикс')}
-            ${renderCosm('color','🎨 Цвет ника')}
-            ${renderCosm('badge','🏆 Значок')}
+            <button class="btn" onclick="saveP()" style="margin-bottom:8px;">Сохранить профиль</button>
+
+            <button class="settings-collapse-btn" onclick="toggleCollapse(this)">
+                <span>📱 Telegram ${d.tgChatId?'<span style=\"color:#2ecc71;font-size:12px;\">✅ Привязан</span>':'<span style=\"color:var(--secondary);font-size:12px;\">❌ Не привязан</span>'}</span>
+                <span class="arrow">›</span>
+            </button>
+            <div class="settings-collapse-body">
+                ${d.tgChatId
+                    ? `<div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:12px;padding:10px;font-size:12px;color:#2ecc71;margin-bottom:6px;">✅ Telegram привязан (ID: ${d.tgChatId})</div>`
+                    : `<div style="background:rgba(36,129,204,0.08);border:1px solid rgba(36,129,204,0.2);border-radius:12px;padding:10px;font-size:12px;color:var(--secondary);margin-bottom:6px;">❌ Telegram не привязан</div>`
+                }
+                <a href="https://t.me/Gift_world_to_market_bot?start=link_${user.id}" target="_blank" class="btn" style="background:var(--tg);font-size:13px;padding:10px;margin-bottom:6px;">📱 Привязать Telegram</a>
+            </div>
+
+            <button class="settings-collapse-btn" onclick="toggleCollapse(this)">
+                <span>🎨 Косметика</span>
+                <span class="arrow">›</span>
+            </button>
+            <div class="settings-collapse-body">
+                <p style="font-size:11px;color:var(--secondary);margin:0 0 8px;">Нажми на активную чтобы снять</p>
+                ${renderCosm('prefix','✨ Префикс')}
+                ${renderCosm('color','🎨 Цвет ника')}
+                ${renderCosm('badge','🏆 Значок')}
+            </div>
         `;
         openModal();
     };
@@ -2056,13 +2110,16 @@
 
     window.broadcastGift = async () => {
         const itm=catalog.find(x=>x.id==document.getElementById('bcast-gift').value);
-        const ok2=await showConfirm('Выдать подарок всем',itm.i+' '+itm.n+' всем игрокам?','🎁','var(--orange)','Выдать');
+        const rar=parseInt(document.getElementById('bcast-rarity').value);
+        const rarLabel=RARITY_LEVELS[rar]?.label||'Обычный';
+        const rarIcon=RARITY_LEVELS[rar]?.icon||'⬜';
+        const ok2=await showConfirm('Выдать подарок всем',`${rarIcon} ${rarLabel} ${itm.i} ${itm.n} всем игрокам?`,'🎁','var(--orange)','Выдать');
         if(!ok2) return;
         const s=await get(ref(db,'users')),us=s.val();
         const up={};
-        for(let id in us){const inv=(us[id].cloudInv||[]);inv.push({...itm,inst:Date.now(),from:"ADMIN",seen:false});up[`users/${id}/cloudInv`]=inv;}
+        for(let id in us){const inv=(us[id].cloudInv||[]);inv.push({...itm,rarity:rar,inst:Date.now()+(Math.random()*100|0),from:"ADMIN",seen:false});up[`users/${id}/cloudInv`]=inv;}
         await update(ref(db),up);
-        showToast(`✅ ${itm.i} выдан всем!`,'var(--green)');
+        showToast(`✅ ${rarIcon} ${itm.i} выдан всем!`,'var(--green)');
     };
 
 
