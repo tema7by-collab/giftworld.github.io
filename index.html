@@ -1340,6 +1340,7 @@
         flashBalance();
         const giftMsg = (promo.giftObj ? ` + 🎁 ${promo.giftObj.n}` : (promo.gift ? ` + ${promo.gift}` : ''));
         showToast(`🎉 Промокод активирован! +${promo.reward||0}💰${giftMsg}`,'var(--green)');
+        logActivity('promo', {user: user.name, userId: user.id, code, reward: promo.reward||0, gift: promo.giftObj?.n || promo.gift || null});
         closeModal();
     };
     window.togglePin = async (inst) => {
@@ -1373,6 +1374,7 @@
         const newBalance = (d.balance || 0) + reward;
         await update(r, { cloudInv: newInv, balance: newBalance });
         showToast(`🗑️ Продано! +${reward.toLocaleString()} 💰`, 'var(--green)');
+        logActivity('sell_item', {user: user.name, userId: user.id, item: item.n, emoji: item.i||'🎁', reward});
         renderInv();
     };
 
@@ -1842,6 +1844,7 @@
         const sCosm=(uc.exists()&&uc.val().activeCosmetic)||{};
         push(ref(db,'market/'),{...enriched,mP:price,sI:user.id,sN:user.name,sCosm});
         closeModal(); showToast("Выставлено на рынок! ⚖️",'var(--green)'); renderInv();
+        logActivity('market_list', {user: user.name, userId: user.id, item: itm.n, emoji: enriched.i||'🎁', price});
     };
     window.buyM = async (k,p,si,e) => {
         const bR=ref(db,'users/'+user.id),bS=await get(bR);
@@ -1930,6 +1933,7 @@
         if(frPriv.allowFriends===false) return showToast("❌ Настройки конфиденциальности запрещают запросы",'var(--err)');
         await update(ref(db,`users/${tid}/requests/${user.id}`),{from:user.id,name:user.name});
         getTgId(tid).then(cid=>sendTg(cid,`👥 <b>Запрос в друзья!</b>\n\n<b>${user.name}</b> хочет добавить тебя в друзья.\n\n✅ Открой приложение → Друзья → Входящие запросы`));
+        logActivity('friend_request', {user: user.name, userId: user.id, toId: tid, toName: tname});
         showToast(`✅ Запрос отправлен ${tname}!`);
     };
 
@@ -2085,6 +2089,7 @@
             ts: Date.now()
         });
         getTgId(friendId).then(cid=>sendTg(cid,`🔄 <b>Предложение обмена!</b>\n\n<b>${user.name}</b> предлагает тебе:\n🎁 <b>${itm.n} ${itm.i||''}</b>\n\n📱 Открой приложение → Друзья → Входящие обмены\nчтобы принять или отклонить.`));
+        logActivity('trade_offer', {user: user.name, userId: user.id, toName: friendName, toId: friendId, item: itm.n, emoji: itm.i||'🎁'});
         closeModal();
         showToast(`🔄 Предложение отправлено ${friendName}!`,'var(--green)');
     };
@@ -2310,6 +2315,7 @@
             } catch(e){}
         }, 15*60*1000);
         getTgId(friendId).then(cid=>sendTg(cid,`⚔️ <b>Вызов на дуэль!</b>\n\n<b>${user.name}</b> бросает тебе вызов!\n\n🎯 Его ставка: <b>${myItem.n} ${myItem.i||''}</b>\n🏆 Победитель заберёт оба подарка!\n\n📱 Открой приложение → Друзья → Дуэли`));
+        logActivity('duel_challenge', {user: user.name, userId: user.id, toName: friendName, toId: friendId, item: myItem.n, emoji: myItem.i||'🎁'});
         closeModal();
         showToast(`⚔️ Вызов отправлен ${friendName}!`,'#ff6b6b','⚔️');
     };
@@ -2400,6 +2406,7 @@
             update(ref(db,'users/'+challengerId),{cloudInv:theirInv}),
             remove(ref(db,`duelChallenges/${user.id}/${duelKey}`))
         ]);
+        logActivity('duel_result', {winner: winnerName, winnerId, loser: iWin ? challengerName : user.name, loserId: iWin ? challengerId : user.id, item1: myItem.n, item2: theirItem.n});
         // Трекаем победы и выдаём бейдж
         if(iWin) {
             const newWins = (myD.duelWins||0) + 1;
@@ -2574,7 +2581,9 @@
         getTgId(fid).then(cid=>sendTg(cid,`🎁 <b>Новый подарок!</b>\n\n<b>${user.name}</b> подарил тебе:\n${itm.i||'🎁'} <b>${itm.n}</b>\n\n🏷 Редкость: <b>${RARITY_LEVELS[itm.r]&&RARITY_LEVELS[itm.r].label||'Обычный'}</b>\n\nОткрой приложение чтобы посмотреть!`));
         closeModal();spawnConfetti(window.innerWidth/2,window.innerHeight/2,40);
         flyEmoji('🎁',window.innerWidth/2,window.innerHeight/2);
-        showToast("Подарок отправлен! 🎁",'var(--green)');renderInv();
+        showToast("Подарок отправлен! 🎁",'var(--green)');
+        logActivity('gift_sent', {user: user.name, userId: user.id, toId: fid, item: itm.n, emoji: itm.i||'🎁'});
+        renderInv();
     };
     function renderMyProfile(d) {
         const inv = d.cloudInv || [];
@@ -3302,26 +3311,50 @@
             const raw = snap.exists() ? snap.val() : null;
             const log = raw ? (Array.isArray(raw) ? raw : Object.values(raw)) : [];
             if(!log.length) { feedEl.innerHTML='<div style="color:var(--secondary);text-align:center;padding:16px;font-size:13px;">Действий пока нет</div>'; return; }
-            const sorted = [...log].reverse().slice(0, 50);
+            const sorted = [...log].reverse().slice(0, 100);
             feedEl.innerHTML = sorted.map(e => {
                 const d = new Date(e.time);
                 const timeStr = d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}) + ' ' + d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});
                 let icon, text, color;
                 if(e.type === 'shop_buy') {
-                    icon = '🛍️'; color = 'rgba(36,129,204,0.15)';
-                    text = `<b>@${e.userId}</b> купил в магазине: ${e.emoji||''} <b>${e.item}</b> за ${(e.price||0).toLocaleString()}💰`;
+                    icon='🛍️'; color='rgba(36,129,204,0.12)';
+                    text=`<b>@${e.userId}</b> купил в магазине: ${e.emoji||''} <b>${e.item}</b> за ${(e.price||0).toLocaleString()}💰`;
                 } else if(e.type === 'market_buy') {
-                    icon = '⚖️'; color = 'rgba(243,156,18,0.12)';
-                    text = `<b>@${e.userId}</b> купил на рынке: ${e.emoji||''} <b>${e.item}</b> у <b>@${e.seller}</b> за ${(e.price||0).toLocaleString()}💰`;
+                    icon='⚖️'; color='rgba(243,156,18,0.12)';
+                    text=`<b>@${e.userId}</b> купил на рынке: ${e.emoji||''} <b>${e.item}</b> у <b>@${e.seller}</b> за ${(e.price||0).toLocaleString()}💰`;
+                } else if(e.type === 'market_list') {
+                    icon='📤'; color='rgba(162,155,254,0.1)';
+                    text=`<b>@${e.userId}</b> выставил на рынок: ${e.emoji||''} <b>${e.item}</b> за ${(e.price||0).toLocaleString()}💰`;
                 } else if(e.type === 'friend_add') {
-                    icon = '👥'; color = 'rgba(46,204,113,0.12)';
-                    text = `<b>@${e.userId}</b> добавил в друзья <b>@${e.friendId}</b>`;
+                    icon='👥'; color='rgba(46,204,113,0.1)';
+                    text=`<b>@${e.userId}</b> добавил в друзья <b>@${e.friendId}</b>`;
+                } else if(e.type === 'friend_request') {
+                    icon='👋'; color='rgba(46,204,113,0.07)';
+                    text=`<b>@${e.userId}</b> отправил запрос в друзья → <b>@${e.toId}</b>`;
+                } else if(e.type === 'gift_sent') {
+                    icon='🎁'; color='rgba(255,215,0,0.08)';
+                    text=`<b>@${e.userId}</b> подарил ${e.emoji||'🎁'} <b>${e.item}</b> → <b>@${e.toId}</b>`;
+                } else if(e.type === 'trade_offer') {
+                    icon='🔄'; color='rgba(36,129,204,0.08)';
+                    text=`<b>@${e.userId}</b> предложил обмен: ${e.emoji||'🎁'} <b>${e.item}</b> → <b>@${e.toId}</b>`;
+                } else if(e.type === 'duel_challenge') {
+                    icon='⚔️'; color='rgba(255,107,107,0.08)';
+                    text=`<b>@${e.userId}</b> вызвал на дуэль <b>@${e.toId}</b> (ставка: ${e.emoji||'🎁'} ${e.item})`;
+                } else if(e.type === 'duel_result') {
+                    icon='🏆'; color='rgba(255,215,0,0.1)';
+                    text=`Дуэль: <b>@${e.winnerId}</b> победил <b>@${e.loserId}</b> · ${e.item1} vs ${e.item2}`;
+                } else if(e.type === 'sell_item') {
+                    icon='🗑️'; color='rgba(255,255,255,0.04)';
+                    text=`<b>@${e.userId}</b> продал: ${e.emoji||'🎁'} <b>${e.item}</b> за ${(e.reward||0).toLocaleString()}💰`;
+                } else if(e.type === 'promo') {
+                    icon='🎟️'; color='rgba(243,156,18,0.1)';
+                    text=`<b>@${e.userId}</b> использовал промокод <b>${e.code}</b> · +${e.reward||0}💰${e.gift?` + 🎁 ${e.gift}`:''}`;
                 } else {
-                    icon = '📌'; color = 'rgba(255,255,255,0.04)';
-                    text = JSON.stringify(e);
+                    icon='📌'; color='rgba(255,255,255,0.04)';
+                    text=`<b>@${e.userId||'?'}</b> · ${e.type}`;
                 }
-                return `<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:12px;margin-bottom:6px;background:${color};border:1px solid rgba(255,255,255,0.05);">
-                    <span style="font-size:18px;flex-shrink:0;margin-top:1px;">${icon}</span>
+                return `<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:12px;margin-bottom:5px;background:${color};border:1px solid rgba(255,255,255,0.04);">
+                    <span style="font-size:17px;flex-shrink:0;margin-top:1px;">${icon}</span>
                     <div style="flex:1;min-width:0;">
                         <div style="font-size:12px;line-height:1.5;">${text}</div>
                         <div style="font-size:10px;color:var(--secondary);margin-top:2px;font-family:monospace;">🕐 ${timeStr}</div>
