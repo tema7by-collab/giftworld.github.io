@@ -272,15 +272,14 @@
         .avatar-ring-wrap {
             position: relative;
             display: inline-block;
-            width: 170px;
-            height: 170px;
+            width: 200px;
+            height: 200px;
             margin-bottom: 18px;
         }
         .avatar-ring-orbit {
             position: absolute;
             top: 0; left: 0;
-            width: 170px; height: 170px;
-            border-radius: 50%;
+            width: 200px; height: 200px;
             pointer-events: none;
         }
         .avatar-ring-item {
@@ -3048,14 +3047,14 @@
                             .slice(0, 6);
                         if(!pinnedArr.length) return '';
                         const angle = 360 / pinnedArr.length;
-                        const radius = 62; // centre=85, avatar radius=50, item half=14 → sits just outside avatar border
-                        return `<div class="avatar-ring-orbit" style="position:absolute;top:0;left:0;width:170px;height:170px;pointer-events:none;">${pinnedArr.map((item, i) => {
+                        const radius = 80; // centre=100, avatar radius=50, gap+item → sits outside avatar
+                        return `<div class="avatar-ring-orbit" style="position:absolute;top:0;left:0;width:200px;height:200px;pointer-events:none;">${pinnedArr.map((item, i) => {
                             const cat2 = catalog.find(c => c.id == item.id);
                             const img2 = item.img || (cat2 && cat2.img);
                             const em2 = item.i || (cat2 && cat2.i) || '🎁';
                             const rad = (angle * i - 90) * Math.PI / 180;
-                            const x2 = Math.round(85 + radius * Math.cos(rad) - 14);
-                            const y2 = Math.round(85 + radius * Math.sin(rad) - 14);
+                            const x2 = Math.round(100 + radius * Math.cos(rad) - 14);
+                            const y2 = Math.round(100 + radius * Math.sin(rad) - 14);
                             const upgCls2 = item.upgrade && item.upgrade.level ? getNftUpgradeClasses(item) : '';
                             const upgStyle2 = (()=>{
                                 if(!item.upgrade||!item.upgrade.level) return '';
@@ -3460,7 +3459,7 @@
                                 .slice(0,6);
                             if(!pArr.length) return '';
                             const ang = 360/pArr.length;
-                            const rad2 = 48; // avatar radius=40, item half=12 → sits on border
+                            const rad2 = 52; // avatar radius=40, items sit just outside border
                             return '<div style="position:absolute;top:50%;left:50%;width:0;height:0;pointer-events:none;">' +
                             pArr.map((it2,i2) => {
                                 const ct2 = catalog.find(c=>c.id==it2.id);
