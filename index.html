@@ -271,7 +271,9 @@
         }
         .avatar-ring-wrap {
             position: relative;
-            display: inline-block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 200px;
             height: 200px;
             margin-bottom: 18px;
@@ -281,6 +283,7 @@
             top: 0; left: 0;
             width: 200px; height: 200px;
             pointer-events: none;
+            overflow: visible;
         }
         .avatar-ring-item {
             position: absolute;
@@ -328,7 +331,7 @@
             border-bottom: 1px solid rgba(255,255,255,0.07);
             position: relative;
         }
-        .tg-avatar-wrap { position:relative; display:inline-block; margin-bottom:14px; }
+        .tg-avatar-wrap { position:relative; display:inline-block; margin-bottom:0; }
         .tg-avatar {
             width:100px; height:100px; border-radius:50%;
             object-fit:cover; border:3px solid var(--accent);
@@ -642,6 +645,16 @@
         .nft-lvl5-holo::before { content:''; position:absolute; inset:-2px; border-radius:20px; background:linear-gradient(105deg,#ff0000,#ff7f00,#ffff00,#00ff00,#0000ff,#8b00ff,#ff0000); background-size:400% 400%; animation:holoShine 3s ease infinite; z-index:0; opacity:0.5; }
         .nft-lvl5-holo { position:relative; overflow:visible !important; }
         .nft-lvl5-holo .tg-gift-inner,.nft-lvl5-holo .tg-gift-name,.nft-lvl5-holo .tg-gift-nft-badge { z-index:2 !important; position:relative; }
+        /* Ring items: block all upgrade side-effects that break absolute positioning */
+        .avatar-ring-item { position:absolute !important; }
+        .avatar-ring-item.nft-lvl3-fire,
+        .avatar-ring-item.nft-lvl3-ocean,
+        .avatar-ring-item.nft-lvl3-forest,
+        .avatar-ring-item.nft-lvl3-galaxy,
+        .avatar-ring-item.nft-lvl3-sunset { animation: none !important; }
+        .avatar-ring-item.nft-lvl5-holo { overflow:hidden !important; }
+        .avatar-ring-item.nft-lvl5-holo::before { display:none !important; }
+        .avatar-ring-item.nft-lvl4-particles { overflow:hidden !important; }
         .nft-upgrade-badge { position:absolute; bottom:5px; right:5px; z-index:5; font-size:8px; font-weight:900; border-radius:8px; padding:2px 5px; letter-spacing:0.3px; }
         .nft-upg-1 { background:linear-gradient(90deg,#555,#888); color:#fff; }
         .nft-upg-2 { background:linear-gradient(90deg,#1a5fa8,#4db4ff); color:#fff; }
@@ -1595,7 +1608,7 @@
     const NFT_UPGRADE_LEVELS = [
         null, // 0 — no upgrade
         {
-            level: 1, name: 'Фон', icon: '🎨', cost: 200,
+            level: 1, name: 'Фон', icon: '🎨', cost: 100,
             description: 'Меняет цвет фона карточки',
             themes: [
                 { id: 'fire',   name: '🔥 Огонь',    classes: 'nft-lvl1-fire' },
@@ -1606,7 +1619,7 @@
             ]
         },
         {
-            level: 2, name: 'Текстура', icon: '✨', cost: 500,
+            level: 2, name: 'Текстура', icon: '✨', cost: 200,
             description: 'Добавляет текстурный узор',
             themes: [
                 { id: 'grid',  name: '▦ Сетка',    classes: 'nft-lvl2 nft-lvl2-grid' },
@@ -1617,7 +1630,7 @@
             ]
         },
         {
-            level: 3, name: 'Аура', icon: '💫', cost: 1000,
+            level: 3, name: 'Аура', icon: '💫', cost: 300,
             description: 'Пульсирующее свечение вокруг карточки',
             themes: [
                 { id: 'fire',   name: '🔥 Огненная', classes: 'nft-lvl3-fire' },
@@ -1628,7 +1641,7 @@
             ]
         },
         {
-            level: 4, name: 'Частицы', icon: '🔮', cost: 2000,
+            level: 4, name: 'Частицы', icon: '🔮', cost: 500,
             description: 'Летящие частицы вокруг карточки',
             themes: [
                 { id: 'fire',   name: '🔥 Огонь',   color: '#ff5500', emoji: '🔥' },
@@ -1639,7 +1652,7 @@
             ]
         },
         {
-            level: 5, name: 'Голограмма', icon: '🌈', cost: 5000,
+            level: 5, name: 'Голограмма', icon: '🌈', cost: 1000,
             description: 'Радужная голографическая рамка — топовый эффект!',
             themes: [
                 { id: 'holo', name: '🌈 Голограмма', classes: 'nft-lvl5-holo' }
@@ -1721,7 +1734,7 @@
                     <h3 style="margin:0 0 4px;">${item.n}</h3>
                     <div style="font-size:12px;color:gold;">✦ NFT · Уровень прокачки: <b>${curLevel}/5</b></div>
                     <div style="font-size:12px;color:var(--secondary);margin-top:4px;">💰 Баланс: <b>${balance.toLocaleString()}</b></div>
-                    ${!canUpg.ok ? `<div style="background:rgba(243,156,18,0.12);border:1px solid rgba(243,156,18,0.25);border-radius:12px;padding:8px 12px;margin-top:8px;font-size:12px;color:#f39c12;">${canUpg.msg}</div>` : ''}
+                    ${!canUpg.ok && curLevel === 0 ? `<div style="background:rgba(243,156,18,0.12);border:1px solid rgba(243,156,18,0.25);border-radius:12px;padding:8px 12px;margin-top:8px;font-size:12px;color:#f39c12;">${canUpg.msg}</div>` : ''}
                 </div>`;
 
         // Show all 5 levels
@@ -1764,8 +1777,8 @@
                     <div style="display:flex;flex-wrap:wrap;gap:6px;" id="theme-pick-${lvl}">
                         ${def.themes.map((t,i) => `<button onclick="selectUpgradeTheme(${lvl},'${t.id}',this)" style="padding:5px 10px;border-radius:10px;border:1.5px solid ${i===0?'var(--accent)':'rgba(255,255,255,0.12)'};background:${i===0?'rgba(36,129,204,0.2)':'rgba(255,255,255,0.04)'};color:white;font-size:11px;cursor:pointer;" data-theme="${t.id}">${t.name}</button>`).join('')}
                     </div>
-                    <button onclick="doNftUpgrade('${inst}',${lvl})" id="upg-btn-${lvl}" style="margin-top:8px;width:100%;padding:10px;border-radius:12px;border:none;background:${canAfford && canUpg.ok ? 'linear-gradient(90deg,var(--accent),#1a8fd1)' : 'rgba(255,255,255,0.08)'};color:${canAfford && canUpg.ok ? '#fff' : 'var(--secondary)'};font-weight:bold;font-size:13px;cursor:${canAfford && canUpg.ok ? 'pointer' : 'default'};">
-                        ${!canUpg.ok ? canUpg.msg : !canAfford ? `Нужно ещё ${(def.cost-balance).toLocaleString()}💰` : `⚡ Прокачать за ${def.cost.toLocaleString()}💰`}
+                    <button onclick="doNftUpgrade('${inst}',${lvl})" id="upg-btn-${lvl}" style="margin-top:8px;width:100%;padding:10px;border-radius:12px;border:none;background:${canAfford && (lvl > 1 || canUpg.ok) ? 'linear-gradient(90deg,var(--accent),#1a8fd1)' : 'rgba(255,255,255,0.08)'};color:${canAfford && (lvl > 1 || canUpg.ok) ? '#fff' : 'var(--secondary)'};font-weight:bold;font-size:13px;cursor:${canAfford && (lvl > 1 || canUpg.ok) ? 'pointer' : 'default'};">
+                        ${lvl === 1 && !canUpg.ok ? canUpg.msg : !canAfford ? `Нужно ещё ${(def.cost-balance).toLocaleString()}💰` : `⚡ Прокачать за ${def.cost.toLocaleString()}💰`}
                     </button>
                 </div>`;
             }
@@ -1797,8 +1810,11 @@
     };
 
     window.doNftUpgrade = async (inst, level) => {
-        const canUpg = await canUpgradeNft();
-        if (!canUpg.ok) return showToast(canUpg.msg, 'var(--orange)');
+        // Кулдаун только для 1-го уровня
+        if (level === 1) {
+            const canUpg = await canUpgradeNft();
+            if (!canUpg.ok) return showToast(canUpg.msg, 'var(--orange)');
+        }
 
         const levelDef = NFT_UPGRADE_LEVELS[level];
         const theme = (window._selectedUpgTheme && window._selectedUpgTheme[level]) || levelDef.themes[0].id;
@@ -3047,7 +3063,7 @@
                             .slice(0, 6);
                         if(!pinnedArr.length) return '';
                         const angle = 360 / pinnedArr.length;
-                        const radius = 80; // centre=100, avatar radius=50, gap+item → sits outside avatar
+                        const radius = 72; // centre=100, avatar radius=50 + gap 8 + item half 14 = 72
                         return `<div class="avatar-ring-orbit" style="position:absolute;top:0;left:0;width:200px;height:200px;pointer-events:none;">${pinnedArr.map((item, i) => {
                             const cat2 = catalog.find(c => c.id == item.id);
                             const img2 = item.img || (cat2 && cat2.img);
@@ -3074,7 +3090,7 @@
                             return `<div class="avatar-ring-item ring-nft ${upgCls2}" style="left:${x2}px;top:${y2}px;${upgStyle2}" data-inst="${item.inst}">${img2?'<img src="'+img2+'" onerror="this.style.display=\'none\'">':'<span>'+em2+'</span>'}</div>`;
                         }).join('')}</div>`;
                     })()}
-                    <div class="tg-avatar-wrap" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;margin:0;">
+                    <div class="tg-avatar-wrap" style="position:relative;z-index:2;margin:0;flex-shrink:0;">
                         <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
                              class="tg-avatar" onclick="openEdit()"
                              onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
