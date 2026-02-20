@@ -1849,6 +1849,7 @@
         closeModal();
         setTimeout(() => openNftUpgrade(inst), 350);
     };
+    const NFT_START=new Date('2026-02-22T21:00:00Z').getTime(); // 00:00 МСК 23 февраля
     const NFT_END=new Date('2026-02-23T21:00:00Z').getTime();
     // Ящерица — 24 часа с 18 февраля 2026
     const LIZ_START=new Date('2026-02-18T17:00:00Z').getTime(); // 20:00 МСК
@@ -3991,6 +3992,8 @@
         document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
         document.getElementById(id).classList.add('active');b.classList.add('active');
         if(id==='inv') renderInv();
+        if(id==='shop') renderShop();
+        if(id==='market') listenMarket();
         if(id==='profile') { get(ref(db,'users/'+user.id)).then(s=>{ if(s.val()) renderMyProfile(s.val()); }); }
     };
     // ===== TELEGRAM INTEGRATION =====
