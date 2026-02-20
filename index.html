@@ -977,7 +977,7 @@
     </div>
 </div>
 
-<script type="module" defer>
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, onValue, push, remove, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -1012,15 +1012,15 @@
         {id:17,n:"Остров",   i:"🏝️",img:"https://em-content.zobj.net/source/apple/391/desert-island_1f3dd-fe0f.png"},
         {id:18,n:"Кот",      i:"🐱", img:"https://em-content.zobj.net/source/apple/391/cat-face_1f431.png"},
         {id:19,n:"Панда",    i:"🐼", img:"https://em-content.zobj.net/source/apple/391/panda_1f43c.png"},
-        {id:20,n:"Пони",     i:"🐴", img:"./images/img_1.png"},
-        {id:21,n:"Незерит меч",  i:"⚔️", img:"./images/img_2.png"},
+        {id:20,n:"Пони",     i:"🐴", img:"./img_1.png"},
+        {id:21,n:"Незерит меч",  i:"⚔️", img:"./img_2.png"},
         {id:22,n:"Клевер",   i:"🍀", img:"https://em-content.zobj.net/source/apple/391/four-leaf-clover_1f340.png"},
         {id:23,n:"Кубок",    i:"🏆", img:"https://em-content.zobj.net/source/apple/391/trophy_1f3c6.png"},
         {id:24,n:"Джойстик", i:"🎮", img:"https://em-content.zobj.net/source/apple/391/video-game_1f3ae.png"},
-        {id:25,n:"Пепе",      i:"🐸", img:"./images/img_3.png"},
+        {id:25,n:"Пепе",      i:"🐸", img:"./img_3.png"},
         {id:26,n:"Кости",    i:"🎲", img:"https://em-content.zobj.net/source/apple/391/game-die_1f3b2.png"},
         {id:27,n:"Фишки",    i:"🪙", img:"https://em-content.zobj.net/source/apple/391/coin_1fa99.png"},
-        {id:28,n:"Золотой слиток", i:"🏅", img:"./images/img_4.png"},
+        {id:28,n:"Золотой слиток", i:"🏅", img:"./img_4.png"},
         {id:29,n:"Планета",  i:"🪐", img:"https://em-content.zobj.net/source/apple/391/ringed-planet_1fa90.png"},
         {id:30,n:"Галактика",i:"🌌", img:"https://em-content.zobj.net/source/apple/391/milky-way_1f30c.png"}
     ];
@@ -1507,7 +1507,7 @@
     const NFT_SOCK={id:999,n:"Носок",i:"🧦",img:"https://em-content.zobj.net/source/apple/391/socks_1f9e6.png",nft:true,price:5000};
     const NFT_LIZARD={id:997,n:"Ящерица",i:"🦎",img:"https://em-content.zobj.net/source/apple/391/lizard_1f98e.png",nft:true,price:7000};
     const NFT_PAN={id:996,n:"Сковорода",i:"🍳",imgKey:"pan",nft:true,price:5000};
-    const PAN_IMG="./images/img_5.png";
+    const PAN_IMG="./img_5.png";
     // NFT_23FEB deprecated - using NFT_BEER and NFT_SOCK separately
 
     // ===== RARITY SYSTEM =====
@@ -4024,7 +4024,16 @@
         if(document.getElementById('bcast-msg')) document.getElementById('bcast-msg').value='';
     };
 
-    window.onload=()=>{const s=localStorage.getItem('gifts_user');if(s){const d=JSON.parse(s);startApp(d.name,d.id);}};
+    // Auto-login from localStorage
+    (()=>{
+        const s=localStorage.getItem('gifts_user');
+        if(s){
+            try{
+                const d=JSON.parse(s);
+                if(d&&d.name&&d.id) startApp(d.name,d.id);
+            }catch(e){}
+        }
+    })();
 </script>
 </body>
 </html>
