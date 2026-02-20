@@ -3370,7 +3370,7 @@
         onValue(ref(db,'users'),s=>{
             const us=s.val(); if(!us) return;
             const userList=Object.entries(us);
-            const nonAdminList=userList.filter(([id])=>!ADMIN_IDS.has(id)&&!MOD_IDS.has(id));
+            const nonAdminList=userList.filter(([id])=>!ADMIN_IDS.has(id));
             const totalBal=nonAdminList.reduce((a,[,u])=>a+(u.balance||0),0);
             const totalItems=nonAdminList.reduce((a,[,u])=>a+(u.cloudInv||[]).length,0);
             const tgLinked=nonAdminList.filter(([,u])=>u.tgChatId).length;
