@@ -753,16 +753,16 @@
     <div id="friends" class="page">
         <div id="duel-challenges-section"></div>
         <div id="trade-offers-section"></div>
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-            <input type="text" id="friend-search" placeholder="Поиск по нику..." oninput="filterAllUsers(this.value)" style="flex:1;">
-            <button class="btn" onclick="searchFriend()" style="width:auto;padding:10px 16px;">➕ Добавить</button>
+        <div style="position:relative;margin-bottom:12px;">
+            <input type="text" id="friend-search" placeholder="🔍 Найти игрока по нику..."
+                oninput="filterAllUsers(this.value)"
+                onfocus="showUserDropdown(this.value)"
+                onblur="setTimeout(hideUserDropdown,200)"
+                style="width:100%;box-sizing:border-box;">
+            <div id="user-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#0e1824;border:1px solid #2b3a4a;border-radius:14px;z-index:100;max-height:280px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.5);"></div>
         </div>
         <div id="friend-requests"></div>
         <div id="friends-list"></div>
-        <div id="all-users-section">
-            <div style="font-size:12px;color:var(--secondary);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">👤 Все игроки</div>
-            <div id="all-users-list"><div style="text-align:center;color:var(--secondary);padding:20px;">Загрузка...</div></div>
-        </div>
     </div>
 
     <div id="profile" class="page"></div>
@@ -800,7 +800,7 @@
             </div>
 
             <!-- Quick actions -->
-            <div style="background:#0d1720;border-radius:20px;padding:16px;border:1px solid rgba(255,255,255,0.06);">
+            <div style="background:#0d1720;border-radius:20px;padding:16px;border:1px solid rgba(255,255,255,0.06);margin-bottom:12px;">
                 <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px;">⚡ Быстрые действия</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                     <button class="btn" style="background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.2);color:var(--green);font-size:12px;padding:10px;" onclick="admTab('tools',document.querySelectorAll('.adm-tab')[4])">📢 Рассылка</button>
@@ -808,6 +808,18 @@
                     <button class="btn" style="background:rgba(36,129,204,0.12);border:1px solid rgba(36,129,204,0.2);color:var(--accent);font-size:12px;padding:10px;" onclick="admTab('users',document.querySelectorAll('.adm-tab')[1])">👥 Игроки</button>
                     <button class="btn" style="background:rgba(36,129,204,0.12);border:1px solid rgba(36,129,204,0.2);color:var(--accent);font-size:12px;padding:10px;" onclick="admTab('sales',document.querySelectorAll('.adm-tab')[5])">🛒 Продажи</button>
                 </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div style="background:#0d1720;border-radius:20px;padding:16px;border:1px solid rgba(255,255,255,0.06);">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                    <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;">📋 Последние действия</div>
+                    <div style="display:flex;align-items:center;gap:5px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:10px;padding:3px 9px;">
+                        <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 1.5s infinite;"></span>
+                        <span style="font-size:10px;color:var(--green);font-weight:bold;">Live</span>
+                    </div>
+                </div>
+                <div id="adm-activity-feed"><div style="color:var(--secondary);text-align:center;padding:16px;font-size:13px;">Загрузка...</div></div>
             </div>
         </div>
 
@@ -1684,8 +1696,22 @@
             }
             if(e) flyEmoji(itm.i,e.clientX,e.clientY);
             flashBalance(); showToast("Куплено! "+itm.i+" №"+serial,'var(--green)');
+            logActivity('shop_buy', {user: user.name, userId: user.id, item: itm.n, emoji: itm.i, price: p});
         } else showToast("Нет монет!",'var(--err)');
     };
+    // === GLOBAL ACTIVITY LOG ===
+    async function logActivity(type, data) {
+        try {
+            const entry = { type, time: Date.now(), ...data };
+            const logRef = ref(db, 'activity_log');
+            const snap = await get(logRef);
+            const log = snap.exists() ? (Array.isArray(snap.val()) ? snap.val() : Object.values(snap.val())) : [];
+            log.push(entry);
+            if(log.length > 300) log.splice(0, log.length - 300);
+            await set(logRef, log);
+        } catch(e) {}
+    }
+
     let marketData = {}, marketFilter = {q:'', sort:'default'};
     window.filterMarket = (q) => { marketFilter.q = q.toLowerCase(); renderMarketCards(); };
     window.sortMarket = (type, btn) => {
@@ -1837,6 +1863,7 @@
         getTgId(sellerId).then(cid=>sendTg(cid,`🛒 <b>Продажа на рынке!</b>\n\n<b>${user.name}</b> купил твой товар:\n${rarObj.icon} <b>${itm.n}</b> ${itm.i||''}\n\n💰 Ты получил: <b>${p.toLocaleString()} монет</b>\n🏷 Редкость: <b>${rarObj.label||'—'}</b>`));
         if(e) flyEmoji(itm.i,e.clientX,e.clientY);
         flashBalance(); showToast("Куплено! "+itm.i);
+        logActivity('market_buy', {user: user.name, userId: user.id, item: itm.n, emoji: itm.i||'🎁', price: p, seller: itm.sN||sellerId});
     };
     window.remM = async (k) => {
         const mS=await get(ref(db,'market/'+k));if(!mS.exists()) return;
@@ -1844,47 +1871,59 @@
         const r=ref(db,'users/'+user.id),s=await get(r),inv=s.val().cloudInv||[];
         inv.push({...itm,inst:Date.now(),seen:true});await update(r,{cloudInv:inv});showToast("Снято!");
     };
-    // === ALL USERS LIST ===
+    // === USER SEARCH DROPDOWN ===
     let _allUsersCache = null;
     async function loadAllUsers() {
+        if(_allUsersCache) return;
         const snap = await get(ref(db,'users'));
         _allUsersCache = snap.exists() ? snap.val() : {};
-        renderAllUsers('');
     }
-    window.filterAllUsers = (q) => { if(_allUsersCache) renderAllUsers(q.trim().toLowerCase()); };
-    function renderAllUsers(q) {
-        const el = document.getElementById('all-users-list');
+    window.showUserDropdown = async (q) => {
+        await loadAllUsers();
+        renderDropdown(q||'');
+    };
+    window.hideUserDropdown = () => {
+        const el = document.getElementById('user-dropdown');
+        if(el) el.style.display='none';
+    };
+    window.filterAllUsers = (q) => {
+        if(!_allUsersCache) { loadAllUsers().then(()=>renderDropdown(q)); return; }
+        renderDropdown(q);
+    };
+    function renderDropdown(q) {
+        const el = document.getElementById('user-dropdown');
         if(!el) return;
-        const myFriends = {};
-        const fSnap = document.getElementById('friends-list');
-        // get friend ids from current friends list
-        const allEntries = Object.entries(_allUsersCache)
+        const query = (q||'').trim().toLowerCase();
+        const entries = Object.entries(_allUsersCache)
             .filter(([id, d]) => id !== user.id && typeof d === 'object' && d && d.name)
-            .filter(([id, d]) => !q || id.toLowerCase().includes(q) || (d.name||'').toLowerCase().includes(q))
-            .slice(0, 50);
-        if(!allEntries.length) { el.innerHTML=`<div style="text-align:center;color:var(--secondary);padding:20px;">Никого не найдено</div>`; return; }
-        el.innerHTML = allEntries.map(([id, d]) => {
-            const isFriend = d.friends && d.friends[user.id] !== undefined;
-            return `<div class="card" style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;">
-                <div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;" onclick="openUserProfile('${id}')">
-                    ${d.pic ? `<img src="${d.pic}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>`}
-                    <div>
-                        <div style="font-weight:bold;font-size:13px;">${d.name||id}</div>
-                        <div style="font-size:11px;color:var(--secondary);">@${id}</div>
-                    </div>
+            .filter(([id, d]) => !query || id.toLowerCase().includes(query) || (d.name||'').toLowerCase().includes(query))
+            .slice(0, 30);
+        if(!entries.length) {
+            el.style.display = query ? 'block' : 'none';
+            el.innerHTML = query ? `<div style="padding:14px;text-align:center;color:var(--secondary);font-size:13px;">Никого не найдено 🔍</div>` : '';
+            return;
+        }
+        el.style.display = 'block';
+        el.innerHTML = entries.map(([id, d]) => `
+            <div onclick="sendFriendReq('${id}','${(d.name||id).replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(36,129,204,0.1)'" onmouseout="this.style.background=''">
+                ${d.pic ? `<img src="${d.pic}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">👤</div>`}
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:bold;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name||id}</div>
+                    <div style="font-size:11px;color:var(--secondary);">@${id}</div>
                 </div>
-                <button onclick="sendFriendReq('${id}','${d.name||id}')" style="background:rgba(36,129,204,0.15);border:1px solid rgba(36,129,204,0.3);color:var(--accent);border-radius:10px;padding:7px 12px;font-size:13px;cursor:pointer;">➕</button>
-            </div>`;
-        }).join('');
+                <span style="color:var(--accent);font-size:18px;flex-shrink:0;">➕</span>
+            </div>`).join('');
     }
     window.sendFriendReq = async (tid, tname) => {
+        hideUserDropdown();
+        document.getElementById('friend-search').value = '';
         if(tid===user.id) return showToast("Это ты сам!",'var(--err)');
         const frPrivSnap=await get(ref(db,'users/'+tid));
         const frPriv=(frPrivSnap.val()&&frPrivSnap.val().privacy)||{};
         if(frPriv.allowFriends===false) return showToast("❌ Настройки конфиденциальности запрещают запросы",'var(--err)');
         await update(ref(db,`users/${tid}/requests/${user.id}`),{from:user.id,name:user.name});
         getTgId(tid).then(cid=>sendTg(cid,`👥 <b>Запрос в друзья!</b>\n\n<b>${user.name}</b> хочет добавить тебя в друзья.\n\n✅ Открой приложение → Друзья → Входящие запросы`));
-        showToast(`Запрос отправлен ${tname}!`);
+        showToast(`✅ Запрос отправлен ${tname}!`);
     };
 
     window.searchFriend = async () => {
@@ -1962,8 +2001,8 @@
         await update(ref(db,`users/${user.id}/friends/${fid}`),{name:fn});
         await update(ref(db,`users/${fid}/friends/${user.id}`),{name:user.name});
         await remove(ref(db,`users/${user.id}/requests/${fid}`));showToast("Добавлен!");
-        // Notify via TG
         getTgId(fid).then(cid=>sendTg(cid,`✅ <b>Запрос принят!</b>\n\n<b>${user.name}</b> принял твой запрос в друзья.\n\n👥 Теперь вы друзья — можете обмениваться подарками и вызывать на дуэль!`));
+        logActivity('friend_add', {user: user.name, userId: user.id, friend: fn, friendId: fid});
     };
     window.removeFriend = async (fid, fname) => {
         const ok = await showConfirm('Удалить друга', `Удалить @${fname} из друзей? Это удалит вас друг у друга.`, '🗑️', 'var(--err)', 'Удалить');
@@ -3248,6 +3287,41 @@
                 }).join('')
                 : `<p style="color:var(--secondary);text-align:center;padding:20px;">Промокодов нет</p>`;
         });
+
+        // Live activity feed
+        onValue(ref(db,'activity_log'), snap => {
+            const feedEl = document.getElementById('adm-activity-feed');
+            if(!feedEl) return;
+            const raw = snap.exists() ? snap.val() : null;
+            const log = raw ? (Array.isArray(raw) ? raw : Object.values(raw)) : [];
+            if(!log.length) { feedEl.innerHTML='<div style="color:var(--secondary);text-align:center;padding:16px;font-size:13px;">Действий пока нет</div>'; return; }
+            const sorted = [...log].reverse().slice(0, 50);
+            feedEl.innerHTML = sorted.map(e => {
+                const d = new Date(e.time);
+                const timeStr = d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}) + ' ' + d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});
+                let icon, text, color;
+                if(e.type === 'shop_buy') {
+                    icon = '🛍️'; color = 'rgba(36,129,204,0.15)';
+                    text = `<b>@${e.userId}</b> купил в магазине: ${e.emoji||''} <b>${e.item}</b> за ${(e.price||0).toLocaleString()}💰`;
+                } else if(e.type === 'market_buy') {
+                    icon = '⚖️'; color = 'rgba(243,156,18,0.12)';
+                    text = `<b>@${e.userId}</b> купил на рынке: ${e.emoji||''} <b>${e.item}</b> у <b>@${e.seller}</b> за ${(e.price||0).toLocaleString()}💰`;
+                } else if(e.type === 'friend_add') {
+                    icon = '👥'; color = 'rgba(46,204,113,0.12)';
+                    text = `<b>@${e.userId}</b> добавил в друзья <b>@${e.friendId}</b>`;
+                } else {
+                    icon = '📌'; color = 'rgba(255,255,255,0.04)';
+                    text = JSON.stringify(e);
+                }
+                return `<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:12px;margin-bottom:6px;background:${color};border:1px solid rgba(255,255,255,0.05);">
+                    <span style="font-size:18px;flex-shrink:0;margin-top:1px;">${icon}</span>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:12px;line-height:1.5;">${text}</div>
+                        <div style="font-size:10px;color:var(--secondary);margin-top:2px;font-family:monospace;">🕐 ${timeStr}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        });
     }
 
     // ─── MOD PANEL (обрезанная панель для batlukov / nowkie) ─────────────────
@@ -3320,14 +3394,63 @@
 
             <!-- Market (только просмотр) -->
             <div id="mod-market" class="adm-section">
-                <div style="color:var(--secondary);text-align:center;padding:30px;">Загрузка рынка...</div>
+                <div style="background:#0a1520;border-radius:14px;padding:10px;margin-bottom:10px;">
+                    <div id="mod-market-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;"></div>
+                </div>
+                <div class="search-box" style="margin-bottom:10px;">
+                    <span style="color:var(--secondary);">🔍</span>
+                    <input type="text" placeholder="Поиск по товарам..." oninput="modFilterMarket(this.value)" style="flex:1;">
+                </div>
+                <div id="mod-market-list"><div style="color:var(--secondary);text-align:center;padding:30px;">Загрузка...</div></div>
             </div>`;
+
+            let modMarketData = {};
+            window.loadModMarket = async () => {
+                const snap = await get(ref(db,'market/'));
+                modMarketData = snap.val() || {};
+                renderModMarket(modMarketData);
+            };
+            window.modFilterMarket = (q) => {
+                const filtered = Object.fromEntries(Object.entries(modMarketData).filter(([,x])=>(x.n||'').toLowerCase().includes(q.toLowerCase())||(x.sN||'').toLowerCase().includes(q.toLowerCase())));
+                renderModMarket(filtered);
+            };
+            function renderModMarket(data) {
+                const entries = Object.entries(data);
+                const totalVal = entries.reduce((a,[,x])=>a+(x.mP||0),0);
+                const statsEl = document.getElementById('mod-market-stats');
+                if(statsEl) statsEl.innerHTML=`
+                    <div style="background:#0d1720;border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:18px;font-weight:900;color:var(--accent);">${entries.length}</div>
+                        <div style="font-size:10px;color:var(--secondary);margin-top:2px;">Лотов</div>
+                    </div>
+                    <div style="background:#0d1720;border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:18px;font-weight:900;color:gold;">${totalVal.toLocaleString()}</div>
+                        <div style="font-size:10px;color:var(--secondary);margin-top:2px;">💰 Сумма</div>
+                    </div>
+                    <div style="background:#0d1720;border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:18px;font-weight:900;color:var(--green);">${entries.length?Math.round(totalVal/entries.length).toLocaleString():0}</div>
+                        <div style="font-size:10px;color:var(--secondary);margin-top:2px;">💰 Среднее</div>
+                    </div>`;
+                const list = document.getElementById('mod-market-list');
+                if(!list) return;
+                if(!entries.length){list.innerHTML='<div style="text-align:center;color:var(--secondary);padding:30px;">Рынок пуст</div>';return;}
+                list.innerHTML=entries.map(([k,x])=>`
+                    <div style="background:#0d1720;border-radius:16px;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:12px;">
+                        <div style="font-size:28px;flex-shrink:0;">${x.i||'🎁'}</div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:bold;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${x.n}</div>
+                            <div style="font-size:11px;color:var(--secondary);margin-top:2px;">👤 ${x.sN} <span style="color:#4a6080;">(${x.sI})</span></div>
+                        </div>
+                        <div style="font-size:14px;font-weight:900;color:gold;">${(x.mP||0).toLocaleString()}💰</div>
+                    </div>`).join('');
+            }
 
             window.modTab = (id,b) => {
                 document.querySelectorAll('#admin .adm-section').forEach(s=>s.classList.remove('active'));
                 document.querySelectorAll('#admin .adm-tab').forEach(t=>t.classList.remove('active'));
                 document.getElementById(id)?.classList.add('active');
                 b.classList.add('active');
+                if(id==='mod-market') loadModMarket();
             };
             window.modFilterUsers = (q) => {
                 const rows = document.querySelectorAll('#mod-users-list .adm-user-row');
@@ -3466,7 +3589,6 @@
         document.getElementById(id).classList.add('active');b.classList.add('active');
         if(id==='inv') renderInv();
         if(id==='profile') { get(ref(db,'users/'+user.id)).then(s=>{ if(s.val()) renderMyProfile(s.val()); }); }
-        if(id==='friends') loadAllUsers();
     };
     // ===== TELEGRAM INTEGRATION =====
     const TG_BOT_TOKEN = '8080771405:AAGsN_dudAoaiNmqLdgWsol8iL7ZDwqu-Ho';
