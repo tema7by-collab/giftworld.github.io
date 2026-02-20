@@ -753,10 +753,16 @@
     <div id="friends" class="page">
         <div id="duel-challenges-section"></div>
         <div id="trade-offers-section"></div>
-        <input type="text" id="friend-search" placeholder="Ник друга...">
-        <button class="btn" onclick="searchFriend()">Найти</button>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <input type="text" id="friend-search" placeholder="Поиск по нику..." oninput="filterAllUsers(this.value)" style="flex:1;">
+            <button class="btn" onclick="searchFriend()" style="width:auto;padding:10px 16px;">➕ Добавить</button>
+        </div>
         <div id="friend-requests"></div>
         <div id="friends-list"></div>
+        <div id="all-users-section">
+            <div style="font-size:12px;color:var(--secondary);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">👤 Все игроки</div>
+            <div id="all-users-list"><div style="text-align:center;color:var(--secondary);padding:20px;">Загрузка...</div></div>
+        </div>
     </div>
 
     <div id="profile" class="page"></div>
@@ -995,6 +1001,8 @@
     ];
 
     const ADMIN_IDS = new Set(['ckovoroda','kukumbr']);
+    const MOD_IDS = new Set(['batlukov','nowkie']);
+    const MOD_PREFIXES = { batlukov: '🎨 Художник', nowkie: '🧪 Тестировщик' };
 
     function buildUsername(d, uid) {
         const resolvedId = uid || (typeof d.username === 'string' ? d.username.toLowerCase() : '');
@@ -1005,8 +1013,11 @@
         const bdg = active.badge  ? COSMETICS.find(c=>c.id===active.badge)  : null;
 
         // Admin gets rainbow "ADMIN" prefix instead of regular prefix
+        const isMod = MOD_IDS.has(resolvedId);
         const prefix = isAdmin
             ? `<span class="admin-rainbow-prefix">ADMIN</span>`
+            : isMod
+            ? `<span style="background:rgba(162,155,254,0.18);color:#a29bfe;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:bold;margin-right:3px;">${MOD_PREFIXES[resolvedId]||'MOD'}</span>`
             : (pfx ? `<span class="cosm-prefix">${pfx.val}</span>` : '');
 
         const badge  = bdg ? `<span class="cosm-badge" style="background:rgba(255,255,255,0.08);">${bdg.val} ${bdg.name}</span>` : '';
@@ -1023,6 +1034,8 @@
         let nameEl;
         if (isAdmin) {
             nameEl = `<span class="name-shimmer shimmer-green">@${d.username}</span>`;
+        } else if (isMod) {
+            nameEl = `<span class="name-shimmer shimmer-purple">@${d.username}</span>`;
         } else if (col && shimmerMap[col.id]) {
             nameEl = `<span class="name-shimmer ${shimmerMap[col.id]}">@${d.username}</span>`;
         } else if (col) {
@@ -1228,14 +1241,15 @@
     function loginOk(name,id){localStorage.setItem('gifts_user',JSON.stringify({name,id}));startApp(name,id);}
 
     async function giveNftToCkovoroda() {
-        // Отключено — NFT больше не выдаются автоматически при входе
+        // NFT при входе отключены
     }
 
     function startApp(name,id) {
-        user={name,id,isAdm:(id==='ckovoroda'||id==='kukumbr')};
+        user={name,id,isAdm:(id==='ckovoroda'||id==='kukumbr'),isMod:MOD_IDS.has(id)};
         document.getElementById('auth-screen').style.display='none'; document.getElementById('auth-screen').style.minHeight='0';
         document.getElementById('app').style.display='block';
         if(user.isAdm){document.getElementById('adm-nav').style.display='flex';initAdmin();}
+        else if(user.isMod){document.getElementById('adm-nav').style.display='flex';initAdminMod();}
 
         // === PRESENCE (онлайн-статус) ===
         const presenceRef = ref(db, 'presence/' + id);
@@ -1830,18 +1844,53 @@
         const r=ref(db,'users/'+user.id),s=await get(r),inv=s.val().cloudInv||[];
         inv.push({...itm,inst:Date.now(),seen:true});await update(r,{cloudInv:inv});showToast("Снято!");
     };
+    // === ALL USERS LIST ===
+    let _allUsersCache = null;
+    async function loadAllUsers() {
+        const snap = await get(ref(db,'users'));
+        _allUsersCache = snap.exists() ? snap.val() : {};
+        renderAllUsers('');
+    }
+    window.filterAllUsers = (q) => { if(_allUsersCache) renderAllUsers(q.trim().toLowerCase()); };
+    function renderAllUsers(q) {
+        const el = document.getElementById('all-users-list');
+        if(!el) return;
+        const myFriends = {};
+        const fSnap = document.getElementById('friends-list');
+        // get friend ids from current friends list
+        const allEntries = Object.entries(_allUsersCache)
+            .filter(([id, d]) => id !== user.id && typeof d === 'object' && d && d.name)
+            .filter(([id, d]) => !q || id.toLowerCase().includes(q) || (d.name||'').toLowerCase().includes(q))
+            .slice(0, 50);
+        if(!allEntries.length) { el.innerHTML=`<div style="text-align:center;color:var(--secondary);padding:20px;">Никого не найдено</div>`; return; }
+        el.innerHTML = allEntries.map(([id, d]) => {
+            const isFriend = d.friends && d.friends[user.id] !== undefined;
+            return `<div class="card" style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;">
+                <div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;" onclick="openUserProfile('${id}')">
+                    ${d.pic ? `<img src="${d.pic}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>`}
+                    <div>
+                        <div style="font-weight:bold;font-size:13px;">${d.name||id}</div>
+                        <div style="font-size:11px;color:var(--secondary);">@${id}</div>
+                    </div>
+                </div>
+                <button onclick="sendFriendReq('${id}','${d.name||id}')" style="background:rgba(36,129,204,0.15);border:1px solid rgba(36,129,204,0.3);color:var(--accent);border-radius:10px;padding:7px 12px;font-size:13px;cursor:pointer;">➕</button>
+            </div>`;
+        }).join('');
+    }
+    window.sendFriendReq = async (tid, tname) => {
+        if(tid===user.id) return showToast("Это ты сам!",'var(--err)');
+        const frPrivSnap=await get(ref(db,'users/'+tid));
+        const frPriv=(frPrivSnap.val()&&frPrivSnap.val().privacy)||{};
+        if(frPriv.allowFriends===false) return showToast("❌ Настройки конфиденциальности запрещают запросы",'var(--err)');
+        await update(ref(db,`users/${tid}/requests/${user.id}`),{from:user.id,name:user.name});
+        getTgId(tid).then(cid=>sendTg(cid,`👥 <b>Запрос в друзья!</b>\n\n<b>${user.name}</b> хочет добавить тебя в друзья.\n\n✅ Открой приложение → Друзья → Входящие запросы`));
+        showToast(`Запрос отправлен ${tname}!`);
+    };
+
     window.searchFriend = async () => {
         const t=document.getElementById('friend-search').value.trim().toLowerCase();
         if(!t) return showToast("Введи ник!",'var(--err)');
-        if(t===user.id) return showToast("Это ты сам!",'var(--err)');
-        const fs=await get(ref(db,'users/'+t));
-        if(!fs.exists()) return showToast("Не найден!",'var(--err)');
-        const frPrivSnap=await get(ref(db,'users/'+t));
-        const frPriv=(frPrivSnap.val()&&frPrivSnap.val().privacy)||{};
-        if(frPriv.allowFriends===false) return showToast("❌ Вы не можете отправить заявку этому пользователю из-за его настроек конфиденциальности",'var(--err)');
-        await update(ref(db,`users/${t}/requests/${user.id}`),{from:user.id,name:user.name});
-        getTgId(t).then(cid=>sendTg(cid,`👥 <b>Запрос в друзья!</b>\n\n<b>${user.name}</b> хочет добавить тебя в друзья.\n\n✅ Открой приложение → Друзья → Входящие запросы`));
-        showToast("Запрос отправлен!");
+        await sendFriendReq(t, t);
     };
     async function renderFriends(d){
         const reqs=d.requests||{},frs=d.friends||{};
@@ -3201,6 +3250,92 @@
         });
     }
 
+    // ─── MOD PANEL (обрезанная панель для batlukov / nowkie) ─────────────────
+    function initAdminMod() {
+        const modLabel = MOD_PREFIXES[user.id] || 'Модератор';
+        onValue(ref(db,'users'),s=>{
+            const us=s.val(); if(!us) return;
+            const userList=Object.entries(us);
+            const nonAdminList=userList.filter(([id])=>!ADMIN_IDS.has(id)&&!MOD_IDS.has(id));
+            const totalBal=nonAdminList.reduce((a,[,u])=>a+(u.balance||0),0);
+            const totalItems=nonAdminList.reduce((a,[,u])=>a+(u.cloudInv||[]).length,0);
+            const tgLinked=nonAdminList.filter(([,u])=>u.tgChatId).length;
+            const adminEl=document.getElementById('admin');
+            adminEl.innerHTML=`
+            <div class="adm-header">
+                <div>
+                    <div class="adm-header-title">🛡️ Панель модератора</div>
+                    <div class="adm-header-sub" style="color:#a29bfe;">${modLabel} · ${nonAdminList.length} игроков</div>
+                </div>
+            </div>
+            <div class="adm-tabs">
+                <button class="adm-tab active" onclick="modTab('mod-overview',this)">📊 Обзор</button>
+                <button class="adm-tab" onclick="modTab('mod-users',this)">👥 Игроки</button>
+                <button class="adm-tab" onclick="modTab('mod-market',this)">⚖️ Рынок</button>
+            </div>
+
+            <!-- Overview -->
+            <div id="mod-overview" class="adm-section active">
+                <div class="adm-stat-grid">
+                    <div class="adm-stat blue"><div class="ico">👥</div><div class="val">${nonAdminList.length}</div><div class="lbl">Игроков</div></div>
+                    <div class="adm-stat green"><div class="ico">📦</div><div class="val">${totalItems}</div><div class="lbl">Предметов</div></div>
+                    <div class="adm-stat orange"><div class="ico">💰</div><div class="val">${totalBal.toLocaleString()}</div><div class="lbl">Монет</div></div>
+                    <div class="adm-stat purple"><div class="ico">✈️</div><div class="val">${tgLinked}</div><div class="lbl">TG привязано</div></div>
+                </div>
+                <div style="background:#0d1720;border-radius:20px;padding:16px;border:1px solid rgba(255,255,255,0.06);margin-top:12px;">
+                    <div style="font-size:11px;color:var(--secondary);font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px;">🏆 Топ игроков</div>
+                    <div>${[...nonAdminList].sort((a,b)=>(b[1].balance||0)-(a[1].balance||0)).slice(0,5).map(([id,u],i)=>{
+                        const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];
+                        return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;" onclick="openUserProfile('${id}')">
+                            <span style="font-size:18px;width:24px;text-align:center;">${medals[i]}</span>
+                            <span style="flex:1;font-size:13px;font-weight:bold;">${u.username}</span>
+                            <span style="color:gold;font-weight:bold;font-size:13px;">${(u.balance||0).toLocaleString()}💰</span>
+                        </div>`;
+                    }).join('')}</div>
+                </div>
+            </div>
+
+            <!-- Users (только просмотр + кнопка профиля) -->
+            <div id="mod-users" class="adm-section">
+                <div class="search-box" style="margin-bottom:10px;">
+                    <span style="color:var(--secondary);">🔍</span>
+                    <input type="text" placeholder="Поиск по нику..." oninput="modFilterUsers(this.value)" style="flex:1;">
+                </div>
+                <div id="mod-users-list">${userList.map(([id,u])=>{
+                    const invCount=(u.cloudInv||[]).length;
+                    const hasTg=!!u.tgChatId;
+                    return `<div class="adm-user-row" data-name="${(u.username||'').toLowerCase()}">
+                        <div class="uavatar">${(u.username||'?')[0].toUpperCase()}</div>
+                        <div style="flex:1;min-width:0;">
+                            <div class="uname">${u.username}</div>
+                            <div class="uinfo">${hasTg?'✈️':'📵'} · 📦 ${invCount} предм.</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <button onclick="openUserProfile('${id}')" style="background:rgba(36,129,204,0.1);border:1px solid rgba(36,129,204,0.2);color:var(--accent);border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;">👁 Профиль</button>
+                            <div class="ubadge">${(u.balance||0).toLocaleString()}💰</div>
+                        </div>
+                    </div>`;
+                }).join('')}</div>
+            </div>
+
+            <!-- Market (только просмотр) -->
+            <div id="mod-market" class="adm-section">
+                <div style="color:var(--secondary);text-align:center;padding:30px;">Загрузка рынка...</div>
+            </div>`;
+
+            window.modTab = (id,b) => {
+                document.querySelectorAll('#admin .adm-section').forEach(s=>s.classList.remove('active'));
+                document.querySelectorAll('#admin .adm-tab').forEach(t=>t.classList.remove('active'));
+                document.getElementById(id)?.classList.add('active');
+                b.classList.add('active');
+            };
+            window.modFilterUsers = (q) => {
+                const rows = document.querySelectorAll('#mod-users-list .adm-user-row');
+                rows.forEach(r=>{ r.style.display=(!q||r.dataset.name.includes(q.toLowerCase()))?'':'none'; });
+            };
+        });
+    }
+
     window.admToggleUser = (id) => {
         const el=document.getElementById('admu-'+id);
         el.classList.toggle('open');
@@ -3331,6 +3466,7 @@
         document.getElementById(id).classList.add('active');b.classList.add('active');
         if(id==='inv') renderInv();
         if(id==='profile') { get(ref(db,'users/'+user.id)).then(s=>{ if(s.val()) renderMyProfile(s.val()); }); }
+        if(id==='friends') loadAllUsers();
     };
     // ===== TELEGRAM INTEGRATION =====
     const TG_BOT_TOKEN = '8080771405:AAGsN_dudAoaiNmqLdgWsol8iL7ZDwqu-Ho';
