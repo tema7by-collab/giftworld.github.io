@@ -3048,7 +3048,7 @@
                             .slice(0, 6);
                         if(!pinnedArr.length) return '';
                         const angle = 360 / pinnedArr.length;
-                        const radius = 68;
+                        const radius = 56;
                         return `<div class="avatar-ring-orbit" style="position:absolute;top:0;left:0;width:170px;height:170px;pointer-events:none;">${pinnedArr.map((item, i) => {
                             const cat2 = catalog.find(c => c.id == item.id);
                             const img2 = item.img || (cat2 && cat2.img);
@@ -3070,7 +3070,7 @@
                                 }
                                 return '';
                             })();
-                            return `<div class="avatar-ring-item ring-nft ${upgCls2}" style="position:absolute;left:50%;top:50%;transform:rotate(${deg}deg) translateY(-${radius}px) translateX(-50%);${upgStyle2}" data-inst="${item.inst}">${img2?'<img src="'+img2+'" onerror="this.style.display=\'none\'">':'<span>'+em2+'</span>'}</div>`;
+                            return `<div class="avatar-ring-item ring-nft ${upgCls2}" style="position:absolute;left:50%;top:50%;transform:rotate(${deg}deg) translateY(-${radius}px) translateX(-50%);${upgStyle2}" data-inst="${item.inst}"><div style="transform:rotate(${-deg}deg);display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${img2?'<img src="'+img2+'" onerror="this.style.display=\'none\'">':'<span>'+em2+'</span>'}</div></div>`;
                         }).join('')}</div>`;
                     })()}
                     <div class="tg-avatar-wrap" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;margin:0;">
@@ -3458,14 +3458,14 @@
                                 .slice(0,6);
                             if(!pArr.length) return '';
                             const ang = 360/pArr.length;
-                            const rad2 = 55;
+                            const rad2 = 46;
                             return '<div style="position:absolute;top:50%;left:50%;width:0;height:0;pointer-events:none;">' +
                             pArr.map((it2,i2) => {
                                 const ct2 = catalog.find(c=>c.id==it2.id);
                                 const mg2 = it2.img||(ct2&&ct2.img);
                                 const em3 = it2.i||(ct2&&ct2.i)||'🎁';
                                 const deg2 = ang*i2-90;
-                                return `<div class="avatar-ring-item ring-nft" style="position:absolute;left:0;top:0;width:24px;height:24px;transform:rotate(${deg2}deg) translateY(-${rad2}px) translateX(-50%);">${mg2?'<img src="'+mg2+'" style="width:16px;height:16px;" onerror="this.style.display=\'none\'">':'<span style="font-size:12px;">'+em3+'</span>'}</div>`;
+                                return `<div class="avatar-ring-item ring-nft" style="position:absolute;left:0;top:0;width:24px;height:24px;transform:rotate(${deg2}deg) translateY(-${rad2}px) translateX(-50%);"><div style="transform:rotate(${-deg2}deg);display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${mg2?'<img src="'+mg2+'" style="width:16px;height:16px;" onerror="this.style.display=\'none\'">':'<span style="font-size:12px;">'+em3+'</span>'}</div></div>`;
                             }).join('') + '</div>';
                         })()}
                         <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
