@@ -271,21 +271,20 @@
         .avatar-ring-wrap {
             position: relative;
             display: inline-block;
-            width: 180px;
-            height: 180px;
-            margin-bottom: 14px;
+            width: 170px;
+            height: 170px;
+            margin-bottom: 18px;
         }
         .avatar-ring-orbit {
             position: absolute;
-            top: 50%; left: 50%;
-            width: 180px; height: 180px;
-            margin-left: -90px; margin-top: -90px;
+            top: 0; left: 0;
+            width: 170px; height: 170px;
             border-radius: 50%;
             pointer-events: none;
         }
         .avatar-ring-item {
             position: absolute;
-            width: 32px; height: 32px;
+            width: 28px; height: 28px;
             border-radius: 50%;
             background: rgba(10,21,32,0.92);
             border: 1.5px solid rgba(255,255,255,0.18);
@@ -2454,23 +2453,24 @@
             <div class="tg-profile-hero">
                 <div class="avatar-ring-wrap">
                     ${(() => {
-                        const pinnedArr = [...pinnedInsts].slice(0,6);
+                        const pinnedArr = [...pinnedInsts]
+                            .map(inst => inv.find(x => String(x.inst) === String(inst)))
+                            .filter(item => item && item.nft)
+                            .slice(0, 6);
                         if(!pinnedArr.length) return '';
                         const angle = 360 / pinnedArr.length;
-                        const radius = 78;
-                        return `<div class="avatar-ring-orbit">${pinnedArr.map((inst, i) => {
-                            const item = inv.find(x => String(x.inst) === String(inst));
-                            if(!item) return '';
+                        const radius = 68;
+                        return `<div class="avatar-ring-orbit">${pinnedArr.map((item, i) => {
                             const cat2 = catalog.find(c => c.id == item.id);
                             const img2 = item.img || (cat2 && cat2.img);
                             const em2 = item.i || (cat2 && cat2.i) || '🎁';
                             const rad = (angle * i - 90) * Math.PI / 180;
-                            const x2 = 90 + radius * Math.cos(rad) - 16;
-                            const y2 = 90 + radius * Math.sin(rad) - 16;
-                            return `<div class="avatar-ring-item${item.nft?' ring-nft':''}" style="left:${x2}px;top:${y2}px;">${img2?'<img src="'+img2+'" onerror="this.style.display=\'none\'">':'<span>'+em2+'</span>'}</div>`;
+                            const x2 = 85 + radius * Math.cos(rad) - 14;
+                            const y2 = 85 + radius * Math.sin(rad) - 14;
+                            return `<div class="avatar-ring-item ring-nft" style="left:${x2}px;top:${y2}px;">${img2?'<img src="'+img2+'" onerror="this.style.display=\'none\'">':'<span>'+em2+'</span>'}</div>`;
                         }).join('')}</div>`;
                     })()}
-                    <div class="tg-avatar-wrap" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;">
+                    <div class="tg-avatar-wrap" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;margin:0;">
                         <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
                              class="tg-avatar" onclick="openEdit()"
                              onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
@@ -2818,21 +2818,22 @@
                 <div style="text-align:center;margin-bottom:16px;">
                     <div style="position:relative;display:inline-block;margin-bottom:10px;">
                         ${(() => {
-                            const pArr = pinned.slice(0,6);
+                            const pArr = pinned
+                                .map(inst2 => inv.find(x=>String(x.inst)===String(inst2)))
+                                .filter(it2 => it2 && it2.nft)
+                                .slice(0,6);
                             if(!pArr.length) return '';
                             const ang = 360/pArr.length;
-                            const rad2 = 68;
-                            return '<div style="position:absolute;top:50%;left:50%;width:160px;height:160px;margin-left:-80px;margin-top:-80px;border-radius:50%;pointer-events:none;">' +
-                            pArr.map((inst2,i2) => {
-                                const it2 = inv.find(x=>String(x.inst)===String(inst2));
-                                if(!it2) return '';
+                            const rad2 = 55;
+                            return '<div style="position:absolute;top:50%;left:50%;width:140px;height:140px;margin-left:-70px;margin-top:-70px;border-radius:50%;pointer-events:none;">' +
+                            pArr.map((it2,i2) => {
                                 const ct2 = catalog.find(c=>c.id==it2.id);
                                 const mg2 = it2.img||(ct2&&ct2.img);
                                 const em3 = it2.i||(ct2&&ct2.i)||'🎁';
                                 const r3 = (ang*i2-90)*Math.PI/180;
-                                const x3 = 80+rad2*Math.cos(r3)-13;
-                                const y3 = 80+rad2*Math.sin(r3)-13;
-                                return `<div class="avatar-ring-item${it2.nft?' ring-nft':''}" style="left:${x3}px;top:${y3}px;width:26px;height:26px;">${mg2?'<img src="'+mg2+'" style="width:18px;height:18px;" onerror="this.style.display=\'none\'">':'<span style="font-size:13px;">'+em3+'</span>'}</div>`;
+                                const x3 = 70+rad2*Math.cos(r3)-12;
+                                const y3 = 70+rad2*Math.sin(r3)-12;
+                                return `<div class="avatar-ring-item ring-nft" style="left:${x3}px;top:${y3}px;width:24px;height:24px;">${mg2?'<img src="'+mg2+'" style="width:16px;height:16px;" onerror="this.style.display=\'none\'">':'<span style="font-size:12px;">'+em3+'</span>'}</div>`;
                             }).join('') + '</div>';
                         })()}
                         <img src="${d.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"
