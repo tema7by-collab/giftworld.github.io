@@ -1874,7 +1874,7 @@
     // === USER SEARCH DROPDOWN ===
     let _allUsersCache = null;
     async function loadAllUsers() {
-        if(_allUsersCache) return;
+        // Всегда загружаем свежие данные
         const snap = await get(ref(db,'users'));
         _allUsersCache = snap.exists() ? snap.val() : {};
     }
@@ -1895,8 +1895,12 @@
         if(!el) return;
         const query = (q||'').trim().toLowerCase();
         const entries = Object.entries(_allUsersCache)
-            .filter(([id, d]) => id !== user.id && typeof d === 'object' && d && d.name)
-            .filter(([id, d]) => !query || id.toLowerCase().includes(query) || (d.name||'').toLowerCase().includes(query))
+            .filter(([id, d]) => id !== user.id && typeof d === 'object' && d && (d.username || d.name))
+            .filter(([id, d]) => {
+                if(!query) return true;
+                const uname = (d.username || d.name || '').toLowerCase();
+                return id.toLowerCase().includes(query) || uname.includes(query);
+            })
             .slice(0, 30);
         if(!entries.length) {
             el.style.display = query ? 'block' : 'none';
@@ -1904,15 +1908,18 @@
             return;
         }
         el.style.display = 'block';
-        el.innerHTML = entries.map(([id, d]) => `
-            <div onclick="sendFriendReq('${id}','${(d.name||id).replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(36,129,204,0.1)'" onmouseout="this.style.background=''">
+        el.innerHTML = entries.map(([id, d]) => {
+            const displayName = d.username || d.name || id;
+            return `
+            <div onclick="sendFriendReq('${id}','${displayName.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(36,129,204,0.1)'" onmouseout="this.style.background=''">
                 ${d.pic ? `<img src="${d.pic}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">👤</div>`}
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:bold;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name||id}</div>
+                    <div style="font-weight:bold;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${displayName}</div>
                     <div style="font-size:11px;color:var(--secondary);">@${id}</div>
                 </div>
                 <span style="color:var(--accent);font-size:18px;flex-shrink:0;">➕</span>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
     window.sendFriendReq = async (tid, tname) => {
         hideUserDropdown();
