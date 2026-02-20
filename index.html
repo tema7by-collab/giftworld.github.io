@@ -626,6 +626,28 @@
         .cosm-badge { display:inline-block; font-size:11px; padding:1px 6px; border-radius:8px; margin-left:4px; vertical-align:middle; font-weight:bold; }
         .cosm-prefix { margin-right:4px; }
 
+        /* ── Color shimmer для ников ── */
+        @keyframes shimmer {
+            0%   { background-position: 0%   50% }
+            50%  { background-position: 100% 50% }
+            100% { background-position: 0%   50% }
+        }
+        .name-shimmer {
+            display:inline;
+            background-size:300% 100%;
+            animation:shimmer 2.5s ease infinite;
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            background-clip:text;
+            font-weight:700;
+        }
+        .shimmer-blue    { background-image: linear-gradient(90deg, #5dade2, #aed6f1, #2e86c1, #85c1e9, #5dade2); }
+        .shimmer-green   { background-image: linear-gradient(90deg, #2ecc71, #a9dfbf, #27ae60, #82e0aa, #2ecc71); }
+        .shimmer-purple  { background-image: linear-gradient(90deg, #a29bfe, #dcd6ff, #6c5ce7, #c5b9ff, #a29bfe); }
+        .shimmer-orange  { background-image: linear-gradient(90deg, #f39c12, #fde3a7, #e67e22, #fad7a0, #f39c12); }
+        .shimmer-pink    { background-image: linear-gradient(90deg, #fd79a8, #ffd6e7, #e84393, #ffb3d1, #fd79a8); }
+        .shimmer-gold    { background-image: linear-gradient(90deg, #ffd700, #fff4b3, #ffaa00, #ffe680, #ffd700); }
+        .shimmer-red     { background-image: linear-gradient(90deg, #e74c3c, #f1948a, #c0392b, #ec7063, #e74c3c); }
         /* ── Admin rainbow prefix ── */
         @keyframes adminRainbow {
             0%   {background-position:0%   50%}
@@ -974,13 +996,32 @@
             : (pfx ? `<span class="cosm-prefix">${pfx.val}</span>` : '');
 
         const badge  = bdg ? `<span class="cosm-badge" style="background:rgba(255,255,255,0.08);">${bdg.val} ${bdg.name}</span>` : '';
-        const nameStyle = col ? `style="color:${col.val};"` : (isAdmin ? `style="color:#4dff91;"` : '');
+        // Shimmer class по id цвета
+        const shimmerMap = {
+            'col_blue':   'shimmer-blue',
+            'col_green':  'shimmer-green',
+            'col_purple': 'shimmer-purple',
+            'col_orange': 'shimmer-orange',
+            'col_pink':   'shimmer-pink',
+            'col_gold':   'shimmer-gold',
+            'col_red':    'shimmer-red',
+        };
+        let nameEl;
+        if (isAdmin) {
+            nameEl = `<span class="name-shimmer shimmer-green">@${d.username}</span>`;
+        } else if (col && shimmerMap[col.id]) {
+            nameEl = `<span class="name-shimmer ${shimmerMap[col.id]}">@${d.username}</span>`;
+        } else if (col) {
+            nameEl = `<span style="color:${col.val};">@${d.username}</span>`;
+        } else {
+            nameEl = `<span>@${d.username}</span>`;
+        }
 
         // Lizard badge — shown if user owns NFT_LIZARD (id 997)
         const hasLizard = (d.cloudInv||[]).some(x => x.id === 997);
         const lizard = hasLizard ? `<span class="lizard-badge">🦎</span>` : '';
 
-        return `${prefix}<span ${nameStyle}>@${d.username}</span>${badge}${lizard}`;
+        return `${prefix}${nameEl}${badge}${lizard}`;
     }
 
     function checkUnlocks(d) {
@@ -1281,7 +1322,26 @@
         const fresh=await get(r); if(fresh.exists()) { renderMyProfile(fresh.val()); renderInv(); }
     };
 
-    window.renderInv = async () => {
+    window.sellItem = async (inst, name, reward) => {
+        const ok = await showConfirm(
+            'Продать предмет',
+            `"${name}" будет удалён из инвентаря. Ты получишь ${reward.toLocaleString()} монет (50% рыночной цены).`,
+            '🗑️', 'var(--err)', 'Продать'
+        );
+        if (!ok) return;
+        const r = ref(db, 'users/' + user.id);
+        const s = await get(r), d = s.val();
+        const inv = d.cloudInv || [];
+        const item = inv.find(x => String(x.inst) === String(inst));
+        if (!item) return showToast('Предмет не найден!', 'var(--err)');
+        const newInv = inv.filter(x => String(x.inst) !== String(inst));
+        const newBalance = (d.balance || 0) + reward;
+        await update(r, { cloudInv: newInv, balance: newBalance });
+        showToast(`🗑️ Продано! +${reward.toLocaleString()} 💰`, 'var(--green)');
+        renderInv();
+    };
+
+        window.renderInv = async () => {
         const s=await get(ref(db,'users/'+user.id)),d=s.val(),inv=d.cloudInv||[];
         const upd=inv.map(x=>({...x,seen:true}));
         await update(ref(db,'users/'+user.id),{cloudInv:upd});
@@ -1319,8 +1379,11 @@
             const serialBadge = x.nftSerial ? `<div class="nft-id-badge${isNFT?' nft':''}">№${x.nftSerial}</div>` : '';
             const mergeBadge = isMergeReady ? `<div class="merge-count-badge ready" title="Можно объединить!">⚗️</div>` : '';
 
+            const sellPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)) : getPrice(x.id||0);
+            const sellReward = Math.floor(sellPrice / 2);
             return `<div class="card ${cardExtraClass}${isMergeReady?' merge-ready':''}" style="display:flex;flex-direction:column;align-items:center;position:relative;${cardStyle}">
                 ${pinBadge}${nftBadge}${mergeBadge}${serialBadge}
+                <button onclick="sellItem('${x.inst}','${x.n.replace(/'/g,"\'").replace(/`/g,"\`")}',${sellReward})" style="position:absolute;top:6px;left:6px;z-index:5;background:rgba(231,76,60,0.85);border:none;border-radius:8px;width:26px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" onmouseover="this.style.background='rgba(231,76,60,1)'" onmouseout="this.style.background='rgba(231,76,60,0.85)'" title="Продать за ${sellReward} монет">🗑️</button>
                 ${x.from?`<small style="color:var(--orange);margin-bottom:4px;">От: ${x.from}</small>`:''}
                 ${giftImg(x)}
                 <b style="display:block;text-align:center;margin-bottom:2px;${nameStyle}">${x.n}</b>
