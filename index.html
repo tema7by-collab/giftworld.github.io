@@ -3531,14 +3531,27 @@
         else if(sel==='nft_beer') itm={...NFT_BEER};
         else if(sel==='nft_sock') itm={...NFT_SOCK};
         else itm=catalog.find(x=>x.id==sel);
-        if(!itm) return;
-        const rarLabel=RARITY_LEVELS[rar]?.icon||'';
-        const s=await get(ref(db,'users/'+id)),inv=s.val().cloudInv||[];
-        const itmClean={...itm};if(itmClean.img&&itmClean.img.startsWith('data:'))delete itmClean.img;
-        inv.push({...itmClean,rarity:itmClean.nft?undefined:rar,inst:Date.now(),from:"ADMIN",seen:false});
-        await update(ref(db,'users/'+id),{cloudInv:inv});
-        getTgId(id).then(cid=>sendTg(cid,`🎁 <b>Подарок от администратора!</b>\n\nТебе был выдан специальный подарок:\n${itm.i} <b>${itm.n}</b>\n🏷 Редкость: <b>${rarLabel}</b>\n\n🎉 Он уже в твоём инвентаре!`));
-        showToast(`${rarLabel}${itm.i} ${itm.n} → @${id}`,'var(--green)');
+        if(!itm) return showToast('Предмет не найден!','var(--err)');
+        try {
+            const s=await get(ref(db,'users/'+id));
+            if(!s.exists()) return showToast('Пользователь не найден!','var(--err)');
+            const inv=s.val().cloudInv||[];
+            const serial=await getNextNftSerial();
+            const itmClean={...itm};
+            // Strip large base64 images before writing to Firebase
+            if(itmClean.img&&itmClean.img.startsWith('data:')) delete itmClean.img;
+            const entry={...itmClean, inst:Date.now(), from:"ADMIN", seen:false, nftSerial:serial};
+            // NFT items must not have rarity field, regular items get rarity
+            if(itm.nft) { delete entry.rarity; } else { entry.rarity=rar; }
+            inv.push(entry);
+            await update(ref(db,'users/'+id),{cloudInv:inv});
+            const rarLabel=itm.nft?'✦ NFT':(RARITY_LEVELS[rar]?.icon||'');
+            getTgId(id).then(cid=>sendTg(cid,`🎁 <b>Подарок от администратора!</b>\n\nТебе был выдан специальный подарок:\n${itm.i} <b>${itm.n}</b>\n🏷 Редкость: <b>${rarLabel}</b>\n\n🎉 Он уже в твоём инвентаре!`));
+            showToast(`${itm.i} ${itm.n} #${serial} → @${id}`,'var(--green)');
+        } catch(e) {
+            console.error('giveI error:', e);
+            showToast('Ошибка выдачи: '+e.message,'var(--err)');
+        }
     };
 
     window.createPromo = async () => {
