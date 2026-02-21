@@ -1177,14 +1177,26 @@
     const PRICE_MIN = 57;
     const PRICE_MAX = 2100;
     let _shopPriceCache = {}; // { [id]: { price, buyCount } }
-    let _sessionPrice = {};   // цена зафиксированная при открытии магазина (для стрелок)
+    let _dailyPrices = {};    // снимок цен начала дня из Firebase — одинаковый для всех
     let _pricesLoaded = false;
 
-    async function loadShopPrices() {
-        try {
-            const snap = await get(ref(db, 'shopPrices'));
+    // Realtime listener — обновляет цены у всех пользователей мгновенно
+    function startShopPricesListener() {
+        onValue(ref(db, 'shopPrices'), async (snap) => {
             const raw = snap.exists() ? (snap.val() || {}) : {};
+            const todayKey = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+
+            // Читаем снимок начала дня
+            if (raw['_daily'] && raw['_daily'].date === todayKey) {
+                _dailyPrices = raw['_daily'].prices || {};
+            } else {
+                // Новый день — первый кто зашёл, записывает снимок текущих цен
+                _dailyPrices = {};
+            }
+
+            // Обновляем кэш цен
             for (const key in raw) {
+                if (key === '_daily') continue;
                 const id = key.replace('i_', '');
                 const val = raw[key];
                 if (typeof val === 'number') {
@@ -1192,20 +1204,37 @@
                     _shopPriceCache[id] = { price: p, buyCount: val };
                 } else if (val && typeof val === 'object') {
                     const p = Math.max(PRICE_MIN, val.price || BASE_PRICE);
-                    _shopPriceCache[id] = { price: p, buyCount: val.buyCount || 0, prevPrice: val.prevPrice };
+                    _shopPriceCache[id] = { price: p, buyCount: val.buyCount || 0 };
                 }
             }
-        } catch(e) {}
 
-        // Фиксируем sessionPrice только при первой загрузке
-        if (!_pricesLoaded) {
-            _pricesLoaded = true;
-            for (const c of catalog) {
-                const sid = String(c.id);
-                const entry = _shopPriceCache[sid];
-                // prevPrice хранится в Firebase — одинаково для всех пользователей
-                _sessionPrice[sid] = (entry && entry.prevPrice !== undefined) ? entry.prevPrice : getPrice(sid);
+            // Если снимка начала дня нет — создаём (только один раз в день)
+            if (!raw['_daily'] || raw['_daily'].date !== todayKey) {
+                const newDailyPrices = {};
+                for (const c of catalog) {
+                    newDailyPrices[String(c.id)] = getPrice(String(c.id));
+                }
+                _dailyPrices = newDailyPrices;
+                try { await update(ref(db, 'shopPrices'), { '_daily': { date: todayKey, prices: newDailyPrices } }); } catch(e) {}
             }
+
+            _pricesLoaded = true;
+
+            // Перерисовываем магазин если он открыт
+            if (document.getElementById('shop')?.classList.contains('active')) {
+                renderShopCards();
+            }
+        });
+    }
+
+    // Оставляем для совместимости — теперь просто запускает listener
+    async function loadShopPrices() {
+        if (!_pricesLoaded) {
+            startShopPricesListener();
+            // Ждём первого получения данных
+            await new Promise(resolve => {
+                const unsub = onValue(ref(db, 'shopPrices'), () => { unsub(); resolve(); });
+            });
         }
     }
 
@@ -1215,9 +1244,10 @@
         return Math.max(PRICE_MIN, Math.min(PRICE_MAX, entry.price || BASE_PRICE));
     }
 
+    // Возвращает цену начала дня — одинаково для всех пользователей
     function getPrevPrice(id) {
         const sid = String(id);
-        return _sessionPrice[sid] !== undefined ? _sessionPrice[sid] : getPrice(sid);
+        return (_dailyPrices[sid] !== undefined) ? _dailyPrices[sid] : getPrice(sid);
     }
 
     async function incrementShopPrice(id) {
@@ -1226,9 +1256,8 @@
         const buyCount = (_shopPriceCache[sid]?.buyCount || 0) + 1;
         const newPrice = Math.min(PRICE_MAX, curPrice + 1);
 
-        // Сохраняем текущую цену как prevPrice — чтобы все пользователи видели стрелки
-        _shopPriceCache[sid] = { price: newPrice, buyCount, prevPrice: curPrice };
-        const updates = { ['i_' + sid]: { price: newPrice, buyCount, prevPrice: curPrice } };
+        _shopPriceCache[sid] = { price: newPrice, buyCount };
+        const updates = { ['i_' + sid]: { price: newPrice, buyCount } };
 
         // Все остальные -1
         for (const c of catalog) {
@@ -1238,11 +1267,8 @@
             if (cp <= PRICE_MIN) continue;
             const np = Math.max(PRICE_MIN, cp - 1);
             const bc = _shopPriceCache[cid]?.buyCount || 0;
-            const oldPrev = _shopPriceCache[cid]?.prevPrice;
-            // prevPrice для упавших: если prevPrice ещё не установлен или cp > oldPrev — обновляем
-            const newPrev = (oldPrev === undefined || cp !== oldPrev) ? cp : oldPrev;
-            _shopPriceCache[cid] = { price: np, buyCount: bc, prevPrice: newPrev };
-            updates['i_' + cid] = { price: np, buyCount: bc, prevPrice: newPrev };
+            _shopPriceCache[cid] = { price: np, buyCount: bc };
+            updates['i_' + cid] = { price: np, buyCount: bc };
         }
 
         try { await update(ref(db, 'shopPrices'), updates); } catch(e) {}
@@ -1437,16 +1463,8 @@
             bMerge.innerText=mergeCount; bMerge.style.display=mergeCount>0?'flex':'none';
         });
         renderShop(); listenMarket(); giveNftToCkovoroda(); listenTradeOffers(); listenDuelChallenges();
-        // Загружаем цены из Firebase сразу при старте
-        loadShopPrices().then(() => renderShopCards());
-        // Auto-refresh shop when active
-        setInterval(async ()=>{
-            const shopCards = document.getElementById('shop-cards');
-            if(shopCards && document.getElementById('shop').classList.contains('active')) {
-                await loadShopPrices();
-                renderShopCards();
-            }
-        }, 15000);
+        // Запускаем realtime listener цен — обновляет у всех мгновенно
+        startShopPricesListener();
     }
 
 
@@ -4380,7 +4398,7 @@
         document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
         document.getElementById(id).classList.add('active');b.classList.add('active');
         if(id==='inv') renderInv();
-        if(id==='shop') { renderShop(); if(!_pricesLoaded) { loadShopPrices().then(()=>renderShopCards()); } else { renderShopCards(); } }
+        if(id==='shop') { renderShop(); renderShopCards(); }
         if(id==='market') listenMarket();
         if(id==='profile') { get(ref(db,'users/'+user.id)).then(s=>{ if(s.val()) renderMyProfile(s.val()); }); }
     };
