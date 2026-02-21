@@ -1222,12 +1222,9 @@
         const curPrice = getPrice(sid);
         const buyCount = (entry.buyCount || 0) + 1;
 
-        // Цена купленного товара: +10 каждые 5 покупок
-        const newPrice = (buyCount % 5 === 0)
-            ? Math.min(PRICE_MAX, curPrice + 10)
-            : curPrice;
+        // Каждая покупка +1 монета
+        const newPrice = Math.min(PRICE_MAX, curPrice + 1);
 
-        // Если sessionPrice ещё не был зафиксирован — фиксируем сейчас (до изменения)
         if (_sessionPrice[sid] === undefined) _sessionPrice[sid] = curPrice;
 
         const newEntry = { price: newPrice, prevPrice: curPrice, buyCount };
@@ -1235,15 +1232,14 @@
 
         const updates = { ['i_' + sid]: newEntry };
 
-        // Все остальные товары -5 (до минимума)
+        // Все остальные товары -1 (до минимума)
         for (const c of catalog) {
             const cid = String(c.id);
             if (cid === sid) continue;
             const cp = getPrice(cid);
             if (cp <= PRICE_MIN) continue;
-            const np = Math.max(PRICE_MIN, cp - 5);
+            const np = Math.max(PRICE_MIN, cp - 1);
             const ce = _shopPriceCache[cid] || {};
-            // sessionPrice для этих тоже фиксируем если ещё нет
             if (_sessionPrice[cid] === undefined) _sessionPrice[cid] = cp;
             const ne = { price: np, prevPrice: cp, buyCount: ce.buyCount || 0 };
             _shopPriceCache[cid] = ne;
