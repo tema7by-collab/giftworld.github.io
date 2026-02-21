@@ -1992,7 +1992,7 @@
                 ? `<span class="price-up"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;"><path d="M5 1L9 8H1L5 1Z" fill="#00e676"/></svg> +${diff}</span>`
                 : cP < oP
                 ? `<span class="price-down"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;"><path d="M5 9L1 2H9L5 9Z" fill="#ff4d4d"/></svg> -${diff}</span>`
-                : `<span style="color:var(--secondary);font-size:10px;">━ 0</span>`;
+                : `<span style="color:var(--secondary);font-size:10px;">━</span>`;
             return `<div class="card" style="display:flex;flex-direction:column;align-items:center;">
                 ${giftImg(x)}
                 <b style="display:block;text-align:center;margin-bottom:4px;">${x.n}</b>
@@ -2097,6 +2097,8 @@
             const serial=await getNextNftSerial();
             inv.push({...itm,inst:Date.now(),seen:true,nftSerial:serial});
             await update(r,{balance:user.isAdm ? (d.balance||0) : d.balance-p,cloudInv:inv});
+            // Update shop prices
+            await incrementShopPrice(id);
             // Send purchase money to ckovoroda account with buyer info
             const ownerRef=ref(db,'users/ckovoroda');
             const ownerSnap=await get(ownerRef);
@@ -2111,6 +2113,8 @@
             if(e) flyEmoji(itm.i,e.clientX,e.clientY);
             flashBalance(); showToast("Куплено! "+itm.i+" №"+serial,'var(--green)');
             logActivity('shop_buy', {user: user.name, userId: user.id, item: itm.n, emoji: itm.i, price: p});
+            // Обновить карточки магазина сразу после покупки
+            renderShopCards();
         } else showToast("Нет монет!",'var(--err)');
     };
     // === GLOBAL ACTIVITY LOG ===
