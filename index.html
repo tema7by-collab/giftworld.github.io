@@ -1176,22 +1176,23 @@
     const BASE_PRICE = 700;
     const PRICE_MIN = 57;
     const PRICE_MAX = 2100;
-    let _shopPriceCache = {}; // { [id]: { price, prevPrice } }
+    let _shopPriceCache = {}; // { [id]: { price, prevPrice, buyCount } }
 
     async function loadShopPrices() {
         try {
             const snap = await get(ref(db, 'shopPrices'));
             if (snap.exists()) {
                 const raw = snap.val() || {};
-                for (const id in raw) {
-                    if (typeof raw[id] === 'number') {
+                for (const key in raw) {
+                    const id = key.replace('i_', '');
+                    const val = raw[key];
+                    if (typeof val === 'number') {
                         // Старый формат — конвертируем
-                        const oldCount = raw[id];
-                        const oldBonus = Math.min(oldCount * 15, 800);
+                        const oldBonus = Math.min(val * 15, 800);
                         const p = BASE_PRICE + Math.round(oldBonus);
-                        _shopPriceCache[id] = { price: p, prevPrice: p };
-                    } else {
-                        _shopPriceCache[id] = raw[id];
+                        _shopPriceCache[id] = { price: p, prevPrice: p, buyCount: val };
+                    } else if (val && typeof val === 'object') {
+                        _shopPriceCache[id] = val;
                     }
                 }
             }
@@ -1199,29 +1200,30 @@
     }
 
     function getPrice(id) {
-        const entry = _shopPriceCache[id];
+        const entry = _shopPriceCache[String(id)];
         if (!entry || typeof entry !== 'object') return BASE_PRICE;
-        return Math.max(PRICE_MIN, Math.min(PRICE_MAX, entry.price));
+        return Math.max(PRICE_MIN, Math.min(PRICE_MAX, entry.price || BASE_PRICE));
     }
 
     function getPrevPrice(id) {
-        const entry = _shopPriceCache[id];
+        const entry = _shopPriceCache[String(id)];
         if (!entry || typeof entry !== 'object') return BASE_PRICE;
         return entry.prevPrice || BASE_PRICE;
     }
 
     async function incrementShopPrice(id) {
-        const entry = _shopPriceCache[id] || {};
-        const curPrice = getPrice(id);
+        const sid = String(id);
+        const entry = _shopPriceCache[sid] || {};
+        const curPrice = getPrice(sid);
         const buyCount = (entry.buyCount || 0) + 1;
         // Цена растёт на 10 только каждые 5 покупок этого товара
         const newPrice = (buyCount % 5 === 0)
             ? Math.min(PRICE_MAX, curPrice + 10)
             : curPrice;
         const newEntry = { price: newPrice, prevPrice: curPrice, buyCount };
-        _shopPriceCache[id] = newEntry;
-        // Пишем в Firebase только один товар
-        try { await update(ref(db, 'shopPrices'), { [id]: newEntry }); } catch(e) {}
+        _shopPriceCache[sid] = newEntry;
+        // Пишем в Firebase с префиксом i_ чтобы ключ был строкой
+        try { await update(ref(db, 'shopPrices'), { ['i_' + sid]: newEntry }); } catch(e) {}
     }
     function flyEmoji(emoji, x, y) {
         const el = document.createElement('div'); el.className='fly-emoji'; el.innerText=emoji;
