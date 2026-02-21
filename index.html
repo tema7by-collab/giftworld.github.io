@@ -1198,7 +1198,7 @@
             }
         } catch(e) {}
 
-        // Фиксируем sessionPrice для всех товаров только при первой загрузке
+        // Фиксируем sessionPrice для всех товаров только при первой загрузке (после получения данных из Firebase)
         if (!_pricesLoaded) {
             _pricesLoaded = true;
             for (const c of catalog) {
