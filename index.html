@@ -668,6 +668,8 @@
         .avatar-ring-item.nft-lvl5-holo::before { display:none !important; }
         .avatar-ring-item.nft-lvl4-particles { overflow:hidden !important; }
         .nft-upgrade-badge { position:absolute; bottom:5px; right:5px; z-index:5; font-size:8px; font-weight:900; border-radius:8px; padding:2px 5px; letter-spacing:0.3px; }
+        .modal-aura-pulse { animation: modalAuraPulse 2s ease-in-out infinite; }
+        @keyframes modalAuraPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
         .nft-upg-1 { background:linear-gradient(90deg,#555,#888); color:#fff; }
         .nft-upg-2 { background:linear-gradient(90deg,#1a5fa8,#4db4ff); color:#fff; }
         .nft-upg-3 { background:linear-gradient(90deg,#7c3aed,#a855f7); color:#fff; }
@@ -3220,11 +3222,82 @@
             <div style="padding:5px 0;">
                 <!-- Gift image -->
                 <div style="text-align:center;margin-bottom:16px;">
-                    <div style="width:110px;height:110px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;background:${x.nft?'rgba(255,215,0,0.06)':'rgba(255,255,255,0.04)'};border-radius:28px;border:1px solid ${x.nft?'rgba(255,215,0,0.3)':'rgba(255,255,255,0.08)'};">
-                        ${img ? `<img src="${img}" style="width:90px;height:90px;object-fit:contain;filter:drop-shadow(0 6px 24px rgba(0,0,0,0.6));">` : `<span style="font-size:72px;">${emoji}</span>`}
-                    </div>
+                    ${(() => {
+                        const upg = x.upgrade;
+                        const hasUpg = x.nft && upg && upg.level >= 1;
+                        const lvl = hasUpg ? upg.level : 0;
+                        const themeId = hasUpg ? upg.theme : null;
+                        const themeColors = {fire:'255,80,0',ocean:'0,150,255',forest:'0,200,80',galaxy:'150,50,255',sunset:'255,100,150',ice:'136,221,255',magic:'204,136,255',gold:'255,215,0',dark:'136,0,204',grid:'100,200,255',dots:'255,200,100',hex:'100,255,200',waves:'100,150,255',stars:'255,255,150',holo:'255,215,0'};
+                        const tc = themeId && themeColors[themeId] ? themeColors[themeId] : null;
+                        const themeEmojis = {fire:'🔥',ocean:'🌊',forest:'🌿',galaxy:'🌌',sunset:'🌸',ice:'❄️',magic:'✨',gold:'⭐',dark:'💀',grid:'▦',dots:'⬤',hex:'⬡',waves:'〰',stars:'✦',holo:'🌈'};
+
+                        // Border & glow based on level
+                        let borderStyle = x.nft ? '2px solid rgba(255,215,0,0.3)' : '1px solid rgba(255,255,255,0.08)';
+                        let bgStyle = x.nft ? 'rgba(255,215,0,0.06)' : 'rgba(255,255,255,0.04)';
+                        let boxShadow = '';
+                        let extraOverlay = '';
+                        let animClass = '';
+
+                        if(hasUpg) {
+                            if(lvl === 1 && tc) {
+                                borderStyle = `2px solid rgba(${tc},0.8)`;
+                                bgStyle = `rgba(${tc},0.08)`;
+                                boxShadow = `0 0 20px rgba(${tc},0.35), 0 0 40px rgba(${tc},0.15)`;
+                            } else if(lvl === 2 && tc) {
+                                borderStyle = `2px solid rgba(${tc},0.7)`;
+                                bgStyle = `rgba(${tc},0.08)`;
+                                boxShadow = `0 0 20px rgba(${tc},0.35)`;
+                                // texture overlay
+                                const texMap = {grid:'repeating-linear-gradient(0deg,rgba(255,255,255,0.04) 0px,rgba(255,255,255,0.04) 1px,transparent 1px,transparent 20px),repeating-linear-gradient(90deg,rgba(255,255,255,0.04) 0px,rgba(255,255,255,0.04) 1px,transparent 1px,transparent 20px)',dots:'radial-gradient(circle,rgba(255,255,255,0.08) 1px,transparent 1px)',hex:'',waves:'repeating-linear-gradient(45deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 2px,transparent 2px,transparent 10px)',stars:'radial-gradient(circle,rgba(255,255,255,0.12) 1px,transparent 1px)'};
+                                const tex = texMap[themeId] || '';
+                                if(tex) extraOverlay = `<div style="position:absolute;inset:0;border-radius:28px;background:${tex};background-size:20px 20px;pointer-events:none;opacity:0.6;"></div>`;
+                            } else if(lvl === 3 && tc) {
+                                borderStyle = `2px solid rgba(${tc},0.9)`;
+                                bgStyle = `rgba(${tc},0.1)`;
+                                boxShadow = `0 0 25px rgba(${tc},0.6), 0 0 50px rgba(${tc},0.25), inset 0 0 20px rgba(${tc},0.1)`;
+                                animClass = 'modal-aura-pulse';
+                            } else if(lvl === 4 && tc) {
+                                borderStyle = `2px solid rgba(${tc},0.8)`;
+                                bgStyle = `rgba(${tc},0.08)`;
+                                boxShadow = `0 0 20px rgba(${tc},0.4)`;
+                                const pe = themeEmojis[themeId]||'✨';
+                                const pcs = [{l:'8%',t:'8%',d:'0s'},{l:'75%',t:'5%',d:'0.3s'},{l:'85%',t:'65%',d:'0.7s'},{l:'5%',t:'72%',d:'1s'},{l:'45%',t:'90%',d:'0.5s'},{l:'90%',t:'35%',d:'1.2s'}];
+                                extraOverlay = pcs.map(p=>`<div style="position:absolute;left:${p.l};top:${p.t};font-size:14px;pointer-events:none;animation:particleFloat 2s ease-in-out ${p.d} infinite;">${pe}</div>`).join('');
+                            } else if(lvl === 5) {
+                                borderStyle = '3px solid transparent';
+                                bgStyle = 'rgba(20,10,30,0.95)';
+                                boxShadow = '0 0 30px rgba(255,0,255,0.4), 0 0 60px rgba(0,255,255,0.2)';
+                                extraOverlay = `<div style="position:absolute;inset:-3px;border-radius:31px;background:linear-gradient(135deg,#ff0000,#ff7f00,#ffff00,#00ff00,#0000ff,#8b00ff,#ff0000);background-size:400% 400%;animation:holoShine 2s ease infinite;z-index:-1;opacity:0.9;"></div><div style="position:absolute;inset:0;border-radius:28px;background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,0.08) 50%,transparent 70%);background-size:200% 200%;animation:holoShine 1.5s ease infinite;pointer-events:none;"></div>`;
+                            }
+                        }
+
+                        const lvlBadgeHtml = hasUpg ? `<div style="position:absolute;top:-8px;right:-8px;background:linear-gradient(135deg,${tc?`rgba(${tc},1)`:'gold'},${tc?`rgba(${tc},0.7)`:'orange'});color:white;font-size:9px;font-weight:900;border-radius:10px;padding:3px 7px;box-shadow:0 2px 8px rgba(0,0,0,0.5);z-index:5;">LVL ${lvl}</div>` : '';
+
+                        return `<div style="position:relative;width:130px;height:130px;margin:0 auto 14px;">
+                            <div class="${animClass}" style="position:relative;width:130px;height:130px;display:flex;align-items:center;justify-content:center;background:${bgStyle};border-radius:28px;border:${borderStyle};box-shadow:${boxShadow};overflow:hidden;">
+                                ${extraOverlay}
+                                ${img ? `<img src="${img}" style="width:100px;height:100px;object-fit:contain;filter:drop-shadow(0 6px 24px rgba(0,0,0,0.6));position:relative;z-index:1;">` : `<span style="font-size:80px;position:relative;z-index:1;">${emoji}</span>`}
+                            </div>
+                            ${lvlBadgeHtml}
+                        </div>`;
+                    })()}
                     <h3 style="margin:0 0 6px;font-size:20px;">${x.n}</h3>
                     ${rarLabel}
+                    ${(() => {
+                        if(!x.nft || !x.upgrade || !x.upgrade.level) return '';
+                        const lvl = x.upgrade.level;
+                        const themeId = x.upgrade.theme;
+                        const levelDef = NFT_UPGRADE_LEVELS[lvl];
+                        const themeDef = levelDef && levelDef.themes && levelDef.themes.find(t=>t.id===themeId);
+                        const themeColors = {fire:'255,80,0',ocean:'0,150,255',forest:'0,200,80',galaxy:'150,50,255',sunset:'255,100,150',ice:'136,221,255',magic:'204,136,255',gold:'255,215,0',dark:'136,0,204',holo:'200,100,255'};
+                        const tc = themeColors[themeId] || '255,215,0';
+                        const stars = '⭐'.repeat(lvl) + '☆'.repeat(5-lvl);
+                        return `<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(${tc},0.12);border:1px solid rgba(${tc},0.3);border-radius:20px;padding:5px 14px;margin-top:6px;">
+                            <span style="font-size:13px;">${levelDef?levelDef.icon:''}</span>
+                            <span style="font-size:12px;font-weight:bold;color:rgba(${tc},1);">${levelDef?levelDef.name:''} ${themeDef?'· '+themeDef.name:''}</span>
+                            <span style="font-size:11px;letter-spacing:1px;">${stars}</span>
+                        </div>`;
+                    })()}
                 </div>
 
                 <!-- Info grid -->
