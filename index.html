@@ -2399,7 +2399,7 @@
             const displayName = d.username || d.name || id;
             return `
             <div onclick="sendFriendReq('${id}','${displayName.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);" onmouseover="this.style.background='rgba(36,129,204,0.1)'" onmouseout="this.style.background=''">
-                ${d.pic ? `<img src="${d.pic}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">👤</div>`}
+                ${d.pic ? `<img src="${d.pic}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.outerHTML='<div style=\\'width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;\\'>👤</div>'">` : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">👤</div>`}
                 <div style="flex:1;min-width:0;">
                     <div style="font-weight:bold;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${displayName}</div>
                     <div style="font-size:11px;color:var(--secondary);">@${id}</div>
@@ -2442,7 +2442,7 @@
             `<div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     ${reqAvatars[id]
-                        ? `<img src="${reqAvatars[id]}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.style.display='none'">`
+                        ? `<img src="${reqAvatars[id]}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0;" onerror="this.outerHTML='<div style=\\'width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;\\'>👤</div>'">`
                         : `<div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>`}
                     <div><div style="font-weight:bold;">${data.name}</div><div style="font-size:11px;color:var(--secondary);">Хочет добавить вас</div></div>
                 </div>
@@ -2474,7 +2474,7 @@
                 <div style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;" onclick="openUserProfile('${id}')">
                     <div style="position:relative;flex-shrink:0;">
                         ${frAvatars[id]
-                            ? `<img src="${frAvatars[id]}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid ${isOnline?'var(--green)':'rgba(255,255,255,0.1)'};display:block;" onerror="this.style.display='none'">`
+                            ? `<img src="${frAvatars[id]}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid ${isOnline?'var(--green)':'rgba(255,255,255,0.1)'};display:block;" onerror="this.outerHTML='<div style=\\'width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:22px;\\'>👤</div>'">`
                             : `<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a5fa8);display:flex;align-items:center;justify-content:center;font-size:22px;">👤</div>`}
                         <div style="position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid #070d14;box-shadow:${dotGlow};${isOnline?'animation:pulse 2s infinite;':''}"></div>
                     </div>
