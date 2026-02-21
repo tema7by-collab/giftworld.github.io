@@ -1527,6 +1527,7 @@
         const inv = d.cloudInv || [];
         const item = inv.find(x => String(x.inst) === String(inst));
         if (!item) return showToast('Предмет не найден!', 'var(--err)');
+        if (item.nft) return showToast('❌ NFT нельзя удалять!', 'var(--err)');
         const ok = await showConfirm(
             'Продать предмет',
             `"${item.n}" будет удалён из инвентаря. Ты получишь ${reward.toLocaleString()} монет (50% рыночной цены).`,
@@ -1586,7 +1587,7 @@
             const sellReward = Math.floor(sellPrice / 2);
             return `<div class="card ${cardExtraClass}${isMergeReady?' merge-ready':''}" style="display:flex;flex-direction:column;align-items:center;position:relative;${cardStyle}">
                 ${pinBadge}${nftBadge}${mergeBadge}${serialBadge}
-                <button class="sell-btn" onclick="sellItem('${x.inst}',${sellReward})" title="Продать за ${sellReward} монет">🗑️</button>
+                ${!isNFT ? `<button class="sell-btn" onclick="sellItem('${x.inst}',${sellReward})" title="Продать за ${sellReward} монет">🗑️</button>` : ''}
                 ${x.from?`<small style="color:var(--orange);margin-bottom:4px;">От: ${x.from}</small>`:''}
                 ${giftImg(x)}
                 <b style="display:block;text-align:center;margin-bottom:2px;${nameStyle}">${x.n}</b>
@@ -1695,7 +1696,7 @@
         const baseItem={...matching[0]},newRarity=Math.min(currentRarity+1,4);
         const rarObj=RARITY_LEVELS[newRarity],newSerial=await getNextNftSerial();
         const isNewNft=newRarity>=4;
-        const upgradedItem={...baseItem,rarity:newRarity,nftSerial:newSerial,inst:Date.now(),seen:true,from:"⚗️ Слияние"};
+        const upgradedItem={...baseItem,rarity:newRarity,nftSerial:newSerial,inst:Date.now(),seen:true};delete upgradedItem.from;
         if(isNewNft){upgradedItem.nft=true;delete upgradedItem.rarity;upgradedItem.price=getPrice(baseItem.id||0);}
         inv.push(upgradedItem);
         await update(r,{cloudInv:inv, totalMerges:(d.totalMerges||0)+1});
@@ -2370,7 +2371,7 @@
         if(!sellerId) return showToast("Ошибка: продавец не найден!",'var(--err)');
         await remove(ref(db,'market/'+k));
         // Preserve original inst so item ID stays the same after purchase
-        const inv=bS.val().cloudInv||[];inv.push({...itm,seen:false});
+        const inv=bS.val().cloudInv||[];const itmClean={...itm,seen:false};delete itmClean.from;delete itmClean.sN;inv.push(itmClean);
         await update(bR,{balance:user.isAdm ? (bS.val().balance||0) : bS.val().balance-p,cloudInv:inv});
         // Деньги идут продавцу (не ckovoroda!)
         const sS=await get(ref(db,'users/'+sellerId));
