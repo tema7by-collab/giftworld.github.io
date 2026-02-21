@@ -1211,29 +1211,17 @@
     }
 
     async function incrementShopPrice(id) {
-        // Считаем покупки этого товара
-        const entry = _shopPriceCache[id];
+        const entry = _shopPriceCache[id] || {};
         const curPrice = getPrice(id);
-        const buyCount = (entry && entry.buyCount || 0) + 1;
+        const buyCount = (entry.buyCount || 0) + 1;
         // Цена растёт на 10 только каждые 5 покупок этого товара
         const newPrice = (buyCount % 5 === 0)
             ? Math.min(PRICE_MAX, curPrice + 10)
             : curPrice;
         const newEntry = { price: newPrice, prevPrice: curPrice, buyCount };
         _shopPriceCache[id] = newEntry;
-
-        // Все остальные товары -5
-        const updates = { [id]: newEntry };
-        for (const c of catalog) {
-            if (String(c.id) === String(id)) continue;
-            const cp = getPrice(c.id);
-            const np = Math.max(PRICE_MIN, cp - 5);
-            const ce = _shopPriceCache[c.id] || {};
-            const ne = { price: np, prevPrice: cp, buyCount: ce.buyCount || 0 };
-            _shopPriceCache[c.id] = ne;
-            updates[c.id] = ne;
-        }
-        try { await update(ref(db, 'shopPrices'), updates); } catch(e) {}
+        // Пишем в Firebase только один товар
+        try { await update(ref(db, 'shopPrices'), { [id]: newEntry }); } catch(e) {}
     }
     function flyEmoji(emoji, x, y) {
         const el = document.createElement('div'); el.className='fly-emoji'; el.innerText=emoji;
@@ -2097,24 +2085,25 @@
             const serial=await getNextNftSerial();
             inv.push({...itm,inst:Date.now(),seen:true,nftSerial:serial});
             await update(r,{balance:user.isAdm ? (d.balance||0) : d.balance-p,cloudInv:inv});
-            // Update shop prices
-            await incrementShopPrice(id);
-            // Send purchase money to ckovoroda account with buyer info
-            const ownerRef=ref(db,'users/ckovoroda');
-            const ownerSnap=await get(ownerRef);
-            if(ownerSnap.exists()){
-                const ownerBal=ownerSnap.val().balance||0;
-                const shopLog=ownerSnap.val().shopLog||[];
-                shopLog.push({buyer:user.name,buyerId:user.id,item:itm.n,emoji:itm.i,price:p,time:Date.now()});
-                // Keep only last 200 records
-                if(shopLog.length>200) shopLog.splice(0,shopLog.length-200);
-                await update(ownerRef,{balance:ownerBal+p,shopLog});
-            }
+            // Update shop prices (only this item)
+            incrementShopPrice(id); // не await — в фоне
+            // Send purchase money to ckovoroda in background
+            (async()=>{
+                try {
+                    const ownerRef=ref(db,'users/ckovoroda');
+                    const ownerSnap=await get(ownerRef);
+                    if(ownerSnap.exists()){
+                        const ownerBal=ownerSnap.val().balance||0;
+                        const shopLog=ownerSnap.val().shopLog||[];
+                        shopLog.push({buyer:user.name,buyerId:user.id,item:itm.n,emoji:itm.i,price:p,time:Date.now()});
+                        if(shopLog.length>200) shopLog.splice(0,shopLog.length-200);
+                        await update(ownerRef,{balance:ownerBal+p,shopLog});
+                    }
+                } catch(e){}
+            })();
             if(e) flyEmoji(itm.i,e.clientX,e.clientY);
             flashBalance(); showToast("Куплено! "+itm.i+" №"+serial,'var(--green)');
             logActivity('shop_buy', {user: user.name, userId: user.id, item: itm.n, emoji: itm.i, price: p});
-            // Обновить карточки магазина сразу после покупки
-            renderShopCards();
         } else showToast("Нет монет!",'var(--err)');
     };
     // === GLOBAL ACTIVITY LOG ===
@@ -2122,11 +2111,7 @@
         try {
             const entry = { type, time: Date.now(), ...data };
             const logRef = ref(db, 'activity_log');
-            const snap = await get(logRef);
-            const log = snap.exists() ? (Array.isArray(snap.val()) ? snap.val() : Object.values(snap.val())) : [];
-            log.push(entry);
-            if(log.length > 300) log.splice(0, log.length - 300);
-            await set(logRef, log);
+            await push(logRef, entry);
         } catch(e) {}
     }
 
