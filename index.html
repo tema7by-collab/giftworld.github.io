@@ -1211,20 +1211,27 @@
     }
 
     async function incrementShopPrice(id) {
-        // Купленный товар +10, все остальные -5
-        const updates = {};
-        const allIds = catalog.map(x => x.id);
-        for (const cid of allIds) {
-            const cur = getPrice(cid);
-            const prev = cur;
-            let next;
-            if (String(cid) === String(id)) {
-                next = Math.min(PRICE_MAX, cur + 10);
-            } else {
-                next = Math.max(PRICE_MIN, cur - 5);
-            }
-            _shopPriceCache[cid] = { price: next, prevPrice: prev };
-            updates[cid] = { price: next, prevPrice: prev };
+        // Считаем покупки этого товара
+        const entry = _shopPriceCache[id];
+        const curPrice = getPrice(id);
+        const buyCount = (entry && entry.buyCount || 0) + 1;
+        // Цена растёт на 10 только каждые 5 покупок этого товара
+        const newPrice = (buyCount % 5 === 0)
+            ? Math.min(PRICE_MAX, curPrice + 10)
+            : curPrice;
+        const newEntry = { price: newPrice, prevPrice: curPrice, buyCount };
+        _shopPriceCache[id] = newEntry;
+
+        // Все остальные товары -5
+        const updates = { [id]: newEntry };
+        for (const c of catalog) {
+            if (String(c.id) === String(id)) continue;
+            const cp = getPrice(c.id);
+            const np = Math.max(PRICE_MIN, cp - 5);
+            const ce = _shopPriceCache[c.id] || {};
+            const ne = { price: np, prevPrice: cp, buyCount: ce.buyCount || 0 };
+            _shopPriceCache[c.id] = ne;
+            updates[c.id] = ne;
         }
         try { await update(ref(db, 'shopPrices'), updates); } catch(e) {}
     }
@@ -1418,23 +1425,13 @@
             bMerge.innerText=mergeCount; bMerge.style.display=mergeCount>0?'flex':'none';
         });
         renderShop(); listenMarket(); giveNftToCkovoroda(); listenTradeOffers(); listenDuelChallenges();
-        // Auto-refresh shop prices every 15 seconds (live prices)
+        // Auto-refresh shop when active (live prices from Firebase)
         setInterval(()=>{
             const shopCards = document.getElementById('shop-cards');
             if(shopCards && document.getElementById('shop').classList.contains('active')) {
                 renderShopCards();
             }
         }, 15000);
-        // Shop timer countdown (prices change every 15 minutes = 900000ms)
-        setInterval(()=>{
-            const timerEl = document.getElementById('shop-timer');
-            if(!timerEl) return;
-            const now = Date.now();
-            const msLeft = 900000 - (now % 900000);
-            const m = Math.floor(msLeft/60000);
-            const s = Math.floor((msLeft%60000)/1000);
-            timerEl.textContent = `${m}м ${s < 10 ? '0'+s : s}с`;
-        }, isLowEndDevice ? 5000 : 1000);
     }
 
 
@@ -2058,8 +2055,7 @@
                 <button class="filter-btn" onclick="sortShop('az',this)">А-Я</button>
             </div>
             <div style="grid-column:1/-1;display:flex;align-items:center;gap:6px;padding:6px 2px;margin-bottom:-4px;">
-                <span style="font-size:11px;color:var(--secondary);">📈 Цены обновляются каждые 15 мин.</span>
-                <span style="margin-left:auto;font-size:11px;color:var(--secondary);">Следующее: <span id="shop-timer" style="color:var(--accent);font-weight:bold;">—</span></span>
+                <span style="font-size:11px;color:var(--secondary);">📈 Цены меняются от покупок</span>
             </div>
             ${lizardNftHtml}
             ${nftHtml}
