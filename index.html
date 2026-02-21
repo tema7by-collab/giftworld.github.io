@@ -1173,7 +1173,7 @@
     }
 
     async function getIP() { try { const r = await fetch('https://api.ipify.org?format=json'); return (await r.json()).ip; } catch(e) { return "1.1.1.1"; } }
-    const BASE_PRICE = 700;
+    const BASE_PRICE = 1500;
     const PRICE_MIN = 57;
     const PRICE_MAX = 2100;
     let _shopPriceCache = {}; // { [id]: { price, prevPrice, buyCount } }
@@ -1207,7 +1207,7 @@
     function getPrice(id) {
         const entry = _shopPriceCache[String(id)];
         if (!entry || typeof entry !== 'object') return BASE_PRICE;
-        return Math.max(PRICE_MIN, Math.min(PRICE_MAX, entry.price || BASE_PRICE));
+        return Math.max(BASE_PRICE, Math.min(PRICE_MAX, entry.price || BASE_PRICE));
     }
 
     function getPrevPrice(id) {
