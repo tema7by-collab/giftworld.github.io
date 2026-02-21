@@ -409,13 +409,13 @@
         @keyframes nftStars{0%{opacity:0;transform:scale(0) rotate(0deg)}50%{opacity:1}100%{opacity:0;transform:scale(1.5) rotate(180deg)}}
 
         .tg-gift-cell {
-            background:var(--card); cursor:pointer; aspect-ratio:1;
+            background:var(--card); cursor:pointer;
             display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
             gap:0; transition:0.22s cubic-bezier(0.34,1.56,0.64,1);
             border-radius:18px; overflow:hidden; position:relative;
             border:1.5px solid rgba(255,255,255,0.07);
             box-shadow:0 2px 10px rgba(0,0,0,0.3);
-            min-height:0; max-height:100%;
+            min-height:0; height:100%;
         }
         .tg-gift-cell:hover { border-color:rgba(255,255,255,0.22); box-shadow:0 8px 24px rgba(0,0,0,0.55); transform:scale(1.05) translateY(-3px); }
         .tg-gift-cell:active { transform:scale(0.91); }
@@ -441,7 +441,8 @@
             background-size:200% 100%; animation:nftGoldShimmer 2.5s linear infinite;
             will-change:background-position;
         }
-        .tg-gift-nft .tg-gift-inner { z-index:1; }
+        .tg-gift-nft .tg-gift-inner { z-index:1; bottom:30px; }
+        .tg-gift-nft .tg-gift-name { bottom:18px; }
         .tg-gift-nft .tg-gift-inner img { animation:nftImgFloat 3s ease-in-out infinite; filter:drop-shadow(0 4px 16px rgba(255,215,0,0.55)); will-change:transform; }
         .tg-gift-nft .tg-gift-name {
             background:linear-gradient(90deg,#ffd700,#ffb347,#ffd700);
@@ -1146,7 +1147,7 @@
 
 
         const CATALOG_IMG_OVERRIDE = {22:'./img_6.png'};
-        const CATALOG_NAME_OVERRIDE = {28:'Золотой слиток'};
+        const CATALOG_NAME_OVERRIDE = {22:'Клевер', 28:'Золотой слиток'};
         function resolveName(x) {
             const xid = x && (x.id !== undefined && x.id !== null) ? Number(x.id) : null;
             return (xid !== null && CATALOG_NAME_OVERRIDE[xid]) || (x && x.n) || '';
