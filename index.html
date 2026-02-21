@@ -1140,6 +1140,13 @@
     }
 
 
+        const CATALOG_IMG_OVERRIDE = {22:'./img_6.png'};
+        function resolveImg(x) {
+            const xid = x && (x.id !== undefined && x.id !== null) ? Number(x.id) : null;
+            if(xid !== null && CATALOG_IMG_OVERRIDE[xid]) return CATALOG_IMG_OVERRIDE[xid];
+            const cat = xid !== null ? catalog.find(c => c.id == xid) : null;
+            return (x&&x.imgKey==='pan'?PAN_IMG:null) || (cat && cat.img) || (x && x.img) || null;
+        }
         function giftImg(x, size='normal') {
         const isPony = (x && x.id == 20);
         const cls = size === 'sm' ? 'gift-img-sm' : 'gift-img';
@@ -1147,7 +1154,8 @@
         // Ищем в каталоге по id — сравниваем и числа и строки
         const xid = x && (x.id !== undefined && x.id !== null) ? x.id : null;
         const cat = xid !== null ? catalog.find(c => c.id == xid) : null;
-        const img = (x&&x.imgKey==='pan'?PAN_IMG:null) || (x && x.img) || (cat && cat.img) || null;
+        const IMG_OVERRIDE = {22:'./img_6.png'};
+        const img = (x&&x.imgKey==='pan'?PAN_IMG:null) || (xid!==null&&IMG_OVERRIDE[xid]) || (cat && cat.img) || (x && x.img) || null;
         const emoji = (x && x.i) || (cat && cat.i) || '🎁';
         if(size !== 'sm') {
                 const inner = img
@@ -2611,7 +2619,7 @@
         if(!myInv.length) return showToast('У тебя нет подарков для обмена!','var(--err)');
         const makeCard = (x) => {
             const cat = catalog.find(c=>c.id==x.id);
-            const img = (x.imgKey==='pan'?PAN_IMG:null)||x.img||(cat&&cat.img);
+            const img = resolveImg(x);
             const emoji = x.i||(cat&&cat.i)||'🎁';
             const isNFT = !!x.nft;
             return `<div onclick="selectTradeGift('${x.inst}',this)" data-inst="${x.inst}" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:10px 8px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;position:relative;" class="trade-gift-card">
@@ -2681,7 +2689,7 @@
         if(!myInv.length) return showToast('У тебя нет подарков для обмена!','var(--err)');
         const makeCard = (x) => {
             const cat = catalog.find(c=>c.id==x.id);
-            const img = (x.imgKey==='pan'?PAN_IMG:null)||x.img||(cat&&cat.img);
+            const img = resolveImg(x);
             const emoji = x.i||(cat&&cat.i)||'🎁';
             return `<div onclick="selectAcceptGift('${x.inst}',this)" data-inst="${x.inst}" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:10px 8px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;" class="accept-gift-card">
                 ${img?`<img src="${img}" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 5px;" onerror="this.style.display='none'">`:`<div style="font-size:32px;line-height:1;margin-bottom:5px;">${emoji}</div>`}
@@ -2907,7 +2915,7 @@
         if(!myInv.length) return showToast('У тебя нет подарков для дуэли!','var(--err)');
         const makeCard = (x) => {
             const cat = catalog.find(c=>c.id==x.id);
-            const img = (x.imgKey==='pan'?PAN_IMG:null)||x.img||(cat&&cat.img);
+            const img = resolveImg(x);
             const emoji = x.i||(cat&&cat.i)||'🎁';
             return `<div onclick="selectDuelGift('${x.inst}',this)" style="cursor:pointer;text-align:center;background:#0a1520;border-radius:14px;padding:10px 8px;border:2px solid rgba(255,255,255,0.06);transition:all 0.2s;" class="duel-my-card">
                 ${img?`<img src="${img}" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 5px;" onerror="this.style.display='none'">`:`<div style="font-size:32px;line-height:1;margin-bottom:5px;">${emoji}</div>`}
@@ -3178,7 +3186,7 @@
 
         const makeGiftCell = (x) => {
             const cat = catalog.find(c => c.id == x.id);
-            const img = (x.imgKey==='pan'?PAN_IMG:null) || x.img || (cat && cat.img);
+            const img = resolveImg(x);
             const emoji = x.i || (cat && cat.i) || '🎁';
             const isPin = pinnedInsts.has(String(x.inst));
             const isNFT = !!x.nft;
@@ -3295,7 +3303,7 @@
         const x = inv.find(i => String(i.inst) == String(inst));
         if (!x) return;
         const cat = catalog.find(c => c.id == x.id);
-        const img = (x.imgKey==='pan'?PAN_IMG:null) || x.img || (cat && cat.img);
+        const img = resolveImg(x);
         const emoji = x.i || (cat && cat.i) || '🎁';
         const frs = d.friends || {};
         const isPinned = (d.pinnedInsts||[]).some(id => String(id) == String(inst));
@@ -3649,7 +3657,7 @@
 
         const giftCard = (x, isPinCard=false) => {
             const cat = catalog.find(c => c.id == x.id);
-            const img = (x.imgKey==='pan'?PAN_IMG:null) || x.img || (cat && cat.img);
+            const img = resolveImg(x);
             const emoji = x.i || (cat && cat.i) || '🎁';
             const isNFT = !!x.nft;
             const isLizard = isNFT && x.id === 997;
