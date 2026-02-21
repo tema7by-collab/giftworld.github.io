@@ -1192,6 +1192,8 @@
                         const p = BASE_PRICE + Math.round(oldBonus);
                         _shopPriceCache[id] = { price: p, prevPrice: p, buyCount: val };
                     } else if (val && typeof val === 'object') {
+                        // Если старая цена ниже нового BASE_PRICE — поднимаем
+                        if (val.price && val.price < BASE_PRICE) val.price = BASE_PRICE;
                         _shopPriceCache[id] = val;
                     }
                     // sessionPrice запоминаем ТОЛЬКО один раз при первой загрузке
@@ -1207,7 +1209,7 @@
     function getPrice(id) {
         const entry = _shopPriceCache[String(id)];
         if (!entry || typeof entry !== 'object') return BASE_PRICE;
-        return Math.max(BASE_PRICE, Math.min(PRICE_MAX, entry.price || BASE_PRICE));
+        return Math.max(PRICE_MIN, Math.min(PRICE_MAX, entry.price || BASE_PRICE));
     }
 
     function getPrevPrice(id) {
