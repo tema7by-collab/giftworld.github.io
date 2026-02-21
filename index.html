@@ -1415,10 +1415,13 @@
             bMerge.innerText=mergeCount; bMerge.style.display=mergeCount>0?'flex':'none';
         });
         renderShop(); listenMarket(); giveNftToCkovoroda(); listenTradeOffers(); listenDuelChallenges();
+        // Загружаем цены из Firebase сразу
+        loadShopPrices().then(() => renderShopCards());
         // Auto-refresh shop when active (live prices from Firebase)
-        setInterval(()=>{
+        setInterval(async ()=>{
             const shopCards = document.getElementById('shop-cards');
             if(shopCards && document.getElementById('shop').classList.contains('active')) {
+                await loadShopPrices();
                 renderShopCards();
             }
         }, 15000);
@@ -4354,7 +4357,7 @@
         document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
         document.getElementById(id).classList.add('active');b.classList.add('active');
         if(id==='inv') renderInv();
-        if(id==='shop') renderShop();
+        if(id==='shop') { loadShopPrices().then(()=>renderShop()); }
         if(id==='market') listenMarket();
         if(id==='profile') { get(ref(db,'users/'+user.id)).then(s=>{ if(s.val()) renderMyProfile(s.val()); }); }
     };
