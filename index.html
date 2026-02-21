@@ -80,18 +80,18 @@
         .pinned-section > div { transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1); }
         .pinned-section > div:hover { transform: translateY(-6px) scale(1.12); }
         .price-up {
-            display: inline-flex; align-items: center; gap: 2px;
+            display: inline-flex; align-items: center; gap: 3px;
             color: #00e676; font-size: 11px; font-weight: 900;
-            background: rgba(0,230,118,0.12); border-radius: 6px;
-            padding: 1px 5px; line-height: 1.4;
-            text-shadow: 0 0 8px rgba(0,230,118,0.6);
+            background: rgba(0,230,118,0.13); border-radius: 6px;
+            padding: 2px 6px; line-height: 1.4;
+            text-shadow: 0 0 8px rgba(0,230,118,0.5);
         }
         .price-down {
-            display: inline-flex; align-items: center; gap: 2px;
+            display: inline-flex; align-items: center; gap: 3px;
             color: #ff4d4d; font-size: 11px; font-weight: 900;
-            background: rgba(255,77,77,0.12); border-radius: 6px;
-            padding: 1px 5px; line-height: 1.4;
-            text-shadow: 0 0 8px rgba(255,77,77,0.6);
+            background: rgba(255,77,77,0.13); border-radius: 6px;
+            padding: 2px 6px; line-height: 1.4;
+            text-shadow: 0 0 8px rgba(255,77,77,0.5);
         }
         .tg-btn { background: var(--tg); margin-bottom: 8px; }
         /* === ADMIN PANEL === */
@@ -1934,10 +1934,14 @@
         if(!container) return;
         container.innerHTML = items.map(x=>{
             const cP=getPrice(x.id),oP=getPrice(x.id,-900000);
+            const diff=Math.abs(cP-oP);
+            const priceTag = cP>oP
+                ? `<span class="price-up"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;"><path d="M5 1L9 8H1L5 1Z" fill="#00e676"/></svg> +${diff}</span>`
+                : `<span class="price-down"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;"><path d="M5 9L1 2H9L5 9Z" fill="#ff4d4d"/></svg> -${diff}</span>`;
             return `<div class="card" style="display:flex;flex-direction:column;align-items:center;">
                 ${giftImg(x)}
                 <b style="display:block;text-align:center;margin-bottom:4px;">${x.n}</b>
-                <div style="font-weight:bold;text-align:center;margin-bottom:4px;">${cP}💰 ${cP>oP?'<span class="price-up"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;"><path d="M5 1L9 8H1L5 1Z" fill="#00e676"/></svg>+${cP-oP}</span>':'<span class="price-down"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;"><path d="M5 9L1 2H9L5 9Z" fill="#ff4d4d"/></svg>-${oP-cP}</span>'}</div>
+                <div style="font-weight:bold;text-align:center;margin-bottom:4px;">${cP}💰 ${priceTag}</div>
                 <button class="btn" style="margin-top:6px;" onclick="buy(${x.id},event)">Купить</button>
             </div>`;
         }).join('') || '<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:30px;">Ничего не найдено 🔍</div>';
