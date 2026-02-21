@@ -1531,7 +1531,9 @@
             const serialBadge = serialNum ? `<div class="nft-id-badge${isNFT?' nft':''}${x.nftSerial?'':' common-id'}">${serialNum}</div>` : '';
             const mergeBadge = isMergeReady ? `<div class="merge-count-badge ready" title="Можно объединить!">⚗️</div>` : '';
 
-            const sellPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)) : getPrice(x.id||0);
+            const baseMarketPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)) : getPrice(x.id||0);
+            const rarMultiplier = isNFT ? 1 : ([1, 2, 5, 15][rarLevel] || 1);
+            const sellPrice = Math.round(baseMarketPrice * rarMultiplier);
             const sellReward = Math.floor(sellPrice / 2);
             return `<div class="card ${cardExtraClass}${isMergeReady?' merge-ready':''}" style="display:flex;flex-direction:column;align-items:center;position:relative;${cardStyle}">
                 ${pinBadge}${nftBadge}${mergeBadge}${serialBadge}
