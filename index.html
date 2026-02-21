@@ -1201,9 +1201,27 @@
         // Фиксируем sessionPrice для всех товаров только при первой загрузке (после получения данных из Firebase)
         if (!_pricesLoaded) {
             _pricesLoaded = true;
+
+            // Читаем предыдущие цены из localStorage (сохранённые в прошлый раз)
+            let savedPrices = {};
+            try {
+                const raw = localStorage.getItem('gifts_prev_prices');
+                if (raw) savedPrices = JSON.parse(raw);
+            } catch(e) {}
+
             for (const c of catalog) {
-                _sessionPrice[String(c.id)] = getPrice(c.id);
+                const sid = String(c.id);
+                const curPrice = getPrice(sid);
+                // Если есть сохранённая цена из прошлой сессии — используем её как "предыдущую"
+                _sessionPrice[sid] = (savedPrices[sid] !== undefined) ? savedPrices[sid] : curPrice;
             }
+
+            // Сохраняем текущие цены как "предыдущие" для следующей сессии
+            const toSave = {};
+            for (const c of catalog) {
+                toSave[String(c.id)] = getPrice(String(c.id));
+            }
+            try { localStorage.setItem('gifts_prev_prices', JSON.stringify(toSave)); } catch(e) {}
         }
     }
 
