@@ -4437,6 +4437,90 @@
         if(document.getElementById('bcast-msg')) document.getElementById('bcast-msg').value='';
     };
 
+    // ========== 🔊 SOUND ENGINE ==========
+    const SFX = (() => {
+        let ctx = null;
+        const getCtx = () => {
+            if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (ctx.state === 'suspended') ctx.resume();
+            return ctx;
+        };
+
+        // 🎵 Клик по кнопке — лёгкий тик
+        const click = () => {
+            try {
+                const c = getCtx();
+                const o = c.createOscillator();
+                const g = c.createGain();
+                o.connect(g); g.connect(c.destination);
+                o.type = 'sine';
+                o.frequency.setValueAtTime(880, c.currentTime);
+                o.frequency.exponentialRampToValueAtTime(660, c.currentTime + 0.06);
+                g.gain.setValueAtTime(0.18, c.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.08);
+                o.start(c.currentTime);
+                o.stop(c.currentTime + 0.08);
+            } catch(e){}
+        };
+
+        // 🎉 Успех / покупка — радостный звон
+        const success = () => {
+            try {
+                const c = getCtx();
+                const freqs = [523, 659, 784, 1047];
+                freqs.forEach((freq, i) => {
+                    const o = c.createOscillator();
+                    const g = c.createGain();
+                    o.connect(g); g.connect(c.destination);
+                    o.type = 'sine';
+                    const t = c.currentTime + i * 0.1;
+                    o.frequency.setValueAtTime(freq, t);
+                    g.gain.setValueAtTime(0.22, t);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                    o.start(t);
+                    o.stop(t + 0.35);
+                });
+            } catch(e){}
+        };
+
+        // ❌ Ошибка — резкий низкий звук
+        const error = () => {
+            try {
+                const c = getCtx();
+                const o = c.createOscillator();
+                const g = c.createGain();
+                o.connect(g); g.connect(c.destination);
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(220, c.currentTime);
+                o.frequency.exponentialRampToValueAtTime(110, c.currentTime + 0.25);
+                g.gain.setValueAtTime(0.22, c.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.28);
+                o.start(c.currentTime);
+                o.stop(c.currentTime + 0.28);
+            } catch(e){}
+        };
+
+        return { click, success, error };
+    })();
+
+    // Глобальный клик по кнопкам
+    document.addEventListener('click', e => {
+        const target = e.target.closest('button, .btn, .nav-btn, .filter-btn, .auth-tab, .adm-tab, .tg-action-btn, .sell-btn');
+        if (target) SFX.click();
+    }, true);
+
+    // Подключаем звуки к showToast
+    const _origToast = window.showToast;
+    window.showToast = (msg, color = 'var(--accent)', icon = '') => {
+        _origToast(msg, color, icon);
+        if (color && (color.includes('err') || color === '#e74c3c')) {
+            SFX.error();
+        } else if (color && (color.includes('green') || color === '#2ecc71' || color === 'gold' || color === '#4dff91' || color === '#a29bfe')) {
+            SFX.success();
+        }
+    };
+    // ========== END SOUND ENGINE ==========
+
     // Auto-login from localStorage
     (()=>{
         const s=localStorage.getItem('gifts_user');
