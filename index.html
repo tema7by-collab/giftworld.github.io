@@ -1240,7 +1240,11 @@
 
     function getPrice(id) {
         const entry = _shopPriceCache[String(id)];
-        if (!entry) return BASE_PRICE;
+        if (!entry) {
+            // Fallback to catalog price if cache not loaded yet
+            const catItem = catalog.find(x => String(x.id) === String(id));
+            return (catItem && catItem.price) ? catItem.price : BASE_PRICE;
+        }
         return Math.max(PRICE_MIN, Math.min(PRICE_MAX, entry.price || BASE_PRICE));
     }
 
@@ -1576,7 +1580,7 @@
             const serialBadge = serialNum ? `<div class="nft-id-badge${isNFT?' nft':''}${x.nftSerial?'':' common-id'}">${serialNum}</div>` : '';
             const mergeBadge = isMergeReady ? `<div class="merge-count-badge ready" title="Можно объединить!">⚗️</div>` : '';
 
-            const baseMarketPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)) : getPrice(x.id||0);
+            const baseMarketPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:x.id===996?5000:(x.price||getPrice(x.id||0))) : getPrice(x.id||0);
             const rarMultiplier = isNFT ? 1 : ([1, 2, 5, 15][rarLevel] || 1);
             const sellPrice = Math.round(baseMarketPrice * rarMultiplier);
             const sellReward = Math.floor(sellPrice / 2);
@@ -1692,7 +1696,7 @@
         const rarObj=RARITY_LEVELS[newRarity],newSerial=await getNextNftSerial();
         const isNewNft=newRarity>=4;
         const upgradedItem={...baseItem,rarity:newRarity,nftSerial:newSerial,inst:Date.now(),seen:true,from:"⚗️ Слияние"};
-        if(isNewNft){upgradedItem.nft=true;delete upgradedItem.rarity;}
+        if(isNewNft){upgradedItem.nft=true;delete upgradedItem.rarity;upgradedItem.price=getPrice(baseItem.id||0);}
         inv.push(upgradedItem);
         await update(r,{cloudInv:inv, totalMerges:(d.totalMerges||0)+1});
         const newRarObj2=RARITY_LEVELS[newRarity]||RARITY_LEVELS[0];
@@ -2191,7 +2195,7 @@
             ? entries.map(([k,x])=>{
                 const isNFT=!!x.nft;
                 const isLizard=isNFT&&x.id===997;
-                const nftBasePrice=isNFT?(x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)):0;
+                const nftBasePrice=isNFT?(x.id===997?7000:x.id===998?10000:x.id===999?5000:x.id===996?5000:(x.price||getPrice(x.id||0))):0;
                 const rar=getRarityObj(x);
                 const isRare=!isNFT&&rar.id===1, isEpic=!isNFT&&rar.id===2, isLeg=!isNFT&&rar.id===3;
 
@@ -3179,7 +3183,7 @@
             const isNFT = !!x.nft;
             const isLizard = isNFT && x.id === 997;
             const nftClass = isNFT ? (isLizard ? ' tg-gift-nft-lizard' : ' tg-gift-nft') : '';
-            const nftPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:(x.price||0)) : 0;
+            const nftPrice = isNFT ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:x.id===996?5000:(x.price||getPrice(x.id||0))) : 0;
             // NFT upgrade
             const upgClasses = isNFT ? getNftUpgradeClasses(x) : '';
             const upgBadge = isNFT ? getNftUpgradeBadge(x) : '';
@@ -3300,7 +3304,7 @@
 
         const price = x.nft ? 5000 : getPrice(x.id||0);
         const rarMultiplier = x.nft ? 1 : [1, 2, 5, 15][rarLevel2] || 1;
-        const marketPrice = x.nft ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:5000) : Math.round(price * rarMultiplier);
+        const marketPrice = x.nft ? (x.id===997?7000:x.id===998?10000:x.id===999?5000:x.id===996?5000:(x.price||getPrice(x.id||0))) : Math.round(price * rarMultiplier);
         const origin = x.from ? (x.from === 'PROMO' ? '🎟️ Промокод' : x.from === 'ADMIN' ? '🛠️ Выдан админом' : x.from === 'RESET' ? '🔄 Сброс' : x.from === '⚗️ Слияние' ? '⚗️ Получен слиянием' : '🎁 Подарено: ' + x.from) : '🛒 Куплено в магазине';
 
         const rarLabel = x.nft
