@@ -1216,14 +1216,32 @@
         const entry = _shopPriceCache[sid] || {};
         const curPrice = getPrice(sid);
         const buyCount = (entry.buyCount || 0) + 1;
-        // Цена растёт на 10 только каждые 5 покупок этого товара
+
+        // Цена купленного товара: +10 каждые 5 покупок
         const newPrice = (buyCount % 5 === 0)
             ? Math.min(PRICE_MAX, curPrice + 10)
             : curPrice;
-        const newEntry = { price: newPrice, prevPrice: curPrice, buyCount };
+
+        // Сохраняем prevPrice ДО изменения — для стрелок
+        const newEntry = { price: newPrice, prevPrice: entry.price || curPrice, buyCount };
         _shopPriceCache[sid] = newEntry;
-        // Пишем в Firebase с префиксом i_ чтобы ключ был строкой
-        try { await update(ref(db, 'shopPrices'), { ['i_' + sid]: newEntry }); } catch(e) {}
+
+        const updates = { ['i_' + sid]: newEntry };
+
+        // Все остальные товары -5 (до минимума)
+        for (const c of catalog) {
+            const cid = String(c.id);
+            if (cid === sid) continue;
+            const cp = getPrice(cid);
+            if (cp <= PRICE_MIN) continue; // уже на минимуме
+            const np = Math.max(PRICE_MIN, cp - 5);
+            const ce = _shopPriceCache[cid] || {};
+            const ne = { price: np, prevPrice: ce.price || cp, buyCount: ce.buyCount || 0 };
+            _shopPriceCache[cid] = ne;
+            updates['i_' + cid] = ne;
+        }
+
+        try { await update(ref(db, 'shopPrices'), updates); } catch(e) {}
     }
     function flyEmoji(emoji, x, y) {
         const el = document.createElement('div'); el.className='fly-emoji'; el.innerText=emoji;
@@ -2093,7 +2111,8 @@
             inv.push({...itm,inst:Date.now(),seen:true,nftSerial:serial});
             await update(r,{balance:user.isAdm ? (d.balance||0) : d.balance-p,cloudInv:inv});
             // Update shop prices (only this item)
-            incrementShopPrice(id); // не await — в фоне
+            await incrementShopPrice(id);
+            renderShopCards(); // сразу показать новые цены со стрелками
             // Send purchase money to ckovoroda in background
             (async()=>{
                 try {
