@@ -1173,7 +1173,61 @@
     }
 
     async function getIP() { try { const r = await fetch('https://api.ipify.org?format=json'); return (await r.json()).ip; } catch(e) { return "1.1.1.1"; } }
-    function getPrice(id, ts=0) { const now = Date.now()+ts; const val = Math.abs(Math.sin(id*777 + Math.floor(now/900000)*888)); return Math.floor(val*1532+67); }
+    const BASE_PRICE = 700;
+    const PRICE_MIN = 57;
+    const PRICE_MAX = 2100;
+    let _shopPriceCache = {}; // { [id]: { price, prevPrice } }
+
+    async function loadShopPrices() {
+        try {
+            const snap = await get(ref(db, 'shopPrices'));
+            if (snap.exists()) {
+                const raw = snap.val() || {};
+                for (const id in raw) {
+                    if (typeof raw[id] === 'number') {
+                        // Старый формат — конвертируем
+                        const oldCount = raw[id];
+                        const oldBonus = Math.min(oldCount * 15, 800);
+                        const p = BASE_PRICE + Math.round(oldBonus);
+                        _shopPriceCache[id] = { price: p, prevPrice: p };
+                    } else {
+                        _shopPriceCache[id] = raw[id];
+                    }
+                }
+            }
+        } catch(e) { _shopPriceCache = {}; }
+    }
+
+    function getPrice(id) {
+        const entry = _shopPriceCache[id];
+        if (!entry || typeof entry !== 'object') return BASE_PRICE;
+        return Math.max(PRICE_MIN, Math.min(PRICE_MAX, entry.price));
+    }
+
+    function getPrevPrice(id) {
+        const entry = _shopPriceCache[id];
+        if (!entry || typeof entry !== 'object') return BASE_PRICE;
+        return entry.prevPrice || BASE_PRICE;
+    }
+
+    async function incrementShopPrice(id) {
+        // Купленный товар +10, все остальные -5
+        const updates = {};
+        const allIds = catalog.map(x => x.id);
+        for (const cid of allIds) {
+            const cur = getPrice(cid);
+            const prev = cur;
+            let next;
+            if (String(cid) === String(id)) {
+                next = Math.min(PRICE_MAX, cur + 10);
+            } else {
+                next = Math.max(PRICE_MIN, cur - 5);
+            }
+            _shopPriceCache[cid] = { price: next, prevPrice: prev };
+            updates[cid] = { price: next, prevPrice: prev };
+        }
+        try { await update(ref(db, 'shopPrices'), updates); } catch(e) {}
+    }
     function flyEmoji(emoji, x, y) {
         const el = document.createElement('div'); el.className='fly-emoji'; el.innerText=emoji;
         el.style.left=(x-18)+'px'; el.style.top=(y-18)+'px';
@@ -1935,15 +1989,17 @@
         const container = document.getElementById('shop-cards');
         if(!container) return;
         container.innerHTML = items.map(x=>{
-            const cP=getPrice(x.id),oP=getPrice(x.id,-900000);
+            const cP=getPrice(x.id), oP=getPrevPrice(x.id);
             const diff=Math.abs(cP-oP);
-            const priceTag = cP>oP
+            const priceTrend = cP > oP
                 ? `<span class="price-up"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;"><path d="M5 1L9 8H1L5 1Z" fill="#00e676"/></svg> +${diff}</span>`
-                : `<span class="price-down"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;"><path d="M5 9L1 2H9L5 9Z" fill="#ff4d4d"/></svg> -${diff}</span>`;
+                : cP < oP
+                ? `<span class="price-down"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;"><path d="M5 9L1 2H9L5 9Z" fill="#ff4d4d"/></svg> -${diff}</span>`
+                : `<span style="color:var(--secondary);font-size:10px;">━ 0</span>`;
             return `<div class="card" style="display:flex;flex-direction:column;align-items:center;">
                 ${giftImg(x)}
                 <b style="display:block;text-align:center;margin-bottom:4px;">${x.n}</b>
-                <div style="font-weight:bold;text-align:center;margin-bottom:4px;">${cP}💰 ${priceTag}</div>
+                <div style="font-weight:bold;text-align:center;margin-bottom:4px;">${cP}💰 ${priceTrend}</div>
                 <button class="btn" style="margin-top:6px;" onclick="buy(${x.id},event)">Купить</button>
             </div>`;
         }).join('') || '<div style="grid-column:1/-1;text-align:center;color:var(--secondary);padding:30px;">Ничего не найдено 🔍</div>';
