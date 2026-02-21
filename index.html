@@ -4374,7 +4374,7 @@
         document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
         document.getElementById(id).classList.add('active');b.classList.add('active');
         if(id==='inv') renderInv();
-        if(id==='shop') { _sessionPrice = {}; _pricesLoaded = false; renderShop(); loadShopPrices().then(()=>renderShopCards()); }
+        if(id==='shop') { renderShop(); if(!_pricesLoaded) { loadShopPrices().then(()=>renderShopCards()); } else { renderShopCards(); } }
         if(id==='market') listenMarket();
         if(id==='profile') { get(ref(db,'users/'+user.id)).then(s=>{ if(s.val()) renderMyProfile(s.val()); }); }
     };
