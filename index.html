@@ -1188,40 +1188,24 @@
                 const id = key.replace('i_', '');
                 const val = raw[key];
                 if (typeof val === 'number') {
-                    // Старый формат
                     const p = Math.max(BASE_PRICE, BASE_PRICE + Math.min(val * 15, 800));
                     _shopPriceCache[id] = { price: p, buyCount: val };
                 } else if (val && typeof val === 'object') {
                     const p = Math.max(PRICE_MIN, val.price || BASE_PRICE);
-                    _shopPriceCache[id] = { price: p, buyCount: val.buyCount || 0 };
+                    _shopPriceCache[id] = { price: p, buyCount: val.buyCount || 0, prevPrice: val.prevPrice };
                 }
             }
         } catch(e) {}
 
-        // Фиксируем sessionPrice для всех товаров только при первой загрузке (после получения данных из Firebase)
+        // Фиксируем sessionPrice только при первой загрузке
         if (!_pricesLoaded) {
             _pricesLoaded = true;
-
-            // Читаем предыдущие цены из localStorage (сохранённые в прошлый раз)
-            let savedPrices = {};
-            try {
-                const raw = localStorage.getItem('gifts_prev_prices');
-                if (raw) savedPrices = JSON.parse(raw);
-            } catch(e) {}
-
             for (const c of catalog) {
                 const sid = String(c.id);
-                const curPrice = getPrice(sid);
-                // Если есть сохранённая цена из прошлой сессии — используем её как "предыдущую"
-                _sessionPrice[sid] = (savedPrices[sid] !== undefined) ? savedPrices[sid] : curPrice;
+                const entry = _shopPriceCache[sid];
+                // prevPrice хранится в Firebase — одинаково для всех пользователей
+                _sessionPrice[sid] = (entry && entry.prevPrice !== undefined) ? entry.prevPrice : getPrice(sid);
             }
-
-            // Сохраняем текущие цены как "предыдущие" для следующей сессии
-            const toSave = {};
-            for (const c of catalog) {
-                toSave[String(c.id)] = getPrice(String(c.id));
-            }
-            try { localStorage.setItem('gifts_prev_prices', JSON.stringify(toSave)); } catch(e) {}
         }
     }
 
@@ -1242,8 +1226,9 @@
         const buyCount = (_shopPriceCache[sid]?.buyCount || 0) + 1;
         const newPrice = Math.min(PRICE_MAX, curPrice + 1);
 
-        _shopPriceCache[sid] = { price: newPrice, buyCount };
-        const updates = { ['i_' + sid]: { price: newPrice, buyCount } };
+        // Сохраняем текущую цену как prevPrice — чтобы все пользователи видели стрелки
+        _shopPriceCache[sid] = { price: newPrice, buyCount, prevPrice: curPrice };
+        const updates = { ['i_' + sid]: { price: newPrice, buyCount, prevPrice: curPrice } };
 
         // Все остальные -1
         for (const c of catalog) {
@@ -1253,8 +1238,11 @@
             if (cp <= PRICE_MIN) continue;
             const np = Math.max(PRICE_MIN, cp - 1);
             const bc = _shopPriceCache[cid]?.buyCount || 0;
-            _shopPriceCache[cid] = { price: np, buyCount: bc };
-            updates['i_' + cid] = { price: np, buyCount: bc };
+            const oldPrev = _shopPriceCache[cid]?.prevPrice;
+            // prevPrice для упавших: если prevPrice ещё не установлен или cp > oldPrev — обновляем
+            const newPrev = (oldPrev === undefined || cp !== oldPrev) ? cp : oldPrev;
+            _shopPriceCache[cid] = { price: np, buyCount: bc, prevPrice: newPrev };
+            updates['i_' + cid] = { price: np, buyCount: bc, prevPrice: newPrev };
         }
 
         try { await update(ref(db, 'shopPrices'), updates); } catch(e) {}
